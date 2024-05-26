@@ -1,0 +1,525 @@
+<style>
+
+    .t156__wrapper {
+        height: auto;
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(100px, 1fr)); 
+        grid-template-rows: repeat(2, 420px);
+        grid-gap: 15px 15px;
+    }
+
+
+    .t156__wrapper.tiny {
+        grid-template-columns: repeat(4, 10px); 
+        grid-template-rows: repeat(2, 10px);
+        grid-gap: 0;
+    }
+
+    @media screen and (max-width: 960px) {
+       .t156__wrapper {
+            grid-template-columns: repeat(2, minmax(100px, 1fr)); 
+            grid-template-rows: repeat(4, 420px);
+        }
+        
+        
+        .t156__wrapper.tiny {
+            grid-template-columns: repeat(2, 10px); 
+            grid-template-rows: repeat(4, 10px);
+            grid-gap: 0;
+        }
+    }
+    
+
+    .t156__item {
+        border-radius: 6px;
+    }
+    
+    .t156__item img {
+        object-fit: cover;
+        height: 100%;
+        border-radius: 6px;
+    }
+    
+    .t156__item {
+        width: 100%;
+        height: 100%;
+    }
+    
+    .gallery .t156__item/*:not(.active)*/ {
+        /*display: none;*/
+        opacity: 0;
+    }
+    
+    #skeleton {
+        position: relative;
+    }
+    
+    .img__skeleton {
+        background: #4e7dc524;
+    }
+    
+    .gallery {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+    }
+    
+    
+    .menu-item__images-wrapper {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: -1;
+    }
+    
+</style>
+
+<script>
+(() => {
+
+    const getImagesSettings = images => {
+
+        /*const toCamelCase = str => str.split('-').reduce((camelStr, part, i) => {
+             if (!part) return camelStr;
+             return i === 0 ? part : `${camelStr}${part[ 0 ].toUpperCase()}${part.substring(1)}`;
+         }, '');*/
+
+        const settingNameToProp = name => {
+            switch (name) {
+                case 'position': return 'background-position';
+                default: return name;
+            }
+        };
+
+        const getImageSettings = settingsStr => {
+            return settingsStr.split(',').reduce((settings, settingStr) => {
+                const result = settingStr.match(/\s*(?<key>\S+)\s*:\s*(?<value>.*)\s*/);
+
+                if (!result) {
+                    console.log(`Wrong alt text setting: ${settingStr}`);
+                    return settings;
+                }
+
+                const [ , key, value ] = result;
+
+                const [ , mode = 'value', k ] = key.match(/(?:(.+)-)?(.*)/);
+                const prop = settingNameToProp(k);
+
+                return { ...settings, [ prop ]: { ...settings[ prop ], [ mode ]: value.trim() } };
+            }, {});
+        };
+
+        return images.map(image => {
+            const altText = image.getAttribute('aria-label');
+
+            const [ realAltText, settingsStr ] = altText.split('#');
+
+            if (settingsStr) {
+                image.setAttribute('aria-label', realAltText.trim());
+                return getImageSettings(settingsStr);
+            }
+        });
+    };
+
+    const setStyle = (el, style) => {
+        const oldStyle = el.getAttribute('style');
+        el.setAttribute('style', `${oldStyle}; ${style}`);
+    };
+
+    const galleryCategories = [
+        { name: 'Invisible guests', imagesRecids: [ '746428010', '746428004' ] },
+        { name: 'Cathedral Moods', imagesRecids: [ '571578108', '746400014' ] },
+        { name: 'Miniatures', imagesRecids: [ '571579724', '571592065' ] },
+        { name: 'Paris Portraits', imagesRecids: [ '571579825', '571579742' ] },
+        { name: 'Model Sessions', imagesRecids: [ '571579925', '571579800' ] },
+        { name: 'Movie Stills', imagesRecids: [ '571579932', '571579802' ] },
+        { name: 'The Empty Studio', imagesRecids: [ '571579939', '571579804' ] }
+    ];
+
+    const queryAll = (query, element = document) => [ ...element.querySelectorAll(query) ];
+
+    const getElementFromRecid = recid => document.querySelector(`#rec${recid}`);
+
+
+    const imagesToGrid = () => {
+
+        // we move all images to first images block
+        const imagesBlocksByCategory = galleryCategories.map(({ imagesRecids }) => [ ...imagesRecids.map(getElementFromRecid) ]);
+
+
+        const imagesCategories = imagesBlocksByCategory.map((blocks, categoryI) => {
+
+            const wrapper = blocks[ 0 ].querySelector('.t156__wrapper');
+
+            const images = blocks.flatMap((block, i) => {
+                const images = queryAll('.t156__item', block);
+
+                if (i === 0) {
+                    block.classList.add('gallery');
+                    block.classList.add(`gallery-${categoryI}`);
+                    [ ...wrapper.children ].filter(el => el.innerHTML === '').forEach(el => el.remove());
+                } else {
+                    wrapper.append(...images);
+                    block.remove();
+                }
+
+                return images;
+            });
+
+
+            return { images, wrapper, block: blocks[ 0 ] };
+        });
+
+        const createSkeleton = () => {
+            const firstCategory = imagesCategories[ 0 ];
+            const skeletonBlock = firstCategory.block.cloneNode(true);
+
+            const skeletonWrapper = skeletonBlock.querySelector('.t156__wrapper');
+
+            skeletonBlock.id = 'skeleton';
+            skeletonBlock.classList.add('skeleton');
+
+            [ ...skeletonBlock.classList ].forEach(c => {
+                if (c.includes('gallery'))
+                    skeletonBlock.classList.remove(c);
+            });
+
+            imagesCategories[ 0 ].block.before(skeletonBlock);
+
+            skeletonWrapper.replaceChildren();
+
+            firstCategory.images.forEach((_, i) => {
+                skeletonWrapper.insertAdjacentHTML('afterbegin', `<div class="img__skeleton t156__item"></div>`);
+            });
+
+            return skeletonBlock;
+        };
+
+        const skeletonBlock = createSkeleton();
+
+        imagesCategories.forEach(c => skeletonBlock.append(c.block));
+
+        return {
+            imagesCategories,
+            imagesByCategory: imagesCategories.map(c => c.images),
+            images: imagesCategories.flatMap(c => c.images),
+            skeletonBlock,
+            skeletonsImages: queryAll('.img__skeleton', skeletonBlock)
+        };
+    };
+
+    const createElements = () => {
+
+        const menuContainer = document.querySelector('#rec747864295 .t959__container');
+        const menuItems = [ ...menuContainer.querySelectorAll('.t959__card') ];
+
+        const menuItemsCard = menuItems.map(menuItem => {
+            menuItem.insertAdjacentHTML('beforeend', '<div class="menu-item__images-wrapper"></div>');
+
+            return menuItem.querySelector('.menu-item__images-wrapper');
+        });
+
+
+        return {
+            menuContainer,
+            menuItems,
+            menuItemsCard,
+            ...imagesToGrid()
+        };
+    };
+
+    const elements = createElements();
+
+    const menuItemsImages = elements.menuItems.map(item => item.querySelector('.t959__card-image'));
+    const menuItemsImagesSettings = getImagesSettings(menuItemsImages);
+
+
+    const setMenuItemsImagesStyle = styles => {
+
+        menuItemsImagesSettings.forEach((imagesSettings, i) => {
+
+            const styleStr = styles.map(style => {
+                const s = typeof style === 'string' ? { prop: style, mode: 'value' } : style;
+                const value = imagesSettings[ s.prop ]?.[ s.mode ];
+
+                return value ? `${s.prop}: ${imagesSettings[ s.prop ][ s.mode ]}` : '';
+            }).join(';');
+
+            if (styleStr)
+                setStyle(menuItemsImages[ i ], styleStr);
+        });
+    };
+
+
+    setMenuItemsImagesStyle([ { prop: 'background-position', mode: 'lg' } ]);
+
+
+    const getActiveMenuIndex = () => {
+        const index = elements.menuItems.findIndex(m => m.classList.contains('active'));
+        return index > -1 ? index : 0;
+    };
+
+
+
+    const addClickAnimation = () => {
+
+        const getDeltas = menuIndex => {
+            const activeIndex = getActiveMenuIndex();
+
+            const menuItemRect = elements.menuItems[ menuIndex ].getBoundingClientRect();
+
+            return elements.imagesByCategory[ activeIndex ].map(image => {
+                const imageRect = image.getBoundingClientRect();
+
+                return {
+                    dx: (imageRect.x + imageRect.width / 2) - (menuItemRect.x + menuItemRect.width / 2),
+                    dy: (imageRect.y + imageRect.width / 2) - (menuItemRect.y + menuItemRect.height / 2),
+                };
+            });
+        };
+
+
+        const deltas = undefined;
+
+        const createAnimation = (menuIndex, images, mode) => {
+
+            const isFirst = !!deltas;
+
+            const deltasToMenus = deltas || elements.menuItems.map((_, i) => getDeltas(i));
+
+            const propsFrom = {
+                opacity: 0, scale: 0.2,
+                x: i => -deltasToMenus[ menuIndex ][ i ].dx,
+                y: i => -deltasToMenus[ menuIndex ][ i ].dy
+            };
+
+            const propsTo = { opacity: 1, scale: 1, x: 0, y: 0 };
+
+            const settings = {
+                duration: 0.7, ease: 'expo.out', stagger: 0.1, overwrite: true
+            };
+
+
+            if (isFirst) {
+                elements.imagesByCategory.forEach(images => {
+                    gsap.set(images, propsFrom);
+                });
+            }
+
+
+
+            if (mode === 'enter') {
+                return gsap.to(images, {
+                    ...propsTo, ...settings,
+                    onEnter: () => images.forEach(image => image.classList.add('active'))
+                });
+            }
+
+            return gsap.to(images, {
+                ...propsFrom, ...settings,
+                onComplete: () => images.forEach(image => image.classList.remove('active'))
+            });
+        };
+
+        const createAnimation2 = (menuIndex, mode, isFirst) => {
+
+            gsap.timeline().to(window, { scrollTo: { y: elements.menuContainer, offsetY: 25 }, duration: 1, ease: 'expo.out' })
+                .to(elements.menuContainer, { height: 120, duration: 1, ease: 'expo.out' }, '<10%');
+
+
+            const { wrapper, images, block } = elements.imagesCategories[ menuIndex ];
+
+
+            if (mode === 'leave') {
+                /*const state = Flip.getState(images, { props: 'opacity' });
+
+                elements.menuItemsCard[ menuIndex ].append(wrapper);
+                
+                wrapper.classList.add('tiny');
+                setMenuItemsImagesStyle([
+                    { prop: 'background-position', mode: 'lg' }
+                ]);
+
+                gsap.set(images, { scale: 0.2 });
+
+                Flip.from(state, {
+                    duration: 0.5, ease: 'expo.inOut', stagger: 0.1, overwrite: true,
+                    // onComplete: () => imagesContainer.classList.remove('enabled')
+                });*/
+        
+                // const parent = wrapper.parentElement;
+
+                // wrapper.classList.add('tiny');
+                /*setMenuItemsImagesStyle([
+                    { prop: 'background-position', mode: 'lg' }
+                ]);*/
+
+               // gsap.set(images, { scale: 0.2 });
+                
+                const state = Flip.getState(images, { props: 'opacity' });
+                
+                elements.menuItemsCard[ menuIndex ].append(wrapper);
+                
+                gsap.set(images, { opacity: 1, scale: 1 });
+                wrapper.classList.add('tiny');
+
+                Flip.from(state, {
+                    duration: 0.5, ease: 'expo.inOut', stagger: 0.1, overwrite: true,
+                    // onComplete: () => imagesContainer.classList.remove('enabled')
+                });
+
+                return;
+            }
+
+
+
+            // forward
+            
+            const imagesParent = block.querySelector('.t-container .t-col'); // wrapper.parentElement
+
+            
+            if(isFirst) {
+                elements.menuItemsCard[ menuIndex ].append(wrapper);
+    
+                wrapper.classList.add('tiny');
+                gsap.set(wrapper, { perspective: 800 });
+                setMenuItemsImagesStyle([ { prop: 'background-position', mode: 'xs' } ]);
+    
+                gsap.set(images, { scale: 0.2, opacity: 1 /*0*/,
+                skewX: 10, skewY: 10, z: -130
+                // transformPerspective: 800,
+                // z: -500
+                /*rotationY: 45, rotateZ: -15, rotateX: 5*/
+                    
+                });
+            }
+
+
+            //     transform: perspective(800px) rotate3d(0, -1, 0, -40deg) rotate3d(0, 0, -1, 20deg) rotate3d(1, 0, 0, 5deg);
+            //     transform: perspective(800px) rotateY(45deg) rotateZ(-15deg) rotateX(5deg);
+            const imagesState = Flip.getState(images, { props: 'opacity' });
+
+            gsap.set(images, { opacity: 1, scale: 1, /*rotationX: 0, rotationY: 0, rotationZ: 0*/ skewX:0, skewY: 0, z: 0 });
+            wrapper.classList.remove('tiny');
+
+            imagesParent.append(wrapper);
+
+            Flip.from(imagesState, {
+               // absolute: true,
+                duration: 1, ease: 'expo.out', stagger: 0.2, overwrite: true
+            });
+        };
+
+
+        // const animations = elements.menuItems.map((_, i) => createAnimation(elements.imagesByCategory[ i ]));
+
+        // const activeIndex = getActiveMenuIndex();
+        let state = { i: undefined, menuItem: undefined, isFirst: [] }; // { i: activeIndex, menuItem: elements.menuItems[ activeIndex ] };
+
+        // elements.imagesByCategory[activeIndex].forEach(image => image.classList.add('active'))
+
+        elements.menuItems.forEach((menuItem, i) => {
+            state.isFirst[i] = true;
+            
+            // on image menu click
+            menuItem.addEventListener('pointerup', () => {
+
+                if (state.i !== undefined) {
+                    createAnimation2(state.i, 'leave');
+
+                    state.menuItem.classList.remove('active');
+                    // elements.imagesByCategory[i].forEach(image => image.classList.remove('active'));
+
+                    if (state.i === i) {
+                        state = { ...state, menuItem: undefined, i: undefined };
+                        return;
+                    }
+                }
+
+                menuItem.classList.add('active');
+                // elements.imagesByCategory[i].forEach(image => image.classList.add('active'));
+
+                // animations[ i ].play();
+                createAnimation2(i, 'enter', state.isFirst);
+                
+                state = { menuItem, i, isFirst: !state.isFirst[i] };
+
+            }, { passive: true });
+        });
+
+        /*const animations = [];
+        // elements.menuItems.map((_, i) => createAnimation2(i, 'enter'));
+        
+        
+        elements.menuItems.forEach((menuItem, i) => {
+
+            // on image menu click
+            menuItem.addEventListener('pointerup', () => {
+                animations[i] = animations[i] || createAnimation2(i);
+                
+                if(state) {
+                    animations[state.i] = animations[state.i] || createAnimation2(i);
+                    animations[state.i].out.play();
+                    
+                    state.menuItem.classList.remove('active');
+                    // elements.imagesByCategory[i].forEach(image => image.classList.remove('active'));
+                    
+                    if(state.i === i) {
+                        state = undefined;
+                        return;
+                    }
+                }
+
+                state = { menuItem, i };
+
+                menuItem.classList.add('active');
+
+                animations[ i ].in.play();
+            });
+
+        }, { passive: true });
+        };
+        */
+    };
+
+
+    addClickAnimation();
+
+
+    // backward
+    /*const state = Flip.getState(currentState.images, { props: 'opacity' });
+    
+    Flip.to(state, { 
+        duration: 0.5, ease: 'expo.inOut', stagger: 0.1, overwrite: true,
+        onComplete: () => imagesContainer.classList.remove('enabled')
+    });*/
+
+
+
+    // forward
+
+
+
+    // const parent = imagesContainer.parentElement;
+    // menuItems[index].append(imagesContainer);
+
+    // const imagesState = Flip.getState(images, { props: 'opacity' });
+
+    // gsap.set(images, { opacity: 0, scale: 0.2 });
+
+    // parent.append(imagesContainer);
+    // menuItems[index].append(...images /*imagesContainer*/);
+
+    /*Flip.to(imagesState, {
+        // onEnter:  images => gsap.fromTo(images, { opacity: 0 }, { opacity: 1 }),
+        duration: 0.7, ease: 'expo.inOut', stagger: 0.1, overwrite: true
+    });*/
+
+
+})();
+</script>

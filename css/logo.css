@@ -1,0 +1,24 @@
+.kathy-burk-logo {
+    animation: 2.3s ease-out 0.5s forwards kathy-burk-logo-colors;
+}
+
+.kathy-burk-logo .text-container.right {
+    fill: brown;
+    transform: translateX(-50%);
+    animation: 0.3s ease-out 0.5s forwards kathy-burk-logo-slide;
+}
+
+
+@keyframes kathy-burk-logo-slide {
+    to {
+        transform: translateX(0);
+    }
+}
+
+
+@keyframes kathy-burk-logo-colors {
+    to {
+        --kathy-burk-logo-primary-color: black;
+        --kathy-burk-logo-secondary-color: white;
+    }
+}

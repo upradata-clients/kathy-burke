@@ -1,0 +1,14 @@
+.t156__wrapper {
+    height: 380px;
+}
+
+.t156__item {
+    width: 100%;
+    height: 100%;
+}
+
+.t-img {
+    width: 100%;
+    object-fit: cover;
+    object-position: center;
+}

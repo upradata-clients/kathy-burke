@@ -1,0 +1,308 @@
+<style>
+
+    .t156__wrapper {
+        height: auto;
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(100px, 1fr)); 
+        grid-template-rows: repeat(2, 420px);
+        grid-gap: 15px 15px;
+    }
+
+    @media screen and (max-width: 960px) {
+       .t156__wrapper {
+            grid-template-columns: repeat(2, minmax(100px, 1fr)); 
+            grid-template-rows: repeat(4, 420px);
+        }
+    }
+
+    .t156__item {
+        border-radius: 6px;
+    }
+    
+    .t156__item img {
+        object-fit: cover;
+        height: 100%;
+        border-radius: 6px;
+    }
+    
+    
+    /*.t156__grid .t156__wrapper {
+        height: 380px;
+    }*/
+    /*.t156__grid .t156__item {
+        height: 380px;
+    }*/
+    
+     .t156__item {
+        width: 100%;
+        height: 100%;
+        /*opacity: 0;
+        transform: scale(0.2);*/
+        background: #4e7dc524;
+    }
+    
+    .t156__item:not(.active) {
+        display: none;
+    }
+    
+    /*.t156__item {
+        transition: box-shadow 0.8s ease-out;
+    }*/
+    /*.has--shadow*/
+    /*.t156__item {
+        box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.43);
+    }*/
+</style>
+
+<script>
+(() => {
+    const galleryCategories = [
+        { name: 'Invisible guests', imagesRecids: [ '746428010', '746428004' ] },
+        { name: 'Cathedral Moods', imagesRecids: [ '571578108', '746400014' ] },
+        { name: 'Miniatures', imagesRecids: [ '571579724', '571592065' ] },
+        { name: 'Paris Portraits', imagesRecids: [ '571579825', '571579742' ] },
+        { name: 'Model Sessions', imagesRecids: [ '571579925', '571579800' ] },
+        { name: 'Movie Stills', imagesRecids: [ '571579932', '571579802' ] },
+        { name: 'The Empty Studio', imagesRecids: [ '571579939', '571579804' ] }
+    ];
+
+    const queryAll = (query, element = document) => [ ...element.querySelectorAll(query) ];
+
+    const getElementFromRecid = recid => document.querySelector(`#rec${recid}`);
+
+
+    const imagesToGrid = () => {
+        // we move all images to first images block
+        const imagesBlocksByCategory = galleryCategories.map(({ imagesRecids }) => [ ...imagesRecids.map(getElementFromRecid) ]);
+
+
+        const imagesByCategory = imagesBlocksByCategory.map((blocks, i) => {
+            const images = blocks.flatMap(block => queryAll('.t156__item', block));
+
+            images.forEach(image => image.classList.add(`gallery-${i}`));
+            return images;
+        });
+
+        const galleryBlock = imagesBlocksByCategory[ 0 ][ 0 ];
+
+        const wrapper = galleryBlock.querySelector('.t156__wrapper');
+
+        wrapper.append(...imagesByCategory[ 0 ].slice(1), ...imagesByCategory.slice(1).flat());
+        imagesBlocksByCategory.flat().forEach((block, i) => { if (i !== 0) block.remove(); });
+
+        // clean tilda useless stuff for me
+        [ ...wrapper?.children ].filter(el => el.innerHTML === '').forEach(el => el.remove());
+
+
+        const imagesContainer = galleryBlock.querySelector('.t-container');
+
+        // imagesContainer.classList.add('t156__grid');
+
+        imagesByCategory[0].forEach((_, i) => {
+            wrapper.insertAdjacentHTML('afterbegin', `<div class="img__skeleton t156__item"></div>`);
+        });
+
+        return { imagesContainer, imagesByCategory, images: imagesByCategory.flat() };
+    };
+
+
+    const menuContainer = document.querySelector('#rec747864295 .t959__container');
+
+    const elements = {
+        menuContainer,
+        menuItems: [ ...menuContainer.querySelectorAll('.t959__card') ],
+        ...imagesToGrid()
+    };
+
+
+    const loadImages = async images => {
+        // from src="https://thb.tildacdn.net/tild3237-3630-4432-b430-366631396664/-/empty/1-small.jpeg";
+        // to   src="https://optim.tildacdn.net/tild3237-3630-4432-b430-366631396664/-/format/webp/1-small.jpeg"
+        await Promise.allSettled(images.map(image => {
+
+            if (image.classList.contains('loaded') || image.classList.contains('loading'))
+                return Promise.resolve();
+
+            const img = image.querySelector('img');
+
+            img.src = img.src.replace('thb', 'optim').replace('empty', 'format/webp');
+            image.classList.add('loading');
+
+            return new Promise((resolve, reject) => {
+                img.addEventListener('load', _evt => {
+                    image.classList.remove('loading');
+                    image.classList.add('loaded');
+
+                    resolve();
+                });
+            });
+        }));
+    };
+
+
+    const getActiveMenuIndex = () => {
+        const index = elements.menuItems.findIndex(m => m.classList.contains('active'));
+        return index > -1 ? index : 0;
+    };
+
+
+    ScrollTrigger.create({
+        trigger: elements.menuContainer,
+        start: 'top-=800px bottom',
+        end: 'bottom+=800px top',
+        once: true,
+        toggleActions: 'play none play none',
+        onUpdate: async () => {
+            const activeIndex = getActiveMenuIndex();
+
+            await loadImages(elements.imagesByCategory[ activeIndex ]);
+            await loadImages(elements.imagesByCategory.filter((_, i) => i !== activeIndex).flat());
+        }
+    });
+
+
+    elements.menuItems.forEach((menuItem, i) => {
+        const images = elements.imagesByCategory[ i ];
+        menuItem.addEventListener('pointerenter', () => loadImages(images), { once: true, passive: true });
+    });
+
+
+    const addClickAnimation = () => {
+
+        const getDeltas = menuIndex => {
+            const activeIndex = getActiveMenuIndex();
+            
+            const menuItemRect = elements.menuItems[ menuIndex ].getBoundingClientRect();
+
+            return elements.imagesByCategory[ activeIndex ].map(image => {
+                const imageRect = image.getBoundingClientRect();
+
+                return {
+                    dx: (imageRect.x + imageRect.width / 2) - (menuItemRect.x + menuItemRect.width / 2),
+                    dy: (imageRect.y + imageRect.width / 2) - (menuItemRect.y + menuItemRect.height / 2),
+                };
+            });
+        };
+
+
+        const deltas = undefined;
+        
+        const createAnimation = (menuIndex, images, mode) => {
+            
+            const isFirst = !!deltas;
+            
+            const deltasToMenus = deltas || elements.menuItems.map((_, i) => getDeltas(i));
+
+            const propsFrom = {
+                opacity: 0, scale: 0.2,
+                x: i => -deltasToMenus[ menuIndex ][ i ].dx,
+                y: i => -deltasToMenus[ menuIndex ][ i ].dy
+            };
+            
+            const propsTo = { opacity: 1, scale: 1, x: 0, y: 0 };
+            
+            const settings = {
+                duration: 0.7, ease: 'expo.out', stagger: 0.1, overwrite: true
+            };
+
+
+            if(isFirst) {
+                elements.imagesByCategory.forEach(images => {
+                   gsap.set(images, propsFrom);
+                });
+            }
+
+           
+            
+            if(mode === 'enter') {
+                return gsap.to(images, {
+                        ...propsTo, ...settings,
+                        onEnter: () => images.forEach(image => image.classList.add('active'))
+                });
+            }
+
+            return gsap.to(images, {
+                   ...propsFrom, ...settings,
+                    onComplete: () => images.forEach(image => image.classList.remove('active'))
+            });
+        };
+
+        const createAnimation2 = images => {
+
+        };
+
+
+      // const animations = elements.menuItems.map((_, i) => createAnimation(elements.imagesByCategory[ i ]));
+
+        const activeIndex = getActiveMenuIndex();
+        let state = { i: activeIndex, menuItem: elements.menuItems[activeIndex] };
+        
+        elements.imagesByCategory[activeIndex].forEach(image => image.classList.add('active'))
+
+        elements.menuItems.forEach((menuItem, i) => {
+
+            // on image menu click
+            menuItem.addEventListener('pointerup', () => {
+                // animations[ state.i ].reverse();
+                if(state) {
+                    createAnimation(i, elements.imagesByCategory[ state.i ], 'leave');
+                    
+                    state.menuItem.classList.remove('active');
+                    // elements.imagesByCategory[i].forEach(image => image.classList.remove('active'));
+                    
+                    if(state.i === i) {
+                        state = undefined;
+                        return;
+                    }
+                }
+                
+                state = { menuItem, i };
+
+                menuItem.classList.add('active');
+                // elements.imagesByCategory[i].forEach(image => image.classList.add('active'));
+
+                // animations[ i ].play();
+                createAnimation(i, elements.imagesByCategory[ i ], 'enter');
+            });
+
+        }, { passive: true });
+
+    };
+
+
+    addClickAnimation();
+
+
+    // backward
+    /*const state = Flip.getState(currentState.images, { props: 'opacity' });
+    
+    Flip.to(state, { 
+        duration: 0.5, ease: 'expo.inOut', stagger: 0.1, overwrite: true,
+        onComplete: () => imagesContainer.classList.remove('enabled')
+    });*/
+
+
+
+    // forward
+
+
+
+    // const parent = imagesContainer.parentElement;
+    // menuItems[index].append(imagesContainer);
+
+    // const imagesState = Flip.getState(images, { props: 'opacity' });
+
+    // gsap.set(images, { opacity: 0, scale: 0.2 });
+
+    // parent.append(imagesContainer);
+    // menuItems[index].append(...images /*imagesContainer*/);
+
+    /*Flip.to(imagesState, {
+        // onEnter:  images => gsap.fromTo(images, { opacity: 0 }, { opacity: 1 }),
+        duration: 0.7, ease: 'expo.inOut', stagger: 0.1, overwrite: true
+    });*/
+
+
+})();
+</script>

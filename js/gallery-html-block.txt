@@ -1,0 +1,528 @@
+<style>
+    
+    .cards {
+    display: flex;
+    width: 100 %;
+    height: auto;
+    justify-content: center;
+    opacity: 0;
+}
+    
+    
+    .cards__wrapper {
+    /*display: flex;
+    gap: 15px;*/
+    width: 90 %;
+    position: relative;
+    /*overflow: hidden;*/
+}
+    
+    .card {
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: 0;
+    margin: 0;
+    opacity: 0;
+    /*perspective: 600px;*/
+}
+    
+
+    .t156__wrapper {
+    height: auto;
+    width: 100 %;
+    display: grid;
+    grid - template - columns: repeat(4, minmax(100px, 1fr));
+    grid - template - rows: repeat(2, 420px);
+    grid - gap: 15px 15px;
+}
+
+
+    .t156__wrapper.tiny {
+    grid - template - columns: repeat(4, 10px);
+    grid - template - rows: repeat(2, 10px);
+    grid - gap: 0;
+}
+
+@media screen and(max - width: 960px) {
+       .t156__wrapper {
+        grid - template - columns: repeat(2, minmax(100px, 1fr));
+        grid - template - rows: repeat(4, 420px);
+    }
+        
+        
+        .t156__wrapper.tiny {
+        grid - template - columns: repeat(2, 10px);
+        grid - template - rows: repeat(4, 10px);
+        grid - gap: 0;
+    }
+}
+    
+
+    .t156__item {
+    border - radius: 6px;
+}
+    
+    .t156__item img {
+    object - fit: cover;
+    height: 100 %;
+    border - radius: 6px;
+}
+    
+    .t156__item {
+    width: 100 %;
+    height: 100 %;
+}
+    
+    .CACA.gallery.t156__item/*:not(.active)*/ {
+    opacity: 0;
+}
+
+   /* #skeleton {
+        position: relative;
+    }*/
+
+    /*.gallery-skeleton .t156__item {
+        background: #4e7dc524;
+    }*/
+
+    /*.gallery {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+    }*/
+    
+
+    .t959__card.t - card__title.active {
+    visibility: hidden;
+}
+    
+    .t959__card.t - card__title.flipping {
+    visibility: visible;
+}
+
+</style>
+
+    <script>
+    (() => {
+
+        const getImagesSettings = images => {
+
+            /*const toCamelCase = str => str.split('-').reduce((camelStr, part, i) => {
+                 if (!part) return camelStr;
+                 return i === 0 ? part : `${camelStr}${part[ 0 ].toUpperCase()}${part.substring(1)}`;
+             }, '');*/
+
+            const settingNameToProp = name => {
+                switch (name) {
+                    case 'position': return 'background-position';
+                    default: return name;
+                }
+            };
+
+            const getImageSettings = settingsStr => {
+                return settingsStr.split(',').reduce((settings, settingStr) => {
+                    const result = settingStr.match(/\s*(?<key>\S+)\s*:\s*(?<value>.*)\s*/);
+
+                    if (!result) {
+                        console.log(`Wrong alt text setting: ${settingStr}`);
+                        return settings;
+                    }
+
+                    const [ , key, value ] = result;
+
+                    const [ , mode = 'value', k ] = key.match(/(?:(.+)-)?(.*)/);
+                    const prop = settingNameToProp(k);
+
+                    return { ...settings, [ prop ]: { ...settings[ prop ], [ mode ]: value.trim() } };
+                }, {});
+            };
+
+            return images.map(image => {
+                const altText = image.getAttribute('aria-label');
+
+                const [ realAltText, settingsStr ] = altText.split('#');
+
+                if (settingsStr) {
+                    image.setAttribute('aria-label', realAltText.trim());
+                    return getImageSettings(settingsStr);
+                }
+            });
+        };
+
+        const setStyle = (el, style) => {
+            const oldStyle = el.getAttribute('style');
+            el.setAttribute('style', `${oldStyle}; ${style}`);
+        };
+
+        const galleryCategories = [
+            { name: 'Invisible guests', imagesRecids: [ '746428010', '746428004' ] },
+            { name: 'Cathedral Moods', imagesRecids: [ '571578108', '746400014' ] },
+            { name: 'Miniatures', imagesRecids: [ '571579724', '571592065' ] },
+            { name: 'Paris Portraits', imagesRecids: [ '571579825', '571579742' ] },
+            { name: 'Model Sessions', imagesRecids: [ '571579925', '571579800' ] },
+            { name: 'Movie Stills', imagesRecids: [ '571579932', '571579802' ] },
+            { name: 'The Empty Studio', imagesRecids: [ '571579939', '571579804' ] }
+        ];
+
+        const queryAll = (query, element = document) => [ ...element.querySelectorAll(query) ];
+
+        const getElementFromRecid = recid => document.querySelector(`#rec${recid}`);
+
+
+        const imagesToGrid = () => {
+
+            // we move all images to first images block
+            const imagesBlocksByCategory = galleryCategories.map(({ imagesRecids }) => [ ...imagesRecids.map(getElementFromRecid) ]);
+
+
+            const imagesCategories = imagesBlocksByCategory.map((blocks, categoryI) => {
+
+                const wrapper = blocks[ 0 ].querySelector('.t156__wrapper');
+
+                const images = blocks.flatMap((block, i) => {
+                    const images = queryAll('.t156__item', block);
+
+                    if (i === 0) {
+                        // block.classList.add('gallery', `gallery-${categoryI}`, 'card');
+                        block.setAttribute('class', `gallery gallery-${categoryI} card`);
+                        [ ...wrapper.children ].filter(el => el.innerHTML === '').forEach(el => el.remove());
+                    } else {
+                        wrapper.append(...images);
+                        block.remove();
+                    }
+
+                    return images;
+                });
+
+
+                return { images, wrapper, block: blocks[ 0 ] };
+            });
+
+            const createCards = () => {
+
+                const firstCategory = imagesCategories[ 0 ];
+
+                firstCategory.block.insertAdjacentHTML(
+                    'beforebegin',
+                    '<div id="cards" class="cards"><div class="cards__wrapper"</div></div>'
+                );
+
+                const cardsBlock = document.querySelector('#cards');
+
+                const cardsWrapper = cardsBlock.querySelector('.cards__wrapper');
+
+                cardsWrapper.replaceChildren(...imagesCategories.map(({ block }) => block));
+
+
+                const skeletonBlock = firstCategory.block.cloneNode(true);
+
+                skeletonBlock.id = 'gallery-skeleton';
+                skeletonBlock.className = 'gallery-skeleton';
+
+                [ ...skeletonBlock.querySelectorAll('.t156__item') ].forEach(el => el.replaceChildren());
+
+                firstCategory.block.before(skeletonBlock);
+
+                const cardsWrapperWidth = cardsWrapper.getBoundingClientRect().width;
+                const cardWidth = firstCategory.block.getBoundingClientRect().width;
+
+                const deltaLeft = (cardsWrapperWidth - cardWidth) / 2;
+
+                /*const colorizer = gsap.utils.pipe(
+                    gsap.utils.normalize(0, imagesCategories.length - 1),
+                    gsap.utils.interpolate('rgba(255,0,0,0.4)', 'rgba(0,0,255,0.4)')
+                );*/
+
+
+                imagesCategories.map((c, i) => {
+                    gsap.set(c.block, { left: deltaLeft /*, background: colorizer(i)*/ });
+                });
+
+
+                return { block: cardsBlock, wrapper: cardsWrapper };
+            };
+
+
+            const { block: cardsBlock, wrapper: cardsWrapper } = createCards();
+
+
+            return {
+                imagesCategories,
+                imagesByCategory: imagesCategories.map(c => c.images),
+                images: imagesCategories.flatMap(c => c.images),
+                cardsBlock,
+                cardsWrapper,
+                cards: imagesCategories.map(c => c.block)
+            };
+        };
+
+        const createElements = () => {
+
+            const menuContainer = document.querySelector('#rec747864295 .t959__container');
+            const menuItems = [ ...menuContainer.querySelectorAll('.t959__card') ];
+            const menuItemsTitles = menuItems.map(m => m.querySelector('.t-card__title'));
+
+            const galleryTitle = document.querySelector('.uc-gallery-title');
+            const galleryTitleHeader = document.querySelector('.t030__title');
+
+            galleryTitleHeader.dataset.flipId = 'gallery-title';
+
+            return {
+                menuContainer,
+                menuItems,
+                menuItemsTitles,
+                galleryTitle,
+                galleryTitleHeader,
+                ...imagesToGrid()
+            };
+        };
+
+        const elements = createElements();
+
+        const xPercent = 400;
+
+        const slider = createGallerySlider({
+            cards: elements.cards,
+            xPercent,
+            animateCard: element => {
+
+                const wrapper = element.querySelector('.t156__wrapper');
+
+                const cardAnimationTime = {
+                    duration: 1, // duration of the card animation from x = xPercent% to -xPercent%
+                };
+
+                const eases = {
+                    cardOpacity: 'power1.in',
+                    time: 'power3.out',
+                };
+
+
+                const tl = gsap.timeline();
+
+                tl
+                    .fromTo(element,
+                        { scale: 0, opacity: 0 },
+                        {
+                            scale: 1, opacity: 1, zIndex: 100,
+                            duration: cardAnimationTime.duration / 2, yoyo: true, repeat: 1, ease: eases.cardOpacity, immediateRender: false
+                        }
+                    )
+                    .fromTo(element,
+                        { xPercent: xPercent },
+                        {
+                            xPercent: -xPercent,
+                            duration: cardAnimationTime.duration, ease: 'none', immediateRender: false
+                        },
+                        0
+                    );
+
+
+                const duration = tl.duration();
+
+                tl.fromTo(wrapper, {
+                    x: -140, y: -160, z: -270, rotateY: -13, rotateX: -1, rotateZ: 1, transformPerspective: 800,
+                }, {
+                    x: 0, y: 0, z: 0, rotateY: 0, rotateX: -0, rotateZ: 0,
+                    duration: 0.1 * duration, ease: 'none'
+                }, 4 * 0.1);
+
+                tl.fromTo(wrapper, {
+                    x: 0, y: 0, z: 0, rotateY: 0,
+                }, {
+                    x: 140, y: -160, z: -270, rotateY: 13, rotateX: 1, rotateZ: 1, transformPerspective: 800,
+                    duration: 0.1 * duration, ease: 'none'
+                }, 5 * 0.1);
+
+
+                //  perspective(600px) translate3d(630px, -290px, -350px) rotateY(10deg) rotateX(0deg);
+                // perspective(800px) translate3d(-140px, -160px, -270px) rotateY(-13deg) rotateX(-1deg) rotateZ(1deg)
+                return tl;
+            }
+        });
+
+
+
+        const menuItemsImages = elements.menuItems.map(item => item.querySelector('.t959__card-image'));
+        const menuItemsImagesSettings = getImagesSettings(menuItemsImages);
+
+
+        const setMenuItemsImagesStyle = styles => {
+
+            menuItemsImagesSettings.forEach((imagesSettings, i) => {
+
+                const styleStr = styles.map(style => {
+                    const s = typeof style === 'string' ? { prop: style, mode: 'value' } : style;
+                    const value = imagesSettings[ s.prop ]?.[ s.mode ];
+
+                    return value ? `${s.prop}: ${imagesSettings[ s.prop ][ s.mode ]}` : '';
+                }).join(';');
+
+                if (styleStr)
+                    setStyle(menuItemsImages[ i ], styleStr);
+            });
+        };
+
+
+        setMenuItemsImagesStyle([ { prop: 'background-position', mode: 'lg' } ]);
+
+        const addClickAnimation = () => {
+
+            const animate = ({ enterI, leaveI, isEmpty }) => {
+
+                const { galleryTitle, galleryTitleHeader, menuItemsTitles, menuContainer, imagesCategories } = elements;
+
+                if (isEmpty) {
+                    // we scroll to the menu and make it smaller
+                    gsap.timeline()
+                        .to(window, { scrollTo: { y: menuContainer, offsetY: 25 }, duration: 1, ease: 'expo.out' })
+                        .to(menuContainer, { height: 120, duration: 1, ease: 'expo.out' }, '<10%');
+
+                    gsap.to(galleryTitle, { opacity: 1, duration: 0.5, ease: 'expo.out' });
+                    // galleryTitleHeader.classList.remove('active');
+                }
+
+
+                slider.goTo(enterI);
+
+                // const { wrapper, images, block } = elements.imagesCategories[ menuIndex ];
+                const images = i => imagesCategories[ i ].images;
+
+                const tl = gsap.timeline();
+
+
+                if (leaveI !== undefined) {
+                    /*tl.to(images(leaveI), {
+                        scale: 0.1,
+                        autoAlpha: 0,
+                        zIndex: -1,
+                        // x: 400,
+                        // y: 0,
+                        
+                        stagger: {
+                            each: 0.05,
+                            grid: 'auto',
+                            ease: 'expo.inOut',
+                            from: 'end'
+                        },
+                    
+                        duration: 0.4,
+                        ease: 'expo.in'
+                    });*/
+
+
+                    const title = menuItemsTitles[ leaveI ];
+
+                    galleryTitleHeader.innerHTML = '';
+
+                    const titleState = Flip.getState([ title, galleryTitleHeader ]);
+
+                    title.classList.remove('active');
+                    galleryTitleHeader.classList.remove('active');
+
+                    Flip.from(titleState, {
+                        duration: 0.4, ease: 'expo.in', toggleClass: 'flipping', absolute: false, /* overwrite: true*/
+                    });
+                }
+
+
+                if (enterI !== undefined) {
+
+                    /*tl.fromTo(images(enterI), {
+                        scale: 0.1,
+                        autoAlpha: 0,
+                        // x: -400,
+                        // y: 50
+                    }, {
+                        scale: 1,
+                        autoAlpha: 1,
+                        // x: 0,
+                        // y: 0,
+                        
+                        stagger: {
+                            each: 0.05,
+                            grid: 'auto',
+                            ease: 'expo.inOut',
+                            from: 'end'
+                        },
+                    
+                        duration: 0.8,
+                        ease: 'expo.out'
+                    }, 0);*/
+
+                    const title = menuItemsTitles[ enterI ];
+
+                    galleryTitleHeader.innerHTML = title.innerHTML;
+
+                    title.dataset.flipId = galleryTitleHeader.dataset.flipId;
+
+                    const titleState = Flip.getState([ title, galleryTitleHeader ]);
+
+                    title.classList.add('active');
+                    galleryTitleHeader.classList.add('active');
+
+                    Flip.from(titleState, {
+                        duration: 0.4, ease: 'expo.out', toggleClass: 'flipping', absolute: false, /* overwrite: true*/
+                    });
+                }
+            };
+
+
+
+
+            let state = undefined;
+
+            const setClassName = (el, className) => action => el?.classList[ action ](className);
+
+            const setActiveMenuItem = (menuItem, action) => setClassName(menuItem, 'active')(action);
+            const setActiveTitle = setClassName(elements.galleryTitle, 'active');
+            const setActiveCardsBlock = setClassName(elements.cardsBlock, 'active');
+
+            const cardsAppearAnimation = gsap
+                .timeline({ paused: true })
+                .to(elements.cardsBlock, { opacity: 1, ease: 'expo.out', duration: 1.2 });
+
+            elements.menuItems.forEach((menuItem, i) => {
+
+                menuItem.addEventListener('pointerup', () => {
+                    const isEmpty = state === undefined;
+                    const isSame = state?.i === i;
+
+                    setActiveMenuItem(state?.menuItem, 'remove');
+                    setActiveMenuItem(menuItem, 'add');
+
+                    if (isEmpty) {
+                        setActiveCardsBlock('add');
+                        cardsAppearAnimation.play();
+                        setActiveTitle('add');
+                        // elements.cardsWrapper.classList.add('tiny');
+                        setMenuItemsImagesStyle([ { prop: 'background-position', mode: 'xs' } ]);
+                    }
+
+                    animate({ enterI: isSame ? undefined : i, leaveI: state?.i, isEmpty });
+
+
+                    if (isSame) {
+                        state = undefined;
+                        setActiveCardsBlock('remove');
+                        cardsAppearAnimation.reverse();
+                        setActiveTitle('remove');
+                        // elements.cardsWrapper.classList.remove('tiny');
+                        setMenuItemsImagesStyle([ { prop: 'background-position', mode: 'lg' } ]);
+                    } else {
+                        state = { menuItem, i };
+                    }
+
+                }, { passive: true });
+            });
+
+        };
+
+
+        addClickAnimation();
+
+    })();
+</script>;

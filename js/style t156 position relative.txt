@@ -1,0 +1,249 @@
+<style>
+    /*.t156 {
+        position: relative;
+    }*/
+    
+    .t156__grid {
+        display: none;
+        visibility: hidden;
+        /*opacity: 0;
+        transform: scale(0);*/
+        /*position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;*/
+    }
+    
+    .t156__grid.enabled {
+        display: block;
+        /*position: static;*/
+        /*opacity: 1;*/
+        /*transform: scale(1);*/
+    }
+    
+    .t156__grid .t156__wrapper {
+        height: auto;
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(100px, 1fr)); 
+        grid-template-rows: repeat(2, 420px);
+        grid-gap: 15px 15px;
+    }
+
+    @media screen and (max-width: 960px) {
+       .t156__grid .t156__wrapper {
+            grid-template-columns: repeat(2, minmax(100px, 1fr)); 
+            grid-template-rows: repeat(4, 420px);
+        }
+    }
+
+    .t156__grid .t156__item {
+        border-radius: 6px;
+    }
+    
+    .t156__grid .t156__item img {
+        object-fit: cover;
+        height: 100%;
+        border-radius: 6px;
+    }
+    
+    
+    /*.t156__grid .t156__wrapper {
+        height: 380px;
+    }*/
+    /*.t156__grid .t156__item {
+        height: 380px;
+    }*/
+    
+    .t156__grid .t156__item {
+        width: 100%;
+        height: 100%;
+        /*opacity: 0;
+        transform: scale(0.2);*/
+        background: #4e7dc524;
+    }
+    
+    /*.t156__item {
+        transition: box-shadow 0.8s ease-out;
+    }*/
+    /*.has--shadow*/
+    /*.t156__item {
+        box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.43);
+    }*/
+</style>
+
+<script>
+(() => {
+    const galleryCategories = [
+        { name: 'Invisible guests', imagesRecids: [ '746428010', '746428004' ] },
+        { name: 'Cathedral Moods', imagesRecids: [ '571578108', '746400014' ] },
+        { name: 'Miniatures', imagesRecids: [ '571579724', '571592065' ] },
+        { name: 'Paris Portraits', imagesRecids: [ '571579825', '571579742' ] },
+        { name: 'Model Sessions', imagesRecids: [ '571579925', '571579800' ] },
+        { name: 'Movie Stills', imagesRecids: [ '571579932', '571579802' ] },
+        { name: 'The Empty Studio', imagesRecids: [ '571579939', '571579804' ] }
+    ];
+
+    const getElementFromRecid = recid => document.querySelector(`#rec${recid}`);
+    
+
+    const menuContainer = document.querySelector('#rec747864295 .t959__container');
+    const menuItems = [ ...menuContainer.querySelectorAll('.t959__card') ];
+    
+
+    const addClickAnimation = () => {
+        
+        let currentState = undefined;
+        
+        const createAnimation = (index, { imagesContainer, images }) => {
+            
+            const getDelta = (i, image) => {
+                const menuItemRect = menuItems[index].getBoundingClientRect();
+                const imageRect = image.getBoundingClientRect();
+                
+                return {
+                    dx: (imageRect.x + imageRect.width / 2) - (menuItemRect.x + menuItemRect.width / 2),
+                    dy: (imageRect.y + imageRect.width / 2) - (menuItemRect.y + menuItemRect.height / 2),
+                };
+            };
+            
+            
+            const tl = gsap.timeline();
+
+
+            if(currentState) {
+                const state = { ...currentState };
+                // backward
+                /*const state = Flip.getState(currentState.images, { props: 'opacity' });
+                
+                Flip.to(state, { 
+                    duration: 0.5, ease: 'expo.inOut', stagger: 0.1, overwrite: true,
+                    onComplete: () => imagesContainer.classList.remove('enabled')
+                });*/
+                
+                gsap.to(
+                    state.images,
+                    { 
+                        x: (i, target) => -getDelta(i, target).dx,
+                        y: (i, target) => -getDelta(i, target).dy,
+                        opacity: 0, scale: 0.2,
+                        duration: 0.7, ease: 'expo.in', stagger: 0.1, overwrite: true,
+                        onComplete: () => state.imagesContainer.classList.remove('enabled')
+                });
+                
+                
+                if(state.index === index) {
+                    currentState = undefined;
+                    return;
+                }
+            }
+            
+            // forward
+            
+            
+            
+           // const parent = imagesContainer.parentElement;
+            // menuItems[index].append(imagesContainer);
+            
+            // const imagesState = Flip.getState(images, { props: 'opacity' });
+            
+            // gsap.set(images, { opacity: 0, scale: 0.2 });
+            imagesContainer.classList.add('enabled');
+            
+            gsap.fromTo(
+                images,
+                { 
+                    opacity: 0, scale: 0.2,
+                    x: (i, target) => -getDelta(i, target).dx,
+                    y: (i, target) => -getDelta(i, target).dy
+                },
+                {  
+                    opacity: 1, scale: 1, x: 0, y: 0,
+                    duration: 10.7, ease: 'expo.out', stagger: 0.1, overwrite: true,
+                    onStart: () => gsap.set(imagesContainer, { autoAlpha: 1})
+            });
+            
+           // parent.append(imagesContainer);
+           // menuItems[index].append(...images /*imagesContainer*/);
+            
+            /*Flip.to(imagesState, {
+                // onEnter:  images => gsap.fromTo(images, { opacity: 0 }, { opacity: 1 }),
+                duration: 0.7, ease: 'expo.inOut', stagger: 0.1, overwrite: true
+            });*/
+            
+            currentState = { index, imagesContainer, images };
+        }
+        
+        
+        const imagesToGrid = index => {
+            // we move all images to first images block
+            const imagesBlocks = [ ...galleryCategories[index].imagesRecids.map(getElementFromRecid) ];
+            
+            const firstBlock = imagesBlocks[0];
+            const restBlocks = imagesBlocks.slice(1);
+            
+            const restImages = restBlocks.flatMap(b =>[ ...b.querySelectorAll('.t156__item') ]);
+            
+            firstBlock.querySelector('.t156__wrapper').append(...restImages);
+            
+            [ ...firstBlock.querySelector('.t156__wrapper').childNodes].filter(el => el.innerHTML === '').forEach(el => el.remove());
+            
+            const imagesContainer = firstBlock.querySelector('.t-container');
+            
+            imagesContainer.classList.add('t156__grid');
+            
+            return { imagesContainer };
+        };
+        
+        
+        const loadImages = (index, { images }) => {
+            
+            if(images[0].classList.contains('loaded'))
+                return;
+                
+            // from src="https://thb.tildacdn.net/tild3237-3630-4432-b430-366631396664/-/empty/1-small.jpeg";
+            // to   src="https://optim.tildacdn.net/tild3237-3630-4432-b430-366631396664/-/format/webp/1-small.jpeg"
+            images.forEach(image => {
+                const img = image.querySelector('img');
+                
+                img.src = img.src.replace('thb', 'optim').replace('empty', 'format/webp');
+                img.classList.add('loaded');
+            });
+        };
+        
+        let activeMenu = undefined;
+        
+        const galleries = menuItems.map((menuItem, i) => {
+            const { imagesContainer } = imagesToGrid(i);
+            const images = imagesContainer.querySelectorAll('.t156__item');
+            
+            // on image menu click
+            menuItem.addEventListener('pointerup', () => {
+                activeMenu?.classList.remove('active');
+                activeMenu = menuItem;
+                
+                menuItem.classList.add('active');
+        
+                setAnimation(i, { imagesContainer, images });
+                loadImages(i, { images });
+            });
+            
+            return { imagesContainer, images };
+        });
+        
+        const getActiveMenuIndex = () => {
+            const index = menuItems.find(m => m.classList.contains('active'));
+            return index > -1 ? index : 0;
+        };
+        
+        const activeMenuIndex = getActiveMenuIndex();
+        
+        loadImages(activeMenuIndex, { images: galleries[activeMenuIndex].images });
+    };
+    
+    
+    addClickAnimation();
+    
+})();
+</script>
