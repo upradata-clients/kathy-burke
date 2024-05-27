@@ -155,31 +155,32 @@ const createGallerySlider = params => {
 
 
     /**
+     * @template {gsap.core.Timeline | gsap.core.Tween} T
+     * @param {T} timelineOrTween
+     * @returns {Promise<void>}
+     */
+    const promisifyTimelineOrTween = timelineOrTween => new Promise(resolve => timelineOrTween.then(() => resolve()));
+
+
+    /**
      * Moves the scrub to a specific time.
      * @param {number} t - The time to move the scrub to.
      */
     const moveScrubTo = t => {
         scrub.vars.t = t;
-        scrub.invalidate().restart();
+        return promisifyTimelineOrTween(scrub.invalidate().restart());
     };
-
 
     /**
      * Moves the scrub to a specific index.
      * @param {number} index - The index to move the scrub to.
-     * @returns {void}
+     * @returns {Promise<void>}
      */
-    const goTo = index => {
-        moveScrubTo(index * cardAnimationTime.dtStagger);
-    };
+    const goTo = index => moveScrubTo(index * cardAnimationTime.dtStagger);
 
-    const next = () => {
-        moveScrubTo(scrub.vars.t + cardAnimationTime.dtStagger);
-    };
+    const next = () => moveScrubTo(scrub.vars.t + cardAnimationTime.dtStagger);
 
-    const prev = () => {
-        moveScrubTo(scrub.vars.t - cardAnimationTime.dtStagger);
-    };
+    const prev = () => moveScrubTo(scrub.vars.t - cardAnimationTime.dtStagger);
 
     return { goTo, next, prev };
 };

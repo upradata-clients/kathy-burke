@@ -17,7 +17,7 @@ const _ = /** @type {any} */ (window)._;
  * @param {Record<Axis, number>} params.maxRotation
  * @param {Record<Axis, number> | ((params: { wrapper: HTMLElement; }) => Record<Axis, number>)} params.maxDistance
  */
-const createSideCardsMouseAnimation = ({ elementsPerCategory, maxRotation, maxDistance }) => {
+const createSideCardsMouseFollowAnimation = ({ elementsPerCategory, maxRotation, maxDistance }) => {
 
     const power2Ease = gsap.parseEase('power2.out');
 
@@ -52,7 +52,7 @@ const createSideCardsMouseAnimation = ({ elementsPerCategory, maxRotation, maxDi
         return gsap.utils.mapRange(-1, 1, -maxRotation[ axis ], maxRotation[ axis ], distanceProgress);
     };
 
-    const cardsMouseAnimation = elementsPerCategory.map(({ wrapper }) => {
+    const cardsMouseFollowAnimation = elementsPerCategory.map(({ wrapper }) => {
 
         // we need to store the initial rotation values to add the new ones
         let rotationStart = undefined;
@@ -91,9 +91,11 @@ const createSideCardsMouseAnimation = ({ elementsPerCategory, maxRotation, maxDi
         return mouseFollower;
     });
 
-    return cardsMouseAnimation;
+    return cardsMouseFollowAnimation;
 };
 
+
+/** @typedef {ReturnType<typeof createSideCardsMouseFollowAnimation>} SideCardsMouseAnimation} */
 
 /**
  * @param {HTMLElement[]} cards
@@ -177,22 +179,22 @@ const createGallerySlider = cards => {
 
 /**
  * @param {Object} params
- * @param {HTMLElement} params.gallerySkeleton
+ * @param {HTMLElement} params.galleryBackground
  * @param {HTMLElement[]} params.cards
  */
-const createSideCardsScrollFollow = ({ gallerySkeleton, cards }) => {
+const createSideCardsScrollFollow = ({ galleryBackground, cards }) => {
 
-    const gallerySkeletonContainer = gallerySkeleton;
-    const item = _.queryThrow('.t156__item', gallerySkeletonContainer);
+    const galleryBackgroundContainer = galleryBackground;
+    const item = _.queryThrow('.t156__item', galleryBackgroundContainer);
 
     const imageHeight = _.getRect(item).height;
 
     const cardSidesTL = gsap.timeline({
         scrollTrigger: {
-            markers: false,
-            trigger: gallerySkeletonContainer,
+            markers: true,
+            trigger: galleryBackgroundContainer,
             scrub: 1,
-            start: `center+=${imageHeight / 2} bottom`,
+            start: `center-=${imageHeight / 2} bottom`,
             end: `center+=${imageHeight / 2 + imageHeight} bottom`
         }
     });
@@ -203,10 +205,20 @@ const createSideCardsScrollFollow = ({ gallerySkeleton, cards }) => {
      */
     const create = activeI => {
 
-        cardSidesTL.to(cards.filter((_, i) => i !== activeI).map(c => c.querySelector('.t-container')), {
+        const sideCards = cards.filter((_, i) => i !== activeI).map(c => c.querySelector('.t-container'));
+
+        cardSidesTL.from(sideCards, {
+            y: -imageHeight / 2,
+            ease: 'power4.out',
+            duration: 0.5
+        }, 0);
+
+        cardSidesTL.to(sideCards, {
             y: imageHeight / 2,
             ease: 'power4.out',
-        });
+            duration: 0.5
+        }, 0.5);
+
 
         return cardSidesTL;
     };
@@ -215,6 +227,9 @@ const createSideCardsScrollFollow = ({ gallerySkeleton, cards }) => {
 
     return { create, clear };
 };
+
+
+/** @typedef {ReturnType<typeof createSideCardsScrollFollow>} SideCardsScrollFollow */
 
 /** @param {HTMLElement} cardsBlock */
 const createGalleryApparationAnimation = cardsBlock => {
@@ -237,18 +252,28 @@ const createGalleryAnimation = ({ elements }) => {
     /** @type {GallerySlider | undefined} */
     let slider = undefined;
 
-    const sideCardsMouseAnimation = createSideCardsMouseAnimation({
-        elementsPerCategory: elements.elementsPerCategory,
-        maxRotation: { x: 3, y: 6 },
-        maxDistance: ({ wrapper }) => {
-            const { width, height } = _.getRect(wrapper);
-            return { x: 0.5 * width, y: 0.5 * height };
-        }
+    /** @type {SideCardsMouseAnimation | undefined} */
+    let sideCardsMouseFollowAnimation = undefined;
+
+    _.onEvent(_.EventNames.gallery.resize, () => {
+        sideCardsMouseFollowAnimation = createSideCardsMouseFollowAnimation({
+            elementsPerCategory: elements.elementsPerCategory,
+            maxRotation: { x: 3, y: 6 },
+            maxDistance: ({ wrapper }) => {
+                const { width, height } = _.getRect(wrapper);
+                return { x: 0.5 * width, y: 0.5 * height };
+            }
+        });
     });
 
-    const sideCardsScrollFollow = createSideCardsScrollFollow({
-        gallerySkeleton: _.queryThrow('.gallery-skeleton .t-container', elements.cardsBlock),
-        cards: elements.cards
+    /** @type {SideCardsScrollFollow | undefined} */
+    let sideCardsScrollFollow = undefined;
+
+    _.onEvent(_.EventNames.gallery.resize, () => {
+        sideCardsScrollFollow = createSideCardsScrollFollow({
+            galleryBackground: _.queryThrow('.gallery-background .t-container', elements.cardsBlock),
+            cards: elements.cards
+        });
     });
 
 
@@ -310,6 +335,9 @@ const createGalleryAnimation = ({ elements }) => {
     const animateSlider = ({ enterI, leaveI }) => {
         slider = slider || createGallerySlider(cards);
 
+        /** @type {Promise<boolean> | undefined} */
+        let slideIsDone = undefined;
+
         const isFirst = leaveI === undefined && enterI !== undefined;
 
         if (isFirst) {
@@ -318,13 +346,13 @@ const createGalleryAnimation = ({ elements }) => {
         }
 
         if (enterI !== undefined)
-            slider.goTo(enterI);
+            slideIsDone = slider.goTo(enterI).then(() => true);
 
 
         if (leaveI !== undefined) {
             setStateCards(leaveI, 'remove');
 
-            sideCardsMouseAnimation.forEach(a => a.stop());
+            sideCardsMouseFollowAnimation?.forEach(a => a.stop());
             flipTitles(leaveI, 'remove');
         }
 
@@ -333,17 +361,19 @@ const createGalleryAnimation = ({ elements }) => {
 
             setStateCards(enterI, 'add');
 
-            sideCardsMouseAnimation[ wrapI(enterI - 1) ].start();
-            sideCardsMouseAnimation[ wrapI(enterI + 1) ].start();
+            slideIsDone?.then(() => {
+                sideCardsMouseFollowAnimation?.[ wrapI(enterI - 1) ].start();
+                sideCardsMouseFollowAnimation?.[ wrapI(enterI + 1) ].start();
+            });
 
             flipTitles(enterI, 'add');
 
-            sideCardsScrollFollow.clear();
+            sideCardsScrollFollow?.clear();
         }
 
 
         if (enterI !== undefined)
-            sideCardsScrollFollow.create(enterI);
+            sideCardsScrollFollow?.create(enterI);
     };
 
 
