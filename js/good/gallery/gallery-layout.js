@@ -88,27 +88,41 @@ const createGalleriesLayout = galleryCategories => {
         );
 
         const cardsBlock = _.queryThrow('#cards');
-
         const cardsWrapper = _.queryThrow('.cards__wrapper', cardsBlock);
 
-        // we move all images blocks (each block is a category) to the cards wrapper
-        cardsWrapper.replaceChildren(...elementsPerCategory.map(({ block }) => block));
+        cardsWrapper.insertAdjacentHTML(
+            'afterbegin',
+            '<div class="slider-wrapper"></div>'
+        );
 
+        const sliderWrapper = _.queryThrow('.slider-wrapper', cardsWrapper);
+
+        // we move all images blocks (each block is a category) to the cards wrapper
+        sliderWrapper.replaceChildren(...elementsPerCategory.map(({ block }) => block));
 
         // we create a skeleton block
-        const skeletonBlock = /** @type {HTMLElement} */(firstCategory.block.cloneNode(true));
+        const galleryBackground = /** @type {HTMLElement} */(firstCategory.block.cloneNode(true));
 
-        skeletonBlock.id = 'gallery-skeleton';
-        skeletonBlock.className = 'gallery-skeleton';
+        galleryBackground.removeAttribute('id');
+        galleryBackground.className = 'gallery-background';
 
         // we remove all item contents from the skeleton
-        [ ...skeletonBlock.querySelectorAll('.t156__item') ].forEach(el => el.replaceChildren());
+        [ ...galleryBackground.querySelectorAll('.t156__item') ].forEach(el => el.replaceChildren());
 
-        // we insert the skeleton block before the first category block
-        firstCategory.block.before(skeletonBlock);
+        cardsBlock.append(galleryBackground);
+
+        // const skeletonBlock = /** @type {HTMLElement} */(galleryBackground.cloneNode(true));
+        // skeletonBlock.className = 'gallery-skeleton';
+
+        // firstCategory.block.before(skeletonBlock);
+        _.onEvent(_.EventNames.gallery.resize, () => {
+            const frame = _.queryThrow('.t-col', galleryBackground);
+            gsap.set(sliderWrapper, { width: frame.getBoundingClientRect().width, left: '50%', xPercent: -50 });
+        });
 
         // as the cards are absolutely positioned relative to the cards wrapper, we need to center them
-        elementsPerCategory.map(({ block }) => centerPositionedElement(block, cardsWrapper));
+        // centerPositionedElement(sliderWrapper, cardsWrapper);
+        // elementsPerCategory.map(({ block }) => centerPositionedElement(block, sliderWrapper));
 
 
         return { cardsBlock, cardsWrapper };

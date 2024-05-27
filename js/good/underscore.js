@@ -19,6 +19,28 @@ const logger = () => {
 };
 
 /**
+ * @param {string} event
+ * @param {(event: Event) => void} fn
+ * @param {Element | Window & typeof globalThis | undefined} el
+ */
+const onEvent = (event, fn, el = window) => el.addEventListener(event, fn);
+
+/**
+ * @param {string} event
+ * @param {any} detail
+ * @param {Element | Window & typeof globalThis | undefined} el
+ */
+const dispatchEvent = (event, detail = undefined, el = window) => el.dispatchEvent(new CustomEvent(event, { detail }));
+
+const EventNames = {
+    gallery: {
+        enter: 'gallery.enter',
+        leave: 'gallery.leave',
+        resize: 'gallery.resize'
+    }
+};
+
+/**
  * Retrieves an element by its recid.
  * @param {string} recid - The recid of the element to retrieve.
  */
@@ -47,9 +69,13 @@ const define = fn => {
     }
 };
 
+
 const _ = {
     define,
     logThrottle,
+    onEvent,
+    dispatchEvent,
+    EventNames,
     getElementFromRecid,
     getRect,
     setClassName,

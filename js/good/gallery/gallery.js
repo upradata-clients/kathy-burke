@@ -20,15 +20,16 @@ const elements = _.createElements(galleryCategories);
 
 const galleryAnimation = _.createGalleryAnimation({ elements });
 
+/**
+ * @param {gsap.core.Timeline} timeline
+ * @returns {Promise<void>}
+ */
+const promisifyTimeline = timeline => new Promise(resolve => timeline.then(() => resolve()));
 
 _.galleryMenu.createGalleryMenuListener({
     elements,
-    onClickFirstMenuItem: () => {
-        galleryAnimation.animateCardsApparition('add');
-    },
-    onClickMenuItem: ({ enterI, leaveI }) => {
-        galleryAnimation.animateSlider({ enterI, leaveI });
-    },
+    onClickFirstMenuItem: () => new Promise(resolve => galleryAnimation.animateCardsApparition('add').then(() => resolve())),
+    onClickMenuItem: ({ enterI, leaveI }) => galleryAnimation.animateSlider({ enterI, leaveI }),
     onLeave: () => {
         galleryAnimation.animateCardsApparition('remove');
     }

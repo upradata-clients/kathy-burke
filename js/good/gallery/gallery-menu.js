@@ -69,9 +69,9 @@ const getGalleryMenu = elements => {
 /**
  * @param {Object} params
  * @param {import('./gallery-layout.js').Elements} params.elements
- * @param {() => void} [params.onClickFirstMenuItem]
- * @param {(params: { enterI: number | undefined; leaveI: number | undefined }) => void} [params.onClickMenuItem]
- * @param {() => void} [params.onLeave]
+ * @param {() => void | Promise<void>} [params.onClickFirstMenuItem]
+ * @param {(params: { enterI: number | undefined; leaveI: number | undefined }) => void | Promise<void>} [params.onClickMenuItem]
+ * @param {() => void | Promise<void>} [params.onLeave]
  */
 const createGalleryMenuListener = ({ elements, onClickFirstMenuItem, onClickMenuItem, onLeave }) => {
 
@@ -85,8 +85,14 @@ const createGalleryMenuListener = ({ elements, onClickFirstMenuItem, onClickMenu
      */
     const setActiveMenuItem = (menuItem, action) => _.setClassName(menuItem, 'active')(action);
 
+    /** @param {void | Promise<void>} value */
+    const waitIfPromise = async value => {
+        if (value instanceof Promise)
+            await value;
+    };
+
     /** @param {number} i */
-    const goTo = i => {
+    const goTo = async i => {
         const menuItem = elements.menuItems[ i ];
 
         const isEmpty = state === undefined;
@@ -96,14 +102,17 @@ const createGalleryMenuListener = ({ elements, onClickFirstMenuItem, onClickMenu
         setActiveMenuItem(menuItem, 'add');
 
         if (isEmpty) {
-            onClickFirstMenuItem?.();
+            _.dispatchEvent(_.EventNames.gallery.enter);
+            await waitIfPromise(onClickFirstMenuItem?.());
+            _.dispatchEvent(_.EventNames.gallery.resize);
         }
 
-        onClickMenuItem?.({ enterI: isSame ? undefined : i, leaveI: state?.i });
+        await waitIfPromise(onClickMenuItem?.({ enterI: isSame ? undefined : i, leaveI: state?.i }));
 
         if (isSame) {
             state = undefined;
-            onLeave?.();
+            await waitIfPromise(onLeave?.());
+            _.dispatchEvent(_.EventNames.gallery.leave);
         } else {
             state = { menuItem, i };
         }

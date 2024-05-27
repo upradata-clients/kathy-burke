@@ -150,8 +150,6 @@ const createGallerySlider = cards => {
             const y0 = y_ => n * y_ / 2;
 
 
-            // tl.set(wrapper, { transformPerspective: 800 });
-
             tl.fromTo(wrapper, {
                 x: y0(-140), rotateY: y0(-13), rotateX: y0(-1),
             }, {
@@ -167,20 +165,6 @@ const createGallerySlider = cards => {
                 duration: T, ease: t => t < 0.5 ? t : 1 - t
             }, 0);
 
-            // tl.fromTo(wrapper, {
-            //     x: -140, y: -160, z: -270, rotateY: -13, rotateX: -1, rotateZ: 1, transformPerspective: 800,
-            // }, {
-            //     x: 0, y: 0, z: 0, rotateY: 0, rotateX: -0, rotateZ: 0,
-            //     duration: dtStagger, ease: 'none'
-            // }, 4 * dtStagger);
-
-            // tl.fromTo(wrapper, {
-            //     x: 0, y: 0, z: 0, rotateY: 0,
-            // }, {
-            //     x: 140, y: -160, z: -270, rotateY: 13, rotateX: 1, rotateZ: 1, transformPerspective: 800,
-            //     duration: dtStagger, ease: 'none'
-            // }, 5 * dtStagger);
-
             return tl;
         }
     });
@@ -188,6 +172,8 @@ const createGallerySlider = cards => {
     return slider;
 };
 
+
+/** @typedef {ReturnType<typeof createGallerySlider>} GallerySlider */
 
 /**
  * @param {Object} params
@@ -234,7 +220,7 @@ const createSideCardsScrollFollow = ({ gallerySkeleton, cards }) => {
 const createGalleryApparationAnimation = cardsBlock => {
     return gsap
         .timeline({ paused: true })
-        .to(cardsBlock, { opacity: 1, ease: 'expo.out', duration: 1.2 });
+        .to(cardsBlock, { opacity: 1, ease: 'expo.out', duration: 0.7 });
 };
 
 /**
@@ -248,7 +234,8 @@ const createGalleryAnimation = ({ elements }) => {
     const galleryMenu = _.galleryMenu.getGalleryMenu(elements);
     galleryMenu.setMenuItemsImagesStyle([ { prop: 'background-position', mode: 'lg' } ]);
 
-    const slider = createGallerySlider(cards);
+    /** @type {GallerySlider | undefined} */
+    let slider = undefined;
 
     const sideCardsMouseAnimation = createSideCardsMouseAnimation({
         elementsPerCategory: elements.elementsPerCategory,
@@ -321,6 +308,7 @@ const createGalleryAnimation = ({ elements }) => {
      * @param {number | undefined} params.leaveI
      */
     const animateSlider = ({ enterI, leaveI }) => {
+        slider = slider || createGallerySlider(cards);
 
         const isFirst = leaveI === undefined && enterI !== undefined;
 
@@ -370,12 +358,18 @@ const createGalleryAnimation = ({ elements }) => {
 
         setActiveCardsBlock(action);
 
-        action === 'add' ? cardsAppearAnimation.play() : cardsAppearAnimation.reverse();
+        const tl = action === 'add' ? cardsAppearAnimation.play() : cardsAppearAnimation.reverse();
 
         setActiveTitle(action);
         galleryMenu.setMenuItemsImagesStyle([ { prop: 'background-position', mode: action === 'add' ? 'xs' : 'lg' } ]);
+
+        return tl;
     };
 
+
+    window.addEventListener('resize', () => {
+        _.dispatchEvent(_.EventNames.gallery.resize);
+    }, { passive: true });
 
     return { animateSlider, animateCardsApparition };
 };
