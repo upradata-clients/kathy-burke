@@ -19,6 +19,38 @@ const logger = () => {
 };
 
 /**
+ * @param {DocumentReadyState} readyState
+ * @returns {(cb: () => void) => void}
+ */
+const onReady = readyState => cb => {
+
+    const getEventData = () => {
+        switch (readyState) {
+            case 'loading': return { element: document, event: 'DOMContentLoaded' };
+            case 'interactive': return { element: document, event: 'DOMContentLoaded' };
+            case 'complete': return { element: window, event: 'load' };
+            default: return { element: window, event: 'load' };;
+        }
+    };
+
+
+    const tryCall = () => {
+        if (document.readyState === readyState) {
+            cb();
+            return true;
+        }
+
+        return false;
+    };
+
+    if (!tryCall()) {
+        const { element, event } = getEventData();
+        element.addEventListener(event, _ => tryCall(), { once: true, passive: true });
+    }
+};
+
+
+/**
  * @param {string} event
  * @param {(event: Event) => void} fn
  * @param {Element | Window & typeof globalThis | undefined} el
@@ -73,6 +105,9 @@ const define = fn => {
 const _ = {
     define,
     logThrottle,
+    onReady,
+    onLoad: onReady('complete'),
+    onDOMContentLoaded: onReady('interactive'),
     onEvent,
     dispatchEvent,
     EventNames,

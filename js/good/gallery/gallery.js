@@ -28,9 +28,30 @@ const promisifyTimeline = timeline => new Promise(resolve => timeline.then(() =>
 
 _.galleryMenu.createGalleryMenuListener({
     elements,
-    onClickFirstMenuItem: () => new Promise(resolve => galleryAnimation.animateCardsApparition('add').then(() => resolve())),
+    onStart: () => galleryAnimation.activateCardTitles('add'),
     onClickMenuItem: ({ enterI, leaveI }) => galleryAnimation.animateSlider({ enterI, leaveI }),
-    onLeave: () => {
-        galleryAnimation.animateCardsApparition('remove');
-    }
+    onLeave: () => promisifyTimeline(galleryAnimation.animateCardsApparition('remove'))
+});
+
+
+
+_.onLoad(() => {
+    setTimeout(() => {
+        try {
+            // @ts-ignore
+            window.lazyload_img.skip_invisible = false;
+            // @ts-ignore
+            window.lazyload_img.update();
+        } catch (e) {
+            console.error(e);
+        }
+
+
+        _.dispatchEvent(_.EventNames.gallery.resize);
+
+        galleryAnimation.animateCardsApparition('add').then(() => {
+            return galleryAnimation.animateSlider({ enterI: 3, leaveI: undefined, onlySlider: true });
+        });
+
+    }, 501); // in tilda-lazyload-1.0.min.js, there is setTimeout 500 before window.lazyload_img = new window.LazyLoad({...});
 });

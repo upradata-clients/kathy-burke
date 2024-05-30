@@ -69,11 +69,11 @@ const getGalleryMenu = elements => {
 /**
  * @param {Object} params
  * @param {import('./gallery-layout.js').Elements} params.elements
- * @param {() => void | Promise<void>} [params.onClickFirstMenuItem]
+ * @param {() => void | Promise<void>} [params.onStart]
  * @param {(params: { enterI: number | undefined; leaveI: number | undefined }) => void | Promise<void>} [params.onClickMenuItem]
  * @param {() => void | Promise<void>} [params.onLeave]
  */
-const createGalleryMenuListener = ({ elements, onClickFirstMenuItem, onClickMenuItem, onLeave }) => {
+const createGalleryMenuListener = ({ elements, onStart, onClickMenuItem, onLeave }) => {
 
     /** @type {{menuItem: HTMLElement; i: number} | undefined} */
     let state = undefined;
@@ -98,30 +98,31 @@ const createGalleryMenuListener = ({ elements, onClickFirstMenuItem, onClickMenu
         const isEmpty = state === undefined;
         const isSame = state?.i === i;
 
+        if (isSame) {
+            // state = undefined;
+            // await waitIfPromise(onLeave?.());
+            // _.dispatchEvent(_.EventNames.gallery.leave);
+            return;
+        }
+
         setActiveMenuItem(state?.menuItem, 'remove');
         setActiveMenuItem(menuItem, 'add');
 
         if (isEmpty) {
             _.dispatchEvent(_.EventNames.gallery.enter);
-            await waitIfPromise(onClickFirstMenuItem?.());
+            await waitIfPromise(onStart?.());
             _.dispatchEvent(_.EventNames.gallery.resize);
         }
 
         await waitIfPromise(onClickMenuItem?.({ enterI: isSame ? undefined : i, leaveI: state?.i }));
 
-        if (isSame) {
-            state = undefined;
-            await waitIfPromise(onLeave?.());
-            _.dispatchEvent(_.EventNames.gallery.leave);
-        } else {
-            state = { menuItem, i };
-        }
-
+        state = { menuItem, i };
     };
 
 
-    elements.menuItems.forEach((menuItem, i) => {
-        menuItem.addEventListener('pointerup', () => goTo(i), { passive: true });
+    elements.menuItems.forEach((_, i) => {
+        elements.menuItems[ i ].addEventListener('pointerup', () => goTo(i), { passive: true });
+        elements.cards[ i ].addEventListener('pointerup', () => goTo(i), { passive: true });
     });
 
 

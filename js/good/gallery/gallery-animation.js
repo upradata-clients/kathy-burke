@@ -23,7 +23,7 @@ const createSideCardsMouseFollowAnimation = ({ elementsPerCategory, maxRotation,
 
     // power2EaseSymmetric is the same as power2Ease but symmetric on 1/2 ("y" goes from 1 to 0 when "x=progress" goes from 0 to 1)
     /** @param {number} progress */
-    const power2EaseSymmetric = progress => power2Ease(-progress + 1);
+    const power2EaseSymmetric = progress => power2Ease(1 - progress);
 
     /** @type {(distanceProgress: {x: number; y: number}) => {x: number; y: number}} */
     const distanceEasing = distanceProgress => {
@@ -47,9 +47,12 @@ const createSideCardsMouseFollowAnimation = ({ elementsPerCategory, maxRotation,
         };
     };
 
-    /** @type {(axis: Axis) => (distanceProgress: number) => number} */
-    const distanceProgressToRotation = axis => distanceProgress => {
-        return gsap.utils.mapRange(-1, 1, -maxRotation[ axis ], maxRotation[ axis ], distanceProgress);
+    /** @param {Record<Axis,number>} distanceProgress */
+    const distanceProgressToRotation = distanceProgress => {
+        return Object.fromEntries([ 'x', 'y' ].map(axis => [
+            axis,
+            gsap.utils.mapRange(-1, 1, -maxRotation[ axis ], maxRotation[ axis ], distanceProgress[ axis === 'x' ? 'y' : 'x' ])
+        ]));
     };
 
     const cardsMouseFollowAnimation = elementsPerCategory.map(({ wrapper }) => {
@@ -75,14 +78,13 @@ const createSideCardsMouseFollowAnimation = ({ elementsPerCategory, maxRotation,
                 if (!card)
                     throw new Error(`The card is not found for the element: ${data.item}`);
 
-                const { cardState } = card.dataset;
-                const m = cardState === 'left' ? 1 : -1;
+                const deltaRotation = distanceProgressToRotation(d);
 
                 gsap.to(data.item, {
                     duration: 0.5,
                     transformPerspective: 1000,
-                    rotationX: rotationStart.x + m * distanceProgressToRotation('x')(d.y),
-                    rotationY: rotationStart.y - m * distanceProgressToRotation('y')(d.x),
+                    rotationX: rotationStart.x + deltaRotation.x,
+                    rotationY: rotationStart.y - deltaRotation.y,
                     ease: 'power2.out'
                 });
             }
@@ -199,21 +201,23 @@ const createSideCardsScrollFollow = ({ galleryBackground, cards }) => {
         }
     });
 
+    /** @param {number} activeI */
+    const sideCards = activeI => cards.filter((_, i) => i !== activeI).map(c => _.queryThrow('.t-container', c));
+
+
     /**
      * @param {number} activeI
      * @returns {gsap.core.Timeline}
      */
     const create = activeI => {
 
-        const sideCards = cards.filter((_, i) => i !== activeI).map(c => c.querySelector('.t-container'));
-
-        cardSidesTL.from(sideCards, {
+        cardSidesTL.from(sideCards(activeI), {
             y: -imageHeight / 2,
             ease: 'power4.out',
             duration: 0.5
         }, 0);
 
-        cardSidesTL.to(sideCards, {
+        cardSidesTL.to(sideCards(activeI), {
             y: imageHeight / 2,
             ease: 'power4.out',
             duration: 0.5
@@ -223,7 +227,11 @@ const createSideCardsScrollFollow = ({ galleryBackground, cards }) => {
         return cardSidesTL;
     };
 
-    const clear = () => cardSidesTL.clear();
+    /** @param {number} activeI */
+    const clear = activeI => {
+        gsap.set(sideCards(activeI), { clearProps: 'y' });
+        cardSidesTL.clear();
+    };
 
     return { create, clear };
 };
@@ -327,26 +335,66 @@ const createGalleryAnimation = ({ elements }) => {
     };
 
 
+    /** @param {number} activeI */
+    const setZoomableCard = activeI => {
+
+        /**
+         * @param {HTMLImageElement} img
+         * @param {boolean} isActive
+         */
+        const setZoomable = (img, isActive) => {
+            if (isActive) {
+                img.dataset.imgZoomUrl = img.dataset.imgZoomUrl || img.dataset.galleryImgZoomUrl;
+                delete img.dataset.galleryImgZoomUrl;
+            } else {
+                img.dataset.galleryImgZoomUrl = img.dataset.galleryImgZoomUrl || img.dataset.imgZoomUrl;
+                img.dataset.imgZoomUrl = '';
+            }
+        };
+
+        // we need to wait next tick because first will be called document.addEventListener("click", function(t) {
+        // in tilda-zoom-2.0.min.js -> t_zoom__initFullScreenImgOnClick
+        // Otherwise, the image will get zoom as we set the zoomable attribute of the next active card
+        setTimeout(() => {
+            elements.cards.forEach((card, i) => {
+                const images = /**@type {HTMLImageElement[]} */(_.queryAllThrow('img', card));
+                images.forEach(img => setZoomable(img, activeI === i));
+            });
+        }, 0);
+    };
+
+
     /**
      * @param {object} params
      * @param {number | undefined} params.enterI
      * @param {number | undefined} params.leaveI
+     * @param {boolean | undefined} [params.onlySlider]
      */
-    const animateSlider = ({ enterI, leaveI }) => {
+    const animateSlider = ({ enterI, leaveI, onlySlider }) => {
         slider = slider || createGallerySlider(cards);
 
-        /** @type {Promise<boolean> | undefined} */
-        let slideIsDone = undefined;
+        /** @type {Promise<void> | undefined} */
+        let sliderTL$ = undefined;
 
         const isFirst = leaveI === undefined && enterI !== undefined;
+
+        if (onlySlider) {
+            if (leaveI !== undefined)
+                setStateCards(leaveI, 'remove');
+
+            if (enterI !== undefined) {
+                sliderTL$ = slider.goTo(enterI).then(() => {});
+                setZoomableCard(enterI);
+                setStateCards(enterI, 'add');
+            }
+
+            return sliderTL$;
+        }
 
         if (isFirst) {
             animateMenuToSmallState();
             gsap.to(galleryTitle, { opacity: 1, duration: 0.5, ease: 'expo.out' });
         }
-
-        if (enterI !== undefined)
-            slideIsDone = slider.goTo(enterI).then(() => true);
 
 
         if (leaveI !== undefined) {
@@ -356,24 +404,30 @@ const createGalleryAnimation = ({ elements }) => {
             flipTitles(leaveI, 'remove');
         }
 
+        if (enterI !== undefined)
+            sliderTL$ = slider.goTo(enterI).then(() => {});
+
 
         if (enterI !== undefined) {
 
             setStateCards(enterI, 'add');
+            setZoomableCard(enterI);
 
-            slideIsDone?.then(() => {
+            sliderTL$?.then(() => {
                 sideCardsMouseFollowAnimation?.[ wrapI(enterI - 1) ].start();
                 sideCardsMouseFollowAnimation?.[ wrapI(enterI + 1) ].start();
             });
 
             flipTitles(enterI, 'add');
-
-            sideCardsScrollFollow?.clear();
         }
 
+        if (leaveI !== undefined)
+            sideCardsScrollFollow?.clear(leaveI);
 
         if (enterI !== undefined)
             sideCardsScrollFollow?.create(enterI);
+
+        return sliderTL$;
     };
 
 
@@ -385,15 +439,16 @@ const createGalleryAnimation = ({ elements }) => {
 
     /** @param {'add'|'remove'} action */
     const animateCardsApparition = action => {
-
         setActiveCardsBlock(action);
 
         const tl = action === 'add' ? cardsAppearAnimation.play() : cardsAppearAnimation.reverse();
+        return tl;
+    };
 
+    /** @param {'add'|'remove'} action */
+    const activateCardTitles = action => {
         setActiveTitle(action);
         galleryMenu.setMenuItemsImagesStyle([ { prop: 'background-position', mode: action === 'add' ? 'xs' : 'lg' } ]);
-
-        return tl;
     };
 
 
@@ -401,7 +456,7 @@ const createGalleryAnimation = ({ elements }) => {
         _.dispatchEvent(_.EventNames.gallery.resize);
     }, { passive: true });
 
-    return { animateSlider, animateCardsApparition };
+    return { animateSlider, animateCardsApparition, activateCardTitles };
 };
 
 

@@ -58,12 +58,16 @@ const createGalleriesLayout = galleryCategories => {
             const images = _.toArray('.t156__item', block);
 
             if (i === 0) {
-                block.setAttribute('class', `gallery gallery-${categoryI} card`);
+                block.setAttribute('class', `gallery gallery-${categoryI} card r t-rec`);
                 [ ...wrapper.children ].filter(el => el.innerHTML === '').forEach(el => el.remove());
             } else {
                 wrapper.append(...images);
                 block.remove();
             }
+
+            images.forEach(image => {
+                image.dataset.lazyRule = 'skip'; // optimoff
+            });
 
             return images;
         });
@@ -111,19 +115,13 @@ const createGalleriesLayout = galleryCategories => {
 
         cardsBlock.append(galleryBackground);
 
-        // const skeletonBlock = /** @type {HTMLElement} */(galleryBackground.cloneNode(true));
-        // skeletonBlock.className = 'gallery-skeleton';
-
-        // firstCategory.block.before(skeletonBlock);
         _.onEvent(_.EventNames.gallery.resize, () => {
             const frame = _.queryThrow('.t-col', galleryBackground);
-            gsap.set(sliderWrapper, { width: frame.getBoundingClientRect().width, left: '50%', xPercent: -50 });
+            const { width } = _.getRect(frame);
+
+            if (width > 0)
+                gsap.set(sliderWrapper, { width, left: '50%', xPercent: -50 });
         });
-
-        // as the cards are absolutely positioned relative to the cards wrapper, we need to center them
-        // centerPositionedElement(sliderWrapper, cardsWrapper);
-        // elementsPerCategory.map(({ block }) => centerPositionedElement(block, sliderWrapper));
-
 
         return { cardsBlock, cardsWrapper };
     };
