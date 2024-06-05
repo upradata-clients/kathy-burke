@@ -80,7 +80,7 @@ const createGalleriesLayout = galleryCategories => {
 
     /**
      * @param {CategoryElements[]} elementsPerCategory 
-     * @returns {{ cardsBlock: HTMLElement; cardsWrapper: HTMLElement; galleryBackground: HTMLElement; }}
+     * @returns {{ cardsBlock: HTMLElement; cardsWrapper: HTMLElement; }}
      */
     const createCardsContainer = elementsPerCategory => {
 
@@ -117,7 +117,7 @@ const createGalleriesLayout = galleryCategories => {
 
         const onGalleryResize = ({ isActive = false } = {}) => {
             if (isActive) {
-                const frame = _.queryThrow('.t-container', galleryBackground);
+                const frame = _.queryThrow('.t-col', galleryBackground);
                 const { width } = _.getRect(frame);
 
                 if (width > 0)
@@ -132,13 +132,17 @@ const createGalleriesLayout = galleryCategories => {
                 onGalleryResize({ isActive: true });
         });
 
-        return { cardsBlock, cardsWrapper, galleryBackground };
+        return { cardsBlock, cardsWrapper };
     };
 
     const elementsPerCategory = imagesBlocksPerCategory.map(mergeItemsInFirstBlockOfCategory);
 
+    const { cardsBlock, cardsWrapper } = createCardsContainer(elementsPerCategory);
+
+
     return {
-        ...createCardsContainer(elementsPerCategory),
+        cardsBlock,
+        cardsWrapper,
         elementsPerCategory,
         imagesPerCategory: elementsPerCategory.map(c => c.images),
         allImages: elementsPerCategory.flatMap(c => c.images),

@@ -19,10 +19,6 @@
         "traceResolution": false,
         "baseUrl": ".",
         "paths": {},
-        "typeRoots": [
-            "src/@types",
-            "node_modules/@types"
-        ],
         "checkJs": true,
     },
     "include": [

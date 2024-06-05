@@ -29,7 +29,6 @@
  * @param {CardAnimation} [params.animateCard]
  * @param {Eases} [params.eases]
  * @param {(data: { dtStagger: number; previousDuration: number; from: number; to: number; }) => number} [params.moveToDuration]
- * @param {() => void} [params.onStop]
  */
 const createGallerySlider = params => {
     const {
@@ -201,24 +200,15 @@ const createGallerySlider = params => {
     /**
      * Moves the scrub to a specific index.
      * @param {number} index - The index to move the scrub to.
-     * @param {Object} [options]
-     * @param {boolean} [options.wrap] 
      * @returns {Promise<void>}
      */
-    const goTo = (index, { wrap = false } = {}) => {
-        if (wrap)
-            return moveScrubTo(index * dtStagger);
-
-        const currentIndex = Math.round(scrub.vars.t / dtStagger);
-        return moveScrubTo(scrub.vars.t + (index - currentIndex) * dtStagger);
-    };
+    const goTo = index => moveScrubTo(index * dtStagger);
 
     const next = () => moveScrubTo(scrub.vars.t + dtStagger);
 
     const prev = () => moveScrubTo(scrub.vars.t - dtStagger);
 
     const stop = () => {
-        params.onStop?.();
         seamlessLoop.kill();
         scrub.kill();
     };

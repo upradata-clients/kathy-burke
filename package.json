@@ -1,17 +1,24 @@
 {
-  "name": "src",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "El Pupi <elpupi@upradata.com> (https://github.com/elpupi)",
-  "license": "MIT",
-  "publishConfigAccess": "public",
-  "packageManager": "pnpm@8.15.6+sha256.01c01eeb990e379b31ef19c03e9d06a14afa5250b82e81303f88721c99ff2e6f",
-  "dependencies": {
-    "gsap": "^3.12.5"
-  }
+    "name": "src",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [],
+    "author": "El Pupi <elpupi@upradata.com> (https://github.com/elpupi)",
+    "license": "MIT",
+    "publishConfigAccess": "public",
+    "packageManager": "pnpm@8.15.6+sha256.01c01eeb990e379b31ef19c03e9d06a14afa5250b82e81303f88721c99ff2e6f",
+    "dependencies": {
+        "@types/node": "^20.13.0",
+        "eases": "^1.0.8",
+        "gsap": "^3.12.5",
+        "jsdom": "^24.1.0",
+        "svg-path-properties": "^1.3.0"
+    },
+    "devDependencies": {
+        "normalize-svg-coords": "^1.0.9"
+    }
 }

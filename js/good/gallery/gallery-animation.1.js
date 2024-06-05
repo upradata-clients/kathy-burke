@@ -90,7 +90,7 @@ const createSideCardsMouseFollowAnimation = ({ elementsPerCategory, maxRotation,
             }
         });
 
-        return { mouseFollower, item: wrapper };
+        return mouseFollower;
     });
 
     return cardsMouseFollowAnimation;
@@ -105,14 +105,195 @@ const createSideCardsMouseFollowAnimation = ({ elementsPerCategory, maxRotation,
 const createGallerySlider = cards => {
 
     // cards.forEach(card => gsap.set(card, { transformPerspective: 800 }));
-    cards.forEach(card => gsap.set(card, { transformOrigin: 'center center' }));
-
-    const sliderWrapper = _.queryThrow('.slider-wrapper');
-    const galleryBackgroundFrame = _.queryThrow('.gallery-background .t-container');
-
-    gsap.set(sliderWrapper, { width: galleryBackgroundFrame.getBoundingClientRect().width });
+    // cards.forEach(card => gsap.set(card, { transformOrigin: 'center center' }));
 
     const slider = _.GallerySlider.create({
+        cards,
+        dtStagger: 0.1,
+        duration: 0.1 * (cards.length - 1), // duration of the card animation from x = xPercent% to -xPercent%
+        // translation of the card at the beginning of the animation (card side by side => at 1 dt, 100% cards' width)
+        xPercent: ({ dtStagger }) => (100 / dtStagger) / 2,
+        eases: {
+            time: 'power3.inOut',
+        },
+        animateCard2: ({ item, xPercent, duration: T }) => {
+
+            // duration of the card animation from x = xPercent% to -xPercent%
+
+            const tl = gsap.timeline();
+
+            const transformationSettings = {
+                duration: T, ease: 'none', immediateRender: false
+            };
+
+            const symmetricTransformationSettings = {
+                duration: T / 2, yoyo: true, repeat: 1, ease: 'none', immediateRender: false
+            };
+
+            tl.fromTo(item,
+                { opacity: 1, zIndex: 1 },
+                {
+                    opacity: 1, zIndex: 100,
+                    ...symmetricTransformationSettings, ease: 'power1.in'
+                }
+            );
+
+
+            tl.fromTo(item,
+                { scaleX: 0.3, scaleY: 1 },
+                {
+                    scaleX: 1, scaleY: 1,
+                    ...symmetricTransformationSettings, ease: 'expo.in'
+                },
+                0
+            );
+
+            tl.fromTo(item,
+                { xPercent },
+                {
+                    xPercent: -xPercent,
+                    ...transformationSettings,
+                    ease: 'none'
+                    // ease: t => t < .5 ? 0.5 * Math.pow(2 * t, 1 / 3) : 1 - 0.5 * Math.pow(2 * (1 - t), 1 / 3)
+                },
+                0
+            );
+
+
+            // to offset the move on axis X after rotation around Y
+            // with the perspective, it moves the cards on the sides
+
+            const customEase = gsap.parseEase(
+                // CustomEase.create('custom', 'M0,0 C0.077,0.345 0.415,0.89 0.677,1 0.791,1 1,0.63 1,0.5')
+                CustomEase.create("custom", "M0,0 C0.077,0.345 0.198,1.076 0.33,1 0.669,0.802 1,0.091 1,0 ")
+            );
+
+            tl.fromTo(_.queryThrow('.t156', item),
+                { xPercent: 0 },
+                {
+                    xPercent: -24,
+                    ...transformationSettings,
+                    duration: T / 2,
+                    ease: customEase
+                    // t => t < 0.5 ? customEase(2 * t) : customEase(2 * (1 - t))
+                },
+                0
+            );
+
+            tl.fromTo(_.queryThrow('.t156', item),
+                { xPercent: 0 },
+                {
+                    xPercent: 24,
+                    ...transformationSettings,
+                    duration: T / 2,
+                    ease: t => customEase(1 - t)
+                    // t => t < 0.5 ? customEase(2 * t) : customEase(2 * (1 - t))
+                },
+                T / 2,
+            );
+
+
+
+            /*tl.fromTo(item,
+                { xPercent: '+=0' },
+                {
+                    xPercent: '+=24',
+                    ...symmetricTransformationSettings,
+                    ease: CustomEase.create("custom", "M0,0 C0.077,0.345 0.535,1 0.769,1 0.984,1 1,0.63 1,0.5")
+                },
+                0
+            );*/
+
+            tl.fromTo(item, {
+                rotateY: -80, rotateZ: 5
+            }, {
+                rotateY: 80, rotateZ: -5,
+                ...transformationSettings
+            }, 0);
+
+
+            tl.fromTo(item, {
+                z: -1350, rotateX: -5,
+            }, {
+                z: 0, rotateX: 0,
+                ...symmetricTransformationSettings
+            }, 0);
+
+            return tl;
+        },
+        animateCard: ({ item, xPercent, duration: T }) => {
+
+            // duration of the card animation from x = xPercent% to -xPercent%
+
+            const tl = gsap.timeline();
+
+            const transformationSettings = {
+                duration: T, ease: 'none', immediateRender: false
+            };
+
+            const symmetricTransformationSettings = {
+                duration: T / 2, yoyo: true, repeat: 1, ease: 'none', immediateRender: false
+            };
+
+
+            /**
+             * @param {gsap.TweenVars} from
+             * @param {gsap.TweenVars} to
+             * @param {gsap.Position} time
+             * @param {'symetric' | 'normal' } type
+             */
+            const addFromTo = (from, to, time, type) => {
+                return tl.fromTo(item, from, {
+                    ...to,
+                    ...(type === 'symetric' ? symmetricTransformationSettings : transformationSettings)
+                }, time);
+            };
+
+
+            addFromTo({ opacity: 1, zIndex: 1 }, { opacity: 1, zIndex: 100, ease: 'power1.in' }, 0, 'symetric');
+            addFromTo({ scaleX: 0.3, scaleY: 1 }, { scaleX: 1, scaleY: 1, ease: 'expo.in' }, 0, 'symetric');
+            addFromTo({ xPercent }, { xPercent: -xPercent }, 0, 'normal');
+
+
+            // to offset the move on axis X after rotation around Y
+            // with the perspective, it moves the cards on the sides
+
+            const customEase = gsap.parseEase(
+                CustomEase.create('custom', 'M0,0 C0.077,0.345 0.198,1.076 0.33,1 0.669,0.802 1,0.091 1,0')
+            );
+
+            tl.fromTo(_.queryThrow('.t156', item),
+                { xPercent: 0 },
+                {
+                    ...transformationSettings,
+                    xPercent: -24,
+                    duration: T / 2,
+                    ease: customEase
+                },
+                0
+            );
+
+            tl.fromTo(_.queryThrow('.t156', item),
+                { xPercent: 0 },
+                {
+                    ...transformationSettings,
+                    xPercent: 24,
+                    duration: T / 2,
+                    ease: t => customEase(1 - t)
+                },
+                T / 2
+            );
+
+            addFromTo({ rotateY: -80, rotateZ: 5 }, { rotateY: 80, rotateZ: -5 }, 0, 'normal');
+            addFromTo({ z: -1350, rotateX: -5 }, { z: 0, rotateX: 0 }, 0, 'symetric');
+
+            return tl;
+        }
+    });
+
+
+
+    const slider2 = _.GallerySlider.create({
         cards,
         dtStagger: 0.1,
         duration: 0.1 * (cards.length - 1), // duration of the card animation from x = xPercent% to -xPercent%
@@ -137,68 +318,57 @@ const createGallerySlider = cards => {
 
 
             /**
-             * @param {Object} params
-             * @param {gsap.TweenVars} params.from
-             * @param {gsap.TweenVars} params.to
-             * @param {gsap.Position} params.time
-             * @param {'symetric' | 'normal'} params.type
-             * @param {HTMLElement} [params.el]
+             * @param {gsap.TweenVars} from
+             * @param {gsap.TweenVars} to
+             * @param {gsap.Position} time
+             * @param {'symetric' | 'normal' } type
              */
-            const addFromTo = ({ from, to, time, type, el = item }) => {
-                return tl.fromTo(el, from, {
+            const addFromTo = (from, to, time, type) => {
+                return tl.fromTo(item, from, {
                     ...to,
                     ...(type === 'symetric' ? symmetricTransformationSettings : transformationSettings)
                 }, time);
             };
 
 
-            addFromTo({ from: { opacity: 0.3, zIndex: 1 }, to: { opacity: 1, zIndex: 100, ease: 'power1.in' }, time: 0, type: 'symetric' });
-            addFromTo({ from: { scaleX: 0.3, scaleY: 1 }, to: { scaleX: 1, scaleY: 1, ease: 'expo.in' }, time: 0, type: 'symetric' });
-            addFromTo({ from: { xPercent }, to: { xPercent: -xPercent }, time: 0, type: 'normal' });
+            addFromTo({ opacity: 1, zIndex: 1 }, { opacity: 1, zIndex: 100, ease: 'power1.in' }, 0, 'symetric');
+            addFromTo({ scaleX: 0.6, scaleY: 1 }, { scaleX: 1, scaleY: 1, ease: 'expo.in' }, 0, 'symetric');
+            addFromTo({ xPercent }, { xPercent: -xPercent }, 0, 'normal');
+
 
             // to offset the move on axis X after rotation around Y
             // with the perspective, it moves the cards on the sides
 
-            const customEase = gsap.parseEase(
-                CustomEase.create('custom', 'M0,0 C0.077,0.345 0.198,1.076 0.33,1 0.669,0.802 1,0.091 1,0')
-            );
+            // const customEase = gsap.parseEase(
+            //     CustomEase.create('custom', 'M0,0 C0.077,0.345 0.198,1.076 0.33,1 0.669,0.802 1,0.091 1,0')
+            // );
 
-            addFromTo({
-                el: _.queryThrow('.t156', item),
-                from: { xPercent: 0 },
-                to: {
-                    xPercent: -24,
-                    duration: T / 2,
-                    ease: customEase
-                    // t => t < 0.5 ? customEase(2 * t) : customEase(2 * (1 - t))
-                },
-                time: 0,
-                type: 'normal'
-            });
+            // tl.fromTo(_.queryThrow('.t156', item),
+            //     { xPercent: 0 },
+            //     {
+            //         ...transformationSettings,
+            //         xPercent: -24,
+            //         duration: T / 2,
+            //         ease: customEase
+            //     },
+            //     0
+            // );
 
-            addFromTo({
-                el: _.queryThrow('.t156', item),
-                from: { xPercent: 0 },
-                to: {
-                    xPercent: 24,
-                    duration: T / 2,
-                    ease: t => customEase(1 - t)
-                    // t => t < 0.5 ? customEase(2 * t) : customEase(2 * (1 - t))
-                },
-                time: T / 2,
-                type: 'normal'
-            });
+            // tl.fromTo(_.queryThrow('.t156', item),
+            //     { xPercent: 0 },
+            //     {
+            //         ...transformationSettings,
+            //         xPercent: 24,
+            //         duration: T / 2,
+            //         ease: t => customEase(1 - t)
+            //     },
+            //     T / 2
+            // );
 
-
-            addFromTo({ from: { rotateY: -80, rotateZ: 5 }, to: { rotateY: 80, rotateZ: -5 }, time: 0, type: 'normal' });
-            addFromTo({ from: { z: -1350, rotateX: -5 }, to: { z: 0, rotateX: 0 }, time: 0, type: 'symetric' });
+            addFromTo({ rotateY: -67, rotateZ: 2 }, { rotateY: 67, rotateZ: -2 }, 0, 'normal');
+            addFromTo({ z: -370, rotateX: -1 }, { z: 0, rotateX: 0 }, 0, 'symetric');
 
             return tl;
-        },
-        onStop: () => {
-            cards.forEach(card => {
-                gsap.set(_.queryThrow('.t156', card), { clearProps: 'all' });
-            });
         }
     });
 
@@ -288,73 +458,36 @@ const createGalleryAnimation = ({ elements }) => {
     const galleryMenu = _.galleryMenu.getGalleryMenu(elements);
     galleryMenu.setMenuItemsImagesStyle([ { prop: 'background-position', mode: 'lg' } ]);
 
-    /**
-     * @template T
-     * @param {(instance : T | undefined) => T} create
-     * @returns {{ get: () => T; reset: () => void; }}
-     */
-    const lazyFactory = create => {
-        let instance = undefined;
+    /** @type {GallerySlider | undefined} */
+    let slider = undefined;
 
-        return {
-            get: () => {
-                instance = instance || create(instance);
-                return instance;
-            },
-            reset: () => {
-                instance = create(instance);
+    /** @type {SideCardsMouseAnimation | undefined} */
+    let sideCardsMouseFollowAnimation = undefined;
+
+    _.onEvent(_.EventNames.gallery.resize, () => {
+        sideCardsMouseFollowAnimation?.forEach(a => a.stop());
+
+        sideCardsMouseFollowAnimation = createSideCardsMouseFollowAnimation({
+            elementsPerCategory: elements.elementsPerCategory,
+            maxRotation: { x: 3, y: 6 },
+            maxDistance: ({ wrapper }) => {
+                const { width, height } = _.getRect(wrapper);
+                return { x: 0.5 * width, y: 0.5 * height };
             }
-        };
+        });
+    });
 
-    };
+    /** @type {SideCardsScrollFollow | undefined} */
+    let sideCardsScrollFollow = undefined;
 
+    _.onEvent(_.EventNames.gallery.resize, () => {
+        sideCardsScrollFollow?.kill();
 
-    const slider = lazyFactory(
-        /** @param {GallerySlider | undefined} slider */
-        slider => {
-            slider?.stop();
-            return createGallerySlider(cards);
-        }
-    );
-
-    const sideCardsMouseFollowAnimation = lazyFactory(
-        /** @param {SideCardsMouseAnimation | undefined} sideCardsMouseFollowAnimation */
-        sideCardsMouseFollowAnimation => {
-            sideCardsMouseFollowAnimation?.forEach(({ mouseFollower }) => mouseFollower.stop());
-
-            return createSideCardsMouseFollowAnimation({
-                elementsPerCategory: elements.elementsPerCategory,
-                maxRotation: { x: 3, y: 6 },
-                maxDistance: ({ wrapper }) => {
-                    const { width, height } = _.getRect(wrapper);
-                    return { x: 0.5 * width, y: 0.5 * height };
-                }
-            });
-        }
-    );
-
-    const sideCardsScrollFollow = lazyFactory(
-        /** @param {SideCardsScrollFollow | undefined} sideCardsScrollFollow */
-        sideCardsScrollFollow => {
-            sideCardsScrollFollow?.kill();
-
-            return createSideCardsScrollFollow({
-                galleryBackground: _.queryThrow('.t-container', elements.galleryBackground),
-                cards: elements.cards
-            });
-        }
-    );
-
-
-    const createAnimations = () => {
-        sideCardsMouseFollowAnimation.reset();
-        sideCardsScrollFollow.reset();
-        slider.reset();
-    };
-
-    _.onEvent(_.EventNames.gallery.resize, createAnimations);
-    _.onEvent(_.EventNames.gallery.enter, createAnimations);
-
+        sideCardsScrollFollow = createSideCardsScrollFollow({
+            galleryBackground: _.queryThrow('.gallery-background .t-container', elements.cardsBlock),
+            cards: elements.cards
+        });
+    });
 
 
     const animateMenuToSmallState = () => {
@@ -402,8 +535,8 @@ const createGalleryAnimation = ({ elements }) => {
      */
     const setStateCards = (i, action) => {
         cards[ wrapI(i) ].dataset.cardState = action === 'add' ? 'active' : '';
-        // cards[ wrapI(i - 1) ].dataset.cardState = action === 'add' ? 'left' : '';
-        // cards[ wrapI(i + 1) ].dataset.cardState = action === 'add' ? 'right' : '';
+        cards[ wrapI(i - 1) ].dataset.cardState = action === 'add' ? 'left' : '';
+        cards[ wrapI(i + 1) ].dataset.cardState = action === 'add' ? 'right' : '';
     };
 
 
@@ -440,19 +573,31 @@ const createGalleryAnimation = ({ elements }) => {
      * @param {object} params
      * @param {number | undefined} params.enterI
      * @param {number | undefined} params.leaveI
-     * @param {boolean} params.isActive
+     * @param {boolean | undefined} [params.onlySlider]
      */
-    const animateSlider = ({ enterI, leaveI, isActive }) => {
+    const animateSlider = ({ enterI, leaveI, onlySlider }) => {
+        slider = slider || createGallerySlider(cards);
 
         /** @type {Promise<void> | undefined} */
         let sliderTL$ = undefined;
 
         const isFirst = leaveI === undefined && enterI !== undefined;
 
-        if (isFirst) {
-            if (isActive)
-                animateMenuToSmallState();
+        if (onlySlider) {
+            if (leaveI !== undefined)
+                setStateCards(leaveI, 'remove');
 
+            if (enterI !== undefined) {
+                sliderTL$ = slider.goTo(enterI).then(() => {});
+                setZoomableCard(enterI);
+                setStateCards(enterI, 'add');
+            }
+
+            return sliderTL$;
+        }
+
+        if (isFirst) {
+            animateMenuToSmallState();
             gsap.to(galleryTitle, { opacity: 1, duration: 0.5, ease: 'expo.out' });
         }
 
@@ -460,35 +605,32 @@ const createGalleryAnimation = ({ elements }) => {
         if (leaveI !== undefined) {
             setStateCards(leaveI, 'remove');
 
-            sideCardsMouseFollowAnimation.get().forEach(({ mouseFollower }) => mouseFollower.stop());
+            // sideCardsMouseFollowAnimation?.forEach(a => a.stop());
             flipTitles(leaveI, 'remove');
         }
 
+        if (enterI !== undefined)
+            sliderTL$ = slider.goTo(enterI).then(() => {});
+
+
         if (enterI !== undefined) {
+
             setStateCards(enterI, 'add');
             setZoomableCard(enterI);
 
-            sliderTL$ = slider.get().goTo(enterI).then(() => {});
-
-            sliderTL$?.then(() => {
-                gsap.to(sideCardsMouseFollowAnimation.get()[ wrapI(enterI) ].item, {
-                    rotateX: 0, rotateY: 0, duration: 0.2, ease: 'power4.out'
-                });
-
-                sideCardsMouseFollowAnimation.get().forEach(({ mouseFollower }, i) => {
-                    if (i !== enterI)
-                        mouseFollower.start();
-                });
-            });
+            // sliderTL$?.then(() => {
+            //     sideCardsMouseFollowAnimation?.[ wrapI(enterI - 1) ].start();
+            //     sideCardsMouseFollowAnimation?.[ wrapI(enterI + 1) ].start();
+            // });
 
             flipTitles(enterI, 'add');
         }
 
-        if (leaveI !== undefined)
-            sideCardsScrollFollow.get().clear(leaveI);
+        // if (leaveI !== undefined)
+        //     sideCardsScrollFollow?.clear(leaveI);
 
-        if (enterI !== undefined)
-            sideCardsScrollFollow.get().create(enterI);
+        // if (enterI !== undefined)
+        //     sideCardsScrollFollow?.create(enterI);
 
         return sliderTL$;
     };

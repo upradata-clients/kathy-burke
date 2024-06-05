@@ -1,0 +1,1385 @@
+<script>
+
+    // mouse-follow.js
+    _.define(() => {
+        gsap.registerPlugin(Flip);
+        gsap.registerPlugin(CustomEase);
+
+
+        /**
+         * @typedef {Record<'x'|'y', number>} Vector2D
+         */
+
+
+        /**
+         * @typedef {Object} MouseFollowerData
+         * @property {number} i
+         * @property {HTMLElement} item
+         * @property {DOMRect} rect
+         * @property {Vector2D} mouse
+         */
+
+
+        /**
+         * @typedef {(distance: Vector2D, data: MouseFollowerData) => Vector2D} DistanceToProgress
+         * @typedef {(progress: Vector2D, data: MouseFollowerData) => Vector2D} ProgressEase
+         * @typedef {(progress: number, data: MouseFollowerData) => number} ProgressEase1D
+         * @typedef {Record<'x'|'y', gsap.EaseString | ProgressEase1D> } ProgressEase2D
+         */
+
+
+        /**
+         * @param {Object} params
+         * @param {HTMLElement[]} params.items
+         * @param {HTMLElement} [params.elementToListenTheMouse]
+         * @param {Partial<ProgressEase2D> | ProgressEase} [params.distanceEasing]
+         * @param {Partial<Vector2D>} [params.maxDistance]
+         * @param {DistanceToProgress} [params.distanceToProgress]
+         * @param {Partial<Record<'x'|'y', { min?: number; max?: number;}>>} [params.progressClamp]
+         * @param {(data: MouseFollowerData) => void} params.onMouseMove
+         * @param {() => void} [params.onStart]
+         * @param {() => void} [params.onStop]
+         */
+        const createMouseFollower = params => {
+            const {
+                items,
+                elementToListenTheMouse = document.documentElement,
+                onMouseMove
+            } = params;
+
+
+            const maxDistance = { x: 300, y: 300, ...params.maxDistance };
+
+            /**
+             * Creates a mouse distance easing function.
+             * @type {(distance: number, maxDistance: number) => number}
+             */
+            const distanceToProgressDefault = (distance, maxDistance) => distance / maxDistance;
+
+            /** @type {DistanceToProgress} */
+            const distanceToProgress = params.distanceToProgress || (distance => ({
+                x: distanceToProgressDefault(distance.x, maxDistance.x),
+                y: distanceToProgressDefault(distance.y, maxDistance.y)
+            }));
+
+
+            /** @type {ProgressEase} */
+            const distanceEasing = (distanceProgress, data) => {
+
+                if (typeof params.distanceEasing === 'function')
+                    return params.distanceEasing(distanceProgress, data);
+
+                const { x: xEase, y: yEase } = params.distanceEasing || {};
+
+                const ease1D = {
+                    x: typeof xEase === 'function' ? xEase : gsap.parseEase(xEase || 'power1.out'),
+                    y: typeof yEase === 'function' ? yEase : gsap.parseEase(yEase || 'power1.out')
+                };
+
+                /** @type {(axis: 'x' | 'y') => ProgressEase1D} */
+                const createEasing = axis => distanceProgress => {
+                    const clampMin = params.progressClamp?.[ axis ]?.min || -1;
+                    const clampMax = params.progressClamp?.[ axis ]?.max || 1;
+
+                    const clampedProgress = gsap.utils.clamp(clampMin, clampMax, distanceProgress);
+                    const easeX = ease1D[ axis ](Math.abs(clampedProgress), data);
+
+                    return clampedProgress < 0 ? -easeX : easeX;
+                };
+
+                return {
+                    x: createEasing('x')(distanceProgress.x, data),
+                    y: createEasing('y')(distanceProgress.y, data)
+                };
+            };
+
+
+            /** @type {(data: MouseFollowerData) => Vector2D} */
+            const getDistanceEase = data => {
+                const { rect, mouse } = data;
+
+                const distance = /** @type {Vector2D}*/ (Object.fromEntries([ 'x', 'y' ].map(axis => {
+                    const size = axis === 'x' ? 'width' : 'height';
+
+                    const X = rect[ axis ];
+                    const middle = X + rect[ size ] / 2;
+
+                    return [ axis, middle - mouse[ axis ] ];
+                })));
+
+                const progress = distanceToProgress(distance, data);
+
+                return distanceEasing(progress, data);
+            };
+
+            /** @type {(this: HTMLElement, ev: MouseEvent) => any} */
+            const listener = ({ clientX: mouseX, clientY: mouseY }) => {
+
+                items.forEach((item, i) => {
+                    const mouse = { x: mouseX, y: mouseY };
+                    const rect = item.getBoundingClientRect();
+
+                    onMouseMove({ i, item, rect, mouse });
+                });
+            };
+
+            return {
+                start: () => {
+                    params.onStart?.();
+                    elementToListenTheMouse.addEventListener('mousemove', listener, { passive: true });
+                },
+                stop: () => {
+                    params.onStop?.();
+                    elementToListenTheMouse.removeEventListener('mousemove', listener, {});
+                },
+                getDistanceEase
+            };
+        };
+
+
+
+        return { createMouseFollower };
+
+    });
+
+    // gallery-slider.js
+    _.define(() => {
+        // @ts-check
+
+
+        /**
+         * @typedef {import("gsap").gsap}
+         */
+
+        // gsap.registerPlugin(ScrollTrigger, Draggable);
+
+        /**
+         * @typedef {Object} Eases
+         * @property {gsap.EaseString | gsap.EaseFunction} [cardOpacity]
+         * @property {gsap.EaseString | gsap.EaseFunction} [time]
+         */
+
+
+        /**
+         * @typedef {{ dtStagger: number; duration: number; item: HTMLElement; index: number; xPercent: number; }} GalleryData
+         * @typedef {(data: GalleryData) => gsap.core.Timeline} CardAnimation
+         */
+
+        /**
+         * @param {Object} params
+         * @param {HTMLElement[]} params.cards
+         * @param {number} [params.dtStagger]
+         * @param {number} [params.duration]
+         * @param {number|((data: { dtStagger: number; }) => number)} [params.xPercent]
+         * @param {(cards: HTMLElement[], data: { dtStagger: number; }) => void} [params.initCards]
+         * @param {CardAnimation} [params.animateCard]
+         * @param {Eases} [params.eases]
+         * @param {(data: { dtStagger: number; previousDuration: number; from: number; to: number; }) => number} [params.moveToDuration]
+         */
+        const createGallerySlider = params => {
+            const {
+                cards,
+                initCards,
+                dtStagger = 0.1, // delta T (stagger) between each card animation
+                duration = 1, // duration of the card animation from x = xPercent% to -xPercent%
+                moveToDuration = ({ previousDuration }) => previousDuration
+            } = params;
+
+            const getXPercent = () => {
+                const { xPercent } = params;
+
+                switch (typeof xPercent) {
+                    case 'number': return xPercent;
+                    case 'function': return xPercent({ dtStagger });
+                    default: return 400;
+                }
+            };
+
+            const xPercent = getXPercent();
+
+
+            /**
+             * @type {Eases}
+             */
+            const eases = {
+                cardOpacity: 'power1.in',
+                time: 'power3.inOut',
+                ...params.eases
+            };
+
+
+
+            // set initial state of items
+            if (initCards)
+                initCards(cards, { dtStagger });
+            else
+                gsap.set(cards, { xPercent, opacity: 0, scale: 0 });
+
+
+
+            /**
+             * Builds a seamless loop animation.
+             * @param {Object} options
+             * @param {Array<HTMLElement>} options.items - The items to animate.
+             * @param {number} options.dtStagger - The delta T (stagger) between each card animation.
+             * @param {CardAnimation} options.cardAnimation - The card animation for each item.
+             */
+            const buildSeamlessLoop = ({ items, dtStagger, cardAnimation }) => {
+                // this is where all the 'real' animations live
+
+                const rawSequence = gsap.timeline({ paused: true });
+
+                // this merely scrubs the playhead of the rawSequence so that it appears to seamlessly loop
+                const seamlessLoop = gsap.timeline({
+                    paused: true,
+                    repeat: -1, // to accommodate infinite scrolling/looping
+                    onRepeat() {
+                        // works around a super rare edge case bug that's fixed GSAP 3.6.1
+                        // this._time === this._dur && (this._tTime += this._dur - 0.01);
+                    },
+                    onReverseComplete() {
+                        this.totalTime(this.rawTime() + this.duration() * 100); // seamless looping backwards
+                    }
+                });
+
+                const cycleDuration = dtStagger * items.length;
+                // the duration of just one animateFunc() (we'll populate it in the .forEach() below...
+                const cardAnimationDuration = cardAnimation({ item: items[ 0 ], index: 0, xPercent, dtStagger, duration: duration + 0.01 }).duration();
+
+                // loop through 3 times so we can have an extra cycle at the start and end - we'll scrub the playhead only on the 2nd cycle
+                items.concat(items).concat(items).forEach((_, i) => {
+                    const anim = cardAnimation({ item: items[ i % items.length ], index: i, xPercent, dtStagger, duration: duration + 0.01 });
+                    rawSequence.add(anim, i * dtStagger);
+                });
+
+                // animate the playhead linearly from the start of the 2nd cycle to its end (so we'll have one 'extra' cycle at the beginning and end)
+                seamlessLoop.fromTo(rawSequence, {
+                    time: cycleDuration + cardAnimationDuration / 2
+                }, {
+                    time: `+=${cycleDuration}`,
+                    duration: cycleDuration,
+                    ease: 'none'
+                });
+
+                return seamlessLoop;
+            };
+
+
+            // this function will get called for each element in the buildSeamlessLoop() function,
+            // and we just need to return an animation that'll get inserted into a master timeline, spaced
+            /**
+             * @type {CardAnimation}
+             */
+            const animateCard = element => {
+
+                const tl = gsap.timeline();
+
+                tl
+                    .fromTo(element,
+                        { scale: 0, opacity: 0 },
+                        {
+                            scale: 1, opacity: 1, zIndex: 100,
+                            duration: duration / 2, yoyo: true, repeat: 1, ease: eases.cardOpacity, immediateRender: false
+                        }
+                    )
+                    .fromTo(element,
+                        { xPercent },
+                        {
+                            xPercent: -xPercent,
+                            duration: duration, ease: 'none', immediateRender: false
+                        },
+                        0
+                    );
+
+                return tl;
+            };
+
+
+            const seamlessLoop = buildSeamlessLoop({
+                items: cards,
+                dtStagger: dtStagger,
+                cardAnimation: params.animateCard || animateCard
+            });
+
+            // feed in any offset (time) and it'll return the corresponding wrapped time (a safe value between 0 and the seamlessLoop's duration)
+            const wrapTime = gsap.utils.wrap(0, seamlessLoop.duration());
+
+
+            // a proxy object we use to simulate the playhead position, but it can go infinitely in either direction and
+            // we'll just use an onUpdate to convert it to the corresponding time on the seamlessLoop timeline.
+            const playhead = { t: 0 };
+
+            // we reuse this tween to smoothly scrub the playhead on the seamlessLoop
+            const scrub = gsap.to(playhead, {
+                t: 0,
+                onUpdate() {
+                    // convert the offset to a 'safe' corresponding time on the seamlessLoop timeline
+                    seamlessLoop.time(wrapTime(playhead.t));
+                },
+                duration: duration / 2,
+                ease: eases.time,
+                paused: true
+            });
+
+
+            /**
+             * @template {gsap.core.Timeline | gsap.core.Tween} T
+             * @param {T} timelineOrTween
+             * @returns {Promise<void>}
+             */
+            const promisifyTimelineOrTween = timelineOrTween => new Promise(resolve => timelineOrTween.then(() => resolve()));
+
+
+            /**
+             * Moves the scrub to a specific time.
+             * @param {number} t - The time to move the scrub to.
+             */
+            const moveScrubTo = t => {
+                scrub.duration(
+                    moveToDuration({ dtStagger, previousDuration: scrub.duration(), from: scrub.vars.t, to: t })
+                );
+
+                scrub.vars.t = t;
+                return promisifyTimelineOrTween(scrub.invalidate().restart());
+            };
+
+            /**
+             * Moves the scrub to a specific index.
+             * @param {number} index - The index to move the scrub to.
+             * @returns {Promise<void>}
+             */
+            const goTo = index => moveScrubTo(index * dtStagger);
+
+            const next = () => moveScrubTo(scrub.vars.t + dtStagger);
+
+            const prev = () => moveScrubTo(scrub.vars.t - dtStagger);
+
+            return { goTo, next, prev };
+        };
+
+
+        /** @typedef {ReturnType<typeof createGallerySlider>} GallerySlider */
+
+
+        const GallerySlider = {
+            create: createGallerySlider
+        };
+
+
+        return { GallerySlider };
+
+    });
+
+
+    // gallery-layout.js
+    _.define(() => {
+
+
+        /**
+         * An array that holds the categories for the gallery.
+         * @typedef {{ name: string; imagesRecids: string[];}[]} GalleryCategories
+         */
+
+
+
+        /** @typedef {{ images: HTMLElement[]; wrapper: HTMLElement; block: HTMLElement; } CategoryElements} */
+
+
+        /**
+         * @param {HTMLElement} element
+         * @param {HTMLElement} parent 
+         */
+        const centerPositionedElement = (element, parent) => {
+            // element is absolutely positioned relative to the parent, we need to center it
+            const { width: parentWidth } = _.getRect(parent);
+            const { width: itemWidth } = _.getRect(element);
+
+            const left = (parentWidth - itemWidth) / 2;
+            gsap.set(element, { left });
+        };
+
+
+        /**
+         * @param {GalleryCategories} galleryCategories
+         */
+        const createGalleriesLayout = galleryCategories => {
+
+            // we move all images to first images block
+            const imagesBlocksPerCategory = galleryCategories.map(({ imagesRecids }) => [ ...imagesRecids.map(_.getElementFromRecid) ]);
+
+
+            /**
+             * 
+             * @param {HTMLElement[]} blocks 
+             * @param {number} categoryI 
+             * @returns {CategoryElements}
+             */
+            const mergeItemsInFirstBlockOfCategory = (blocks, categoryI) => {
+
+                const block = blocks[ 0 ];
+                const wrapper = _.queryThrow('.t156__wrapper', block);
+
+                const images = blocks.flatMap((block, i) => {
+                    const images = _.toArray('.t156__item', block);
+
+                    if (i === 0) {
+                        block.setAttribute('class', `gallery gallery-${categoryI} card r t-rec`);
+                        [ ...wrapper.children ].filter(el => el.innerHTML === '').forEach(el => el.remove());
+                    } else {
+                        wrapper.append(...images);
+                        block.remove();
+                    }
+
+
+                    /*images.forEach(image => {
+                        image.dataset.lazyRule = 'skip'; // optimoff
+                    });*/
+
+                    return images;
+                });
+
+
+                return { images, wrapper, block };
+            };
+
+
+
+            /**
+             * @param {CategoryElements[]} elementsPerCategory 
+             * @returns {{ cardsBlock: HTMLElement; cardsWrapper: HTMLElement; }}
+             */
+            const createCardsContainer = elementsPerCategory => {
+
+                const firstCategory = elementsPerCategory[ 0 ];
+
+                firstCategory.block.insertAdjacentHTML(
+                    'beforebegin',
+                    '<div id="cards" class="cards"><div class="cards__wrapper"></div></div>'
+                );
+
+                const cardsBlock = _.queryThrow('#cards');
+                const cardsWrapper = _.queryThrow('.cards__wrapper', cardsBlock);
+
+                cardsWrapper.insertAdjacentHTML(
+                    'afterbegin',
+                    '<div class="slider-wrapper"></div>'
+                );
+
+                const sliderWrapper = _.queryThrow('.slider-wrapper', cardsWrapper);
+
+                // we move all images blocks (each block is a category) to the cards wrapper
+                sliderWrapper.replaceChildren(...elementsPerCategory.map(({ block }) => block));
+
+                // we create a skeleton block
+                const galleryBackground = /** @type {HTMLElement} */(firstCategory.block.cloneNode(true));
+
+                galleryBackground.removeAttribute('id');
+                galleryBackground.className = 'gallery-background';
+
+                // we remove all item contents from the skeleton
+                [ ...galleryBackground.querySelectorAll('.t156__item') ].forEach(el => el.replaceChildren());
+
+                cardsBlock.append(galleryBackground);
+
+                const onGalleryResize = ({ isActive = false } = {}) => {
+                    if (isActive) {
+                        /*const frame = _.queryThrow('.t-col', galleryBackground);
+                        const { width } = _.getRect(frame);
+        
+                        if (width > 0)
+                            gsap.set(sliderWrapper, { width, left: '50%', xPercent: -50 });*/
+                        const frame = _.queryThrow('.t-container', galleryBackground);
+                        const { width } = _.getRect(frame);
+
+                        if (width > 0)
+                            gsap.set(sliderWrapper, { width, left: '50%', xPercent: -50 });
+                    }
+                };
+
+                _.onEvent(_.EventNames.gallery.resize, event => onGalleryResize(event.detail));
+
+                _.onEvent(_.EventNames.gallery.enter, event => {
+                    if (event.detail?.when === 'after')
+                        onGalleryResize({ isActive: true });
+                });
+                // elementsPerCategory.map(({ block }) => centerPositionedElement(block, sliderWrapper));
+
+
+                return { cardsBlock, cardsWrapper };
+            };
+
+            const elementsPerCategory = imagesBlocksPerCategory.map(mergeItemsInFirstBlockOfCategory);
+
+            const { cardsBlock, cardsWrapper } = createCardsContainer(elementsPerCategory);
+
+
+            return {
+                cardsBlock,
+                cardsWrapper,
+                elementsPerCategory,
+                imagesPerCategory: elementsPerCategory.map(c => c.images),
+                allImages: elementsPerCategory.flatMap(c => c.images),
+                cards: elementsPerCategory.map(c => c.block)
+            };
+        };
+
+        /** @param {GalleryCategories} galleryCategories */
+        const createElements = galleryCategories => {
+
+            const menuContainer = _.queryThrow('.uc-gallery-menu .t959__container');
+            const menuItems = _.queryAllThrow('.t959__card', menuContainer);
+            const menuItemsTitles = menuItems.map(m => _.queryThrow('.t-card__title', m));
+
+            const galleryTitle = _.queryThrow('.uc-gallery-title');
+            const galleryTitleHeader = _.queryThrow('.t030__title', galleryTitle);
+
+            return {
+                menuContainer,
+                menuItems,
+                menuItemsTitles,
+                galleryTitle,
+                galleryTitleHeader,
+                ...createGalleriesLayout(galleryCategories)
+            };
+        };
+
+        /**
+         * @typedef {ReturnType<typeof createElements>} Elements
+         */
+
+        return { createElements };
+    });
+
+
+    // images-settings.js
+    _.define(() => {
+
+        /**
+         * @typedef {string | 'value'} ImageSettingsMode
+         * @typedef {string} ImageSettingsProp
+         * @typedef {Record<ImageSettingsProp, Record<ImageSettingsMode, string>>} ImageSettings
+         */
+
+        /**
+         * @param {HTMLElement[]} images
+         * @returns {ImageSettings[]}
+         */
+        const getImagesSettings = images => {
+
+            /** @param {string} name */
+            const settingNameToProp = name => {
+                switch (name) {
+                    case 'position': return 'background-position';
+                    default: return name;
+                }
+            };
+
+            /**
+             * @param {string} settingsStr
+             * @returns {ImageSettings}
+             */
+            const getImageSettings = settingsStr => {
+                return settingsStr.split(',').reduce((settings, settingStr) => {
+                    const result = settingStr.match(/\s*(?<key>\S+)\s*:\s*(?<value>.*)\s*/);
+
+                    if (!result) {
+                        console.log(`Wrong alt text setting: ${settingStr}`);
+                        return settings;
+                    }
+
+                    const [ , key, value ] = result;
+
+                    const [ , mode = 'value', k ] = key.match(/(?:(.+)-)?(.*)/) || [];
+                    const prop = settingNameToProp(k);
+
+                    return { ...settings, [ prop ]: { ...settings[ prop ], [ mode ]: value.trim() } };
+                }, {});
+            };
+
+            return images.reduce((settings, image) => {
+                const altText = image.getAttribute('aria-label');
+
+                const [ realAltText, settingsStr ] = altText?.split('#') || [];
+
+                if (settingsStr) {
+                    image.setAttribute('aria-label', realAltText.trim());
+                    return [ ...settings, getImageSettings(settingsStr) ];
+                }
+
+                console.error(`Error parsing image setting "${altText}"`);
+                return settings;
+
+            }, /** @type {ImageSettings[]} */([]));
+        };
+
+
+
+
+        return { getImagesSettings };
+
+    });
+
+    // gallery-menu.js
+    _.define(() => {
+        // @ts-check
+
+
+        /** @type {typeof import('../underscore.js')._} */
+        const _ = /** @type {any} */ (window)._;
+
+        /**
+         * @typedef {import('../images-settings.js').ImageSettings} ImageSettings
+         * @typedef {import('../images-settings.js').ImageSettingsProp} ImageSettingsProp
+         * @typedef {import('../images-settings.js').ImageSettingsMode} ImageSettingsMode
+         */
+
+
+
+        /**
+         * @param {import('./gallery-layout.js').Elements} elements
+         */
+        const getGalleryMenu = elements => {
+
+            const menuContainer = _.queryThrow('.uc-gallery-menu .t959__container');
+            const menuItems = _.queryAllThrow('.t959__card', menuContainer);
+            const menuItemsTitles = menuItems.map(m => _.queryThrow('.t-card__title', m));
+
+            const menuItemsImages = elements.menuItems.map(item => _.queryThrow('.t959__card-image', item));
+
+
+            /** @type {ImageSettings[]} */
+            const menuItemsImagesSettings = _.getImagesSettings(menuItemsImages);
+
+            /**
+             * @param {Array<string | { prop: ImageSettingsProp; mode: ImageSettingsMode }>} styles 
+             */
+            const setMenuItemsImagesStyle = styles => {
+
+                menuItemsImagesSettings.forEach((imagesSettings, i) => {
+
+                    const cssStyles = styles.reduce((cssStyles, style) => {
+
+                        const { prop, mode } = typeof style === 'string' ? { prop: style, mode: 'value' } : style;
+
+                        const value = imagesSettings[ prop ]?.[ mode ];
+
+                        return value ? { ...cssStyles, [ prop ]: imagesSettings[ prop ][ mode ] } : cssStyles;
+                    }, {});
+
+                    if (cssStyles)
+                        gsap.set(menuItemsImages[ i ], cssStyles);
+                });
+            };
+
+
+            return {
+                menuContainer,
+                menuItems,
+                menuItemsTitles,
+                menuItemsImages,
+                menuItemsImagesSettings,
+                setMenuItemsImagesStyle
+            };
+        };
+
+        /**
+         * @typedef {ReturnType<typeof getGalleryMenu>} GalleryMenu
+         */
+
+
+
+
+        /**
+         * @param {Object} params
+         * @param {import('./gallery-layout.js').Elements} params.elements
+         * @param {() => void | Promise<void>} [params.onStart]
+         * @param {(params: { enterI: number | undefined; leaveI: number | undefined }) => void | Promise<void>} [params.onClickMenuItem]
+         * @param {() => void | Promise<void>} [params.onLeave]
+         */
+        const createGalleryMenuListener = ({ elements, onStart, onClickMenuItem, onLeave }) => {
+
+            /** @type {{menuItem: HTMLElement; i: number} | undefined} */
+            let state = undefined;
+
+
+            /**
+             * @param {HTMLElement | undefined} menuItem - The menu item to modify.
+             * @param {string} action - The action to perform ('add' or 'remove').
+             */
+            const setActiveMenuItem = (menuItem, action) => _.setClassName(menuItem, 'active')(action);
+
+            /** @param {void | Promise<void>} value */
+            const waitIfPromise = async value => {
+                if (value instanceof Promise)
+                    await value;
+            };
+
+            /** @param {number} i */
+            const goTo = async i => {
+                const menuItem = elements.menuItems[ i ];
+
+                const isEmpty = state === undefined;
+                const isSame = state?.i === i;
+
+                if (isSame) {
+                    return;
+                }
+
+                setActiveMenuItem(state?.menuItem, 'remove');
+                setActiveMenuItem(menuItem, 'add');
+
+                if (isEmpty) {
+                    _.dispatchEvent(_.EventNames.gallery.enter, { when: 'before' });
+                    await waitIfPromise(onStart?.());
+                    _.dispatchEvent(_.EventNames.gallery.enter, { when: 'after' });
+                }
+
+                await waitIfPromise(onClickMenuItem?.({ enterI: isSame ? undefined : i, leaveI: state?.i }));
+
+                state = { menuItem, i };
+
+            };
+
+
+            elements.menuItems.forEach((_, i) => {
+                elements.menuItems[ i ].addEventListener('pointerup', () => goTo(i), { passive: true });
+                elements.cards[ i ].addEventListener('pointerup', () => goTo(i), { passive: true });
+            });
+
+
+            return { goTo };
+        };
+
+
+        const galleryMenu = { getGalleryMenu, createGalleryMenuListener };
+
+
+        return { galleryMenu };
+
+    });
+
+    // gallery-animation.js
+    _.define(() => {
+        // @ts-check
+
+
+        /**
+         * @typedef {import("gsap")} gsap
+         */
+
+
+        /** @type {typeof import('../underscore.js')._} */
+        const _ = /** @type {any} */ (window)._;
+
+        /** @typedef {'x' | 'y'} Axis */
+
+        /**
+         * @param {Object} params
+         * @param {import('./gallery-layout.js').CategoryElements[]} params.elementsPerCategory
+         * @param {Record<Axis, number>} params.maxRotation
+         * @param {Record<Axis, number> | ((params: { wrapper: HTMLElement; }) => Record<Axis, number>)} params.maxDistance
+         */
+        const createSideCardsMouseFollowAnimation = ({ elementsPerCategory, maxRotation, maxDistance }) => {
+
+            const power2Ease = gsap.parseEase('power2.out');
+
+            // power2EaseSymmetric is the same as power2Ease but symmetric on 1/2 ("y" goes from 1 to 0 when "x=progress" goes from 0 to 1)
+            /** @param {number} progress */
+            const power2EaseSymmetric = progress => power2Ease(1 - progress);
+
+            /** @type {(distanceProgress: {x: number; y: number}) => {x: number; y: number}} */
+            const distanceEasing = distanceProgress => {
+
+                const clampP = gsap.utils.clamp(-1, 1);
+
+                /** @param {number} progress */
+                const easing = progress => {
+                    const p = clampP(progress);
+                    const easeX = power2Ease(Math.abs(p));
+
+                    return p < 0 ? -easeX : easeX;
+                };
+
+                // This term is used to make the "y" component goes slower when "x" is going further
+                const alpha = power2EaseSymmetric(Math.abs(clampP(distanceProgress.x)));
+
+                return {
+                    x: easing(distanceProgress.x),
+                    y: alpha * easing(distanceProgress.y)
+                };
+            };
+
+            /** @param {Record<Axis,number>} distanceProgress */
+            const distanceProgressToRotation = distanceProgress => {
+                return Object.fromEntries([ 'x', 'y' ].map(axis => [
+                    axis,
+                    gsap.utils.mapRange(-1, 1, -maxRotation[ axis ], maxRotation[ axis ], distanceProgress[ axis === 'x' ? 'y' : 'x' ])
+                ]));
+            };
+
+            const cardsMouseFollowAnimation = elementsPerCategory.map(({ wrapper }) => {
+
+                // we need to store the initial rotation values to add the new ones
+                let rotationStart = undefined;
+
+                const mouseFollower = _.createMouseFollower({
+                    items: [ wrapper ],
+                    distanceEasing,
+                    maxDistance: typeof maxDistance === 'function' ? maxDistance({ wrapper }) : maxDistance,
+                    onStart: () => {
+                        rotationStart = {
+                            x: gsap.getProperty(wrapper, 'rotationX'),
+                            y: gsap.getProperty(wrapper, 'rotationY')
+                        };
+                    },
+                    onMouseMove: data => {
+                        const d = mouseFollower.getDistanceEase(data);
+
+                        const card = /** @type {HTMLElement} */ (data.item.closest('.card'));
+
+                        if (!card)
+                            throw new Error(`The card is not found for the element: ${data.item}`);
+
+                        const deltaRotation = distanceProgressToRotation(d);
+
+                        gsap.to(data.item, {
+                            duration: 0.5,
+                            transformPerspective: 1000,
+                            rotationX: rotationStart.x + deltaRotation.x,
+                            rotationY: rotationStart.y - deltaRotation.y,
+                            ease: 'power2.out'
+                        });
+                    }
+                });
+
+                return { mouseFollower, item: wrapper };
+            });
+
+            return cardsMouseFollowAnimation;
+        };
+
+
+        /** @typedef {ReturnType<typeof createSideCardsMouseFollowAnimation>} SideCardsMouseAnimation} */
+
+        /**
+         * @param {HTMLElement[]} cards
+         */
+        const createGallerySlider = cards => {
+
+            // cards.forEach(card => gsap.set(card, { transformPerspective: 800 }));
+            cards.forEach(card => gsap.set(card, { transformOrigin: 'center center' }));
+
+            const menuContainer = _.queryThrow('.uc-gallery-menu .t959__container');
+            // const frame =  cards[0].closest('.cards').querySelector('.gallery-background .t-container');
+
+            const sliderWrapper = _.queryThrow('.slider-wrapper');
+            const galleryBackgroundFrame = _.queryThrow('.gallery-background .t-container');
+
+            gsap.set(sliderWrapper, { width: galleryBackgroundFrame.getBoundingClientRect().width });
+
+            const slider = _.GallerySlider.create({
+                cards,
+                dtStagger: 0.1,
+                duration: 0.1 * (cards.length - 1), // duration of the card animation from x = xPercent% to -xPercent%
+                // translation of the card at the beginning of the animation (card side by side => at 1 dt, 100% cards' width)
+                xPercent2: ({ dtStagger }) => {
+                    const w2 = (menuContainer.getBoundingClientRect().width - cards[ 0 ].getBoundingClientRect().width) / 2;
+                    return 1.4 * 100 * (w2 / cards[ 0 ].getBoundingClientRect().width);
+                }, //  0.5 * (100 / dtStagger) / 2,
+                xPercent: ({ dtStagger }) => (100 / dtStagger) / 2,
+                animateCard: ({ item, xPercent, duration: T }) => {
+
+                    // duration of the card animation from x = xPercent% to -xPercent%
+
+                    const tl = gsap.timeline();
+
+                    const transformationSettings = {
+                        duration: T, ease: 'none', immediateRender: false
+                    };
+
+                    const symmetricTransformationSettings = {
+                        duration: T / 2, yoyo: true, repeat: 1, ease: 'none', immediateRender: false
+                    };
+
+
+                    /**
+                     * @param {gsap.TweenVars} from
+                     * @param {gsap.TweenVars} to
+                     * @param {gsap.Position} time
+                     * @param {'symetric' | 'normal' } type
+                     */
+                    const addFromTo = (from, to, time, type) => {
+                        return tl.fromTo(item, from, {
+                            ...to,
+                            ...(type === 'symetric' ? symmetricTransformationSettings : transformationSettings)
+                        }, time);
+                    };
+
+
+                    addFromTo({ opacity: 0.3, zIndex: 1 }, { opacity: 1, zIndex: 100, ease: 'power1.in' }, 0, 'symetric');
+                    addFromTo({ scaleX: 0.3, scaleY: 1 }, { scaleX: 1, scaleY: 1, ease: 'expo.in' }, 0, 'symetric');
+                    addFromTo({ xPercent }, { xPercent: -xPercent }, 0, 'normal');
+
+                    // to offset the move on axis X after rotation around Y
+                    // with the perspective, it moves the cards on the sides
+
+                    const customEase = gsap.parseEase(
+                        CustomEase.create('custom', 'M0,0 C0.077,0.345 0.198,1.076 0.33,1 0.669,0.802 1,0.091 1,0')
+                    );
+
+                    tl.fromTo(_.queryThrow('.t156', item),
+                        { xPercent: 0 },
+                        {
+                            xPercent: -24,
+                            ...transformationSettings,
+                            duration: T / 2,
+                            ease: customEase
+                            // t => t < 0.5 ? customEase(2 * t) : customEase(2 * (1 - t))
+                        },
+                        0
+                    );
+
+                    tl.fromTo(_.queryThrow('.t156', item),
+                        { xPercent: 0 },
+                        {
+                            xPercent: 24,
+                            ...transformationSettings,
+                            duration: T / 2,
+                            ease: t => customEase(1 - t)
+                            // t => t < 0.5 ? customEase(2 * t) : customEase(2 * (1 - t))
+                        },
+                        T / 2,
+                    );
+
+
+                    addFromTo({ rotateY: -80, rotateZ: 5 }, { rotateY: 80, rotateZ: -5 }, 0, 'normal');
+                    addFromTo({ z: -1350, rotateX: -5 }, { z: 0, rotateX: 0 }, 0, 'symetric');
+
+                    return tl;
+                },
+
+                animateCard2: ({ item, xPercent, duration: T }) => {
+
+                    // duration of the card animation from x = xPercent% to -xPercent%
+
+                    const tl = gsap.timeline();
+
+                    const transformationSettings = {
+                        duration: T, ease: 'none', immediateRender: false
+                    };
+
+                    const symmetricTransformationSettings = {
+                        duration: T / 2, yoyo: true, repeat: 1, ease: 'none', immediateRender: false
+                    };
+
+
+                    /**
+                     * @param {gsap.TweenVars} from
+                     * @param {gsap.TweenVars} to
+                     * @param {gsap.Position} time
+                     * @param {'symetric' | 'normal' } type
+                     */
+                    const addFromTo = (from, to, time, type) => {
+                        return tl.fromTo(item, from, {
+                            ...(type === 'symetric' ? symmetricTransformationSettings : transformationSettings),
+                            ...to,
+                        }, time);
+                    };
+
+
+                    // translate(-116.67%, 0%) translate3d(0px, 0px, 30px) rotate(-2deg) rotateY(60deg) rotateX(4deg) scale(0.4, 0.8)
+
+                    addFromTo({ opacity: 0.5, zIndex: 1 }, { opacity: 1, zIndex: 100, ease: 'power1.in' }, 0, 'symetric');
+
+                    // addFromTo({ scaleX: 0.3, scaleY: 0.8 }, { scaleX: 1, scaleY: 1, ease: 'expo.in' }, 0, 'symetric');
+                    addFromTo({ scaleY: 0.8 }, { scaleY: 1, ease: 'expo.in' }, 0, 'symetric');
+
+
+
+
+                    const customEase = gsap.parseEase(
+                        CustomEase.create("custom", "M0,0 C0,0 0.909,-0.052 0.944,0.2 0.994,0.573 1,1 1,1 ")
+                    );
+
+
+                    addFromTo({ scaleX: 0.3 }, { scaleX: 1, ease: customEase }, 0, 'symetric');
+
+
+
+                    addFromTo({ xPercent }, { xPercent: -xPercent }, 0, 'normal');
+
+                    const customEase2 = gsap.parseEase(
+                        CustomEase.create("custom", "M0,0 C0,0 0.193,0.153 0.348,0.32 0.486,0.469 0.516,0.557 0.63,0.697 0.802,0.906 1,0 1,0 ")
+                    );
+
+
+                    tl.fromTo(_.queryThrow('.t156', item),
+                        { xPercent: 0 },
+                        {
+                            xPercent: 100,
+                            ...transformationSettings,
+                            duration: T / 2,
+                            ease: customEase2
+                            // t => t < 0.5 ? customEase(2 * t) : customEase(2 * (1 - t))
+                        },
+                        0
+                    );
+
+                    tl.fromTo(_.queryThrow('.t156', item),
+                        { xPercent: 0 },
+                        {
+                            xPercent: -100,
+                            ...transformationSettings,
+                            duration: T / 2,
+                            ease: t => customEase2(1 - t)
+                            // t => t < 0.5 ? customEase(2 * t) : customEase(2 * (1 - t))
+                        },
+                        T / 2
+                    );
+
+
+                    // addFromTo({ rotateY: -60 }, { rotateY: 60, ease:   }, 0, 'normal');
+
+                    tl.fromTo(item,
+                        { rotateY: -60 },
+                        {
+                            rotateY: 0,
+                            ...transformationSettings,
+                            duration: T / 2,
+                            ease: customEase
+                            // t => t < 0.5 ? customEase(2 * t) : customEase(2 * (1 - t))
+                        },
+                        0
+                    );
+
+                    tl.fromTo(item,
+                        { rotateY: 0 },
+                        {
+                            rotateY: 60,
+                            ...transformationSettings,
+                            duration: T / 2,
+                            ease: t => 1 - customEase(1 - t)
+                            // t => t < 0.5 ? customEase(2 * t) : customEase(2 * (1 - t))
+                        },
+                        T / 2,
+                    );
+
+                    addFromTo({ rotateZ: 2 }, { rotateZ: -2 }, 0, 'normal');
+                    addFromTo({ z: -30, rotateX: -4 }, { z: 0, rotateX: 0 }, 0, 'symetric');
+
+                    return tl;
+                }
+            });
+
+            return slider;
+        };
+
+
+
+        /** @typedef {ReturnType<typeof createGallerySlider>} GallerySlider */
+
+        /**
+         * @param {Object} params
+         * @param {HTMLElement} params.galleryBackground
+         * @param {HTMLElement[]} params.cards
+         */
+        const createSideCardsScrollFollow = ({ galleryBackground, cards }) => {
+
+            const galleryBackgroundContainer = galleryBackground;
+            const item = _.queryThrow('.t156__item', galleryBackgroundContainer);
+
+            const imageHeight = _.getRect(item).height;
+
+            const cardSidesTL = gsap.timeline({
+                scrollTrigger: {
+                    markers: false,
+                    trigger: galleryBackgroundContainer,
+                    scrub: 1,
+                    start: `center-=${imageHeight / 2} bottom`,
+                    end: `center+=${imageHeight / 2 + imageHeight} bottom`
+                }
+            });
+
+            /** @param {number} activeI */
+            const sideCards = activeI => cards.filter((_, i) => i !== activeI).map(c => _.queryThrow('.t-container', c));
+
+
+            /**
+             * @param {number} activeI
+             * @returns {gsap.core.Timeline}
+             */
+            const create = activeI => {
+
+                cardSidesTL.from(sideCards(activeI), {
+                    y: -imageHeight / 2,
+                    ease: 'power4.out',
+                    duration: 0.5
+                }, 0);
+
+                cardSidesTL.to(sideCards(activeI), {
+                    y: imageHeight / 2,
+                    ease: 'power4.out',
+                    duration: 0.5
+                }, 0.5);
+
+
+                cardSidesTL.scrollTrigger?.refresh();
+                return cardSidesTL;
+            };
+
+            /** @param {number} activeI */
+            const clear = activeI => {
+                gsap.set(sideCards(activeI), { clearProps: 'y' });
+                cardSidesTL.clear();
+            };
+
+            return { create, clear, kill: () => cardSidesTL.revert() };
+        };
+
+
+        /** @typedef {ReturnType<typeof createSideCardsScrollFollow>} SideCardsScrollFollow */
+
+        /** @param {HTMLElement} cardsBlock */
+        const createGalleryApparationAnimation = cardsBlock => {
+            return gsap
+                .timeline({ paused: true })
+                .to(cardsBlock, { opacity: 1, ease: 'expo.out', duration: 0.7 });
+        };
+
+        /**
+         * @param {object} params
+         * @param {import('./gallery-layout.js').Elements} params.elements
+         */
+        const createGalleryAnimation = ({ elements }) => {
+
+            const { menuContainer, menuItems, cards, galleryTitle } = elements;
+
+            const galleryMenu = _.galleryMenu.getGalleryMenu(elements);
+            galleryMenu.setMenuItemsImagesStyle([ { prop: 'background-position', mode: 'lg' } ]);
+
+            /** @type {GallerySlider | undefined} */
+            let slider = undefined;
+
+            /** @type {SideCardsMouseAnimation | undefined} */
+            let sideCardsMouseFollowAnimation = undefined;
+
+            const a = () => {
+                sideCardsMouseFollowAnimation?.forEach(({ mouseFollower }) => mouseFollower.stop());
+
+                sideCardsMouseFollowAnimation = createSideCardsMouseFollowAnimation({
+                    elementsPerCategory: elements.elementsPerCategory,
+                    maxRotation: { x: 3, y: 6 },
+                    maxDistance: ({ wrapper }) => {
+                        const { width, height } = _.getRect(wrapper);
+                        return { x: 0.5 * width, y: 0.5 * height };
+                    }
+                });
+            };
+
+            _.onEvent(_.EventNames.gallery.resize, a);
+            _.onEvent(_.EventNames.gallery.enter, a);
+
+            /** @type {SideCardsScrollFollow | undefined} */
+            let sideCardsScrollFollow = undefined;
+
+
+            const b = () => {
+                sideCardsScrollFollow?.kill();
+
+                sideCardsScrollFollow = createSideCardsScrollFollow({
+                    galleryBackground: _.queryThrow('.gallery-background .t-container', elements.cardsBlock),
+                    cards: elements.cards
+                });
+            };
+
+            _.onEvent(_.EventNames.gallery.resize, b);
+            _.onEvent(_.EventNames.gallery.enter, b);
+
+            const animateMenuToSmallState = () => {
+                // we scroll to the menu and make it smaller
+                return gsap.timeline()
+                    .to(window, { scrollTo: { y: menuContainer, offsetY: 25 }, duration: 1, ease: 'expo.out' })
+                    .to(menuContainer, { height: 120, duration: 1, ease: 'expo.out' }, '<10%');
+            };
+
+
+            /**
+             * @param {number} i
+             * @param {'add'|'remove'} action
+             */
+            const flipTitles = (i, action) => {
+                const { galleryTitleHeader, menuItemsTitles } = elements;
+
+                const title = menuItemsTitles[ i ];
+
+                if (action === 'add') {
+                    galleryTitleHeader.innerHTML = title.innerHTML;
+
+                    galleryTitleHeader.dataset.flipId = 'gallery-title';
+                    title.dataset.flipId = 'gallery-title';
+                } else {
+                    galleryTitleHeader.innerHTML = '';
+                }
+
+                const titleState = Flip.getState([ title, galleryTitleHeader ]);
+
+                title.classList[ action ]('active');
+                galleryTitleHeader.classList[ action ]('active');
+
+                Flip.from(titleState, {
+                    duration: 0.4, ease: action === 'add' ? 'expo.out' : 'expo.in', toggleClass: 'flipping'
+                });
+            };
+
+
+            const wrapI = gsap.utils.wrap(0, menuItems.length);
+
+            /**
+             * @param {number} i 
+             * @param {'add'|'remove'} action 
+             */
+            const setStateCards = (i, action) => {
+                cards[ wrapI(i) ].dataset.cardState = action === 'add' ? 'active' : '';
+                cards[ wrapI(i - 1) ].dataset.cardState = action === 'add' ? 'left' : '';
+                cards[ wrapI(i + 1) ].dataset.cardState = action === 'add' ? 'right' : '';
+            };
+
+
+            /** @param {number} activeI */
+            const setZoomableCard = activeI => {
+
+                /**
+                 * @param {HTMLImageElement} img
+                 * @param {boolean} isActive
+                 */
+                const setZoomable = (img, isActive) => {
+                    if (isActive) {
+                        img.dataset.imgZoomUrl = img.dataset.imgZoomUrl || img.dataset.galleryImgZoomUrl;
+                        delete img.dataset.galleryImgZoomUrl;
+                    } else {
+                        img.dataset.galleryImgZoomUrl = img.dataset.galleryImgZoomUrl || img.dataset.imgZoomUrl;
+                        img.dataset.imgZoomUrl = '';
+                    }
+                };
+
+                // we need to wait next tick because first will be called document.addEventListener("click", function(t) {
+                // in tilda-zoom-2.0.min.js -> t_zoom__initFullScreenImgOnClick
+                // Otherwise, the image will get zoom as we set the zoomable attribute of the next active card
+                setTimeout(() => {
+                    elements.cards.forEach((card, i) => {
+                        const images = /**@type {HTMLImageElement[]} */(_.queryAllThrow('img', card));
+                        images.forEach(img => setZoomable(img, activeI === i));
+                    });
+                }, 0);
+            };
+
+
+            /**
+             * @param {object} params
+             * @param {number | undefined} params.enterI
+             * @param {number | undefined} params.leaveI
+             * @param {boolean | undefined} [params.onlySlider]
+             */
+            const animateSlider = ({ enterI, leaveI, onlySlider }) => {
+                slider = slider || createGallerySlider(cards);
+
+                /** @type {Promise<void> | undefined} */
+                let sliderTL$ = undefined;
+
+                const isFirst = leaveI === undefined && enterI !== undefined;
+
+                if (onlySlider) {
+                    if (leaveI !== undefined)
+                        setStateCards(leaveI, 'remove');
+
+                    if (enterI !== undefined) {
+                        sliderTL$ = slider.goTo(enterI).then(() => {});
+                        setZoomableCard(enterI);
+                        setStateCards(enterI, 'add');
+                    }
+
+                    return sliderTL$;
+                }
+
+                if (isFirst) {
+                    animateMenuToSmallState();
+                    gsap.to(galleryTitle, { opacity: 1, duration: 0.5, ease: 'expo.out' });
+                }
+
+
+                if (leaveI !== undefined) {
+                    setStateCards(leaveI, 'remove');
+
+                    sideCardsMouseFollowAnimation?.forEach(({ mouseFollower }) => mouseFollower.stop());
+                    flipTitles(leaveI, 'remove');
+                }
+
+                if (enterI !== undefined)
+                    sliderTL$ = slider.goTo(enterI).then(() => {});
+
+
+                if (enterI !== undefined) {
+
+                    setStateCards(enterI, 'add');
+                    setZoomableCard(enterI);
+
+                    sliderTL$?.then(() => {
+                        gsap.to(sideCardsMouseFollowAnimation?.[ wrapI(enterI) ].item, {
+                            rotateX: 0, rotateY: 0, duration: 0.2, ease: 'power4.out'
+                        });
+
+                        sideCardsMouseFollowAnimation?.[ wrapI(enterI - 1) ].mouseFollower.start();
+                        sideCardsMouseFollowAnimation?.[ wrapI(enterI + 1) ].mouseFollower.start();
+                    });
+
+                    flipTitles(enterI, 'add');
+                }
+
+                if (leaveI !== undefined)
+                    sideCardsScrollFollow?.clear(leaveI);
+
+                if (enterI !== undefined)
+                    sideCardsScrollFollow?.create(enterI);
+
+                return sliderTL$;
+            };
+
+
+
+            const setActiveTitle = _.setClassName(elements.galleryTitle, 'active');
+            const setActiveCardsBlock = _.setClassName(elements.cardsBlock, 'active');
+
+            const cardsAppearAnimation = createGalleryApparationAnimation(elements.cardsBlock);
+
+            /** @param {'add'|'remove'} action */
+            const animateCardsApparition = action => {
+                setActiveCardsBlock(action);
+
+                const tl = action === 'add' ? cardsAppearAnimation.play() : cardsAppearAnimation.reverse();
+                return tl;
+            };
+
+            /** @param {'add'|'remove'} action */
+            const activateCardTitles = action => {
+                setActiveTitle(action);
+                galleryMenu.setMenuItemsImagesStyle([ { prop: 'background-position', mode: action === 'add' ? 'xs' : 'lg' } ]);
+            };
+
+
+            window.addEventListener('resize', () => {
+                _.dispatchEvent(_.EventNames.gallery.resize);
+            }, { passive: true });
+
+            return { animateSlider, animateCardsApparition, activateCardTitles };
+        };
+
+
+
+        return { createGalleryAnimation, createGallerySlider };
+
+    });
+
+
+
+
+</script>

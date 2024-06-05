@@ -1,5 +1,10 @@
 // @ts-check
 
+/**
+ * @typedef {import("gsap").gsap}
+ */
+
+
 
 /** @param {any} data */
 const logThrottle = data => {
@@ -52,10 +57,10 @@ const onReady = readyState => cb => {
 
 /**
  * @param {string} event
- * @param {(event: Event) => void} fn
+ * @param {(event: CustomEvent) => void} fn
  * @param {Element | Window & typeof globalThis | undefined} el
  */
-const onEvent = (event, fn, el = window) => el.addEventListener(event, fn);
+const onEvent = (event, fn, el = window) => el.addEventListener(event, /** @type {EventListener} */ (fn));
 
 /**
  * @param {string} event
@@ -90,6 +95,25 @@ const getRect = el => el.getBoundingClientRect();
  * @returns {(action: string) => void}
  */
 const setClassName = (el, className) => action => el?.classList[ action ](className);
+
+/**
+ * @param {gsap.EaseString | gsap.EaseFunction} ease
+ * @returns {gsap.EaseFunction}
+ */
+const makeEaseSShape = ease => {
+    const parsedEase = gsap.parseEase(ease);
+    return t => t < 0.5 ? 0.5 * parsedEase(2 * t) : 1 - 0.5 * parsedEase(2 * (1 - t));
+};
+
+/**
+ * @param {gsap.EaseString | gsap.EaseFunction} ease
+ * @returns {gsap.EaseFunction}
+ */
+const makeEaseSymmetric = ease => {
+    const parsedEase = gsap.parseEase(ease);
+    return t => t < 0.5 ? parsedEase(2 * t) : parsedEase(2 * (1 - t));
+};
+
 
 /** @param {() => void | Record<string, any>} fn */
 const define = fn => {
@@ -133,7 +157,9 @@ const _ = {
         }
 
         return /** @type {HTMLElement} */ (elt);
-    }
+    },
+    makeEaseSShape,
+    makeEaseSymmetric
     // ...gsap.utils
 };
 
