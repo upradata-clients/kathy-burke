@@ -37,7 +37,7 @@
  * @param {Partial<Record<'x'|'y', { min?: number; max?: number;}>>} [params.progressClamp]
  * @param {(data: MouseFollowerData) => void} params.onMouseMove
  * @param {() => void} [params.onStart]
- * @param {() => void} [params.onStop]
+ * @param {() => void | Promise<void>} [params.onStop]
  */
 const createMouseFollower = params => {
     const {
@@ -113,6 +113,10 @@ const createMouseFollower = params => {
 
     /** @type {(this: HTMLElement, ev: MouseEvent) => any} */
     const listener = ({ clientX: mouseX, clientY: mouseY }) => {
+        if (!isActive) {
+            console.log('not active');
+            return;
+        }
 
         items.forEach((item, i) => {
             const mouse = { x: mouseX, y: mouseY };
@@ -122,14 +126,18 @@ const createMouseFollower = params => {
         });
     };
 
+    let isActive = false;
+
     return {
         start: () => {
+            isActive = true;
             params.onStart?.();
             elementToListenTheMouse.addEventListener('mousemove', listener, { passive: true });
         },
         stop: () => {
-            params.onStop?.();
+            isActive = false;
             elementToListenTheMouse.removeEventListener('mousemove', listener, {});
+            return params.onStop?.();
         },
         getDistanceEase
     };

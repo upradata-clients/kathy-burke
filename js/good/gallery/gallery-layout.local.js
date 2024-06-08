@@ -20,19 +20,6 @@ const _ = /** @type {any} */ (window)._;
 /** @typedef {{ images: HTMLElement[]; wrapper: HTMLElement; block: HTMLElement; }} CategoryElements} */
 
 
-/**
- * @param {HTMLElement} element
- * @param {HTMLElement} parent 
- */
-const centerPositionedElement = (element, parent) => {
-    // element is absolutely positioned relative to the parent, we need to center it
-    const { width: parentWidth } = _.getRect(parent);
-    const { width: itemWidth } = _.getRect(element);
-
-    const left = (parentWidth - itemWidth) / 2;
-    gsap.set(element, { left });
-};
-
 
 /**
  * @param {GalleryCategories} galleryCategories
@@ -139,13 +126,32 @@ const createElements = galleryCategories => {
     const galleryTitle = _.queryThrow('.uc-gallery-title');
     const galleryTitleHeader = _.queryThrow('.t030__title', galleryTitle);
 
+
+    const cards = _.queryAllThrow('.card');
+
+    const elementsPerCategory = cards.map(card => ({
+        block: card,
+        wrapper: _.queryThrow('.t156__wrapper', card),
+        images: _.queryAllThrow('.t156__item', card)
+    }));
+
     return {
         menuContainer,
         menuItems,
         menuItemsTitles,
         galleryTitle,
         galleryTitleHeader,
-        ...createGalleriesLayout(galleryCategories)
+        elementsPerCategory: cards.map(card => ({
+            block: card,
+            wrapper: _.queryThrow('.t156__wrapper', card),
+            images: _.queryAllThrow('.t156__item', card)
+        })),
+        imagesPerCategory: elementsPerCategory.map(c => c.images),
+        allImages: elementsPerCategory.flatMap(c => c.images),
+        cards,
+        cardsBlock: _.queryThrow('#cards'),
+        cardsWrapper: _.queryThrow('#cards .cards__wrapper'),
+        galleryBackground: _.queryThrow('.gallery-background')
     };
 };
 

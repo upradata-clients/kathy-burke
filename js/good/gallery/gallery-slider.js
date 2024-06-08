@@ -29,7 +29,7 @@
  * @param {CardAnimation} [params.animateCard]
  * @param {Eases} [params.eases]
  * @param {(data: { dtStagger: number; previousDuration: number; from: number; to: number; }) => number} [params.moveToDuration]
- * @param {() => void} [params.onStop]
+ * @param {() => void | Promise<void>} [params.onStop]
  */
 const createGallerySlider = params => {
     const {
@@ -178,16 +178,9 @@ const createGallerySlider = params => {
 
 
     /**
-     * @template {gsap.core.Timeline | gsap.core.Tween} T
-     * @param {T} timelineOrTween
-     * @returns {Promise<void>}
-     */
-    const promisifyTimelineOrTween = timelineOrTween => new Promise(resolve => timelineOrTween.then(() => resolve()));
-
-
-    /**
      * Moves the scrub to a specific time.
      * @param {number} t - The time to move the scrub to.
+     * @returns {Promise<void>}
      */
     const moveScrubTo = t => {
         scrub.duration(
@@ -195,7 +188,13 @@ const createGallerySlider = params => {
         );
 
         scrub.vars.t = t;
-        return promisifyTimelineOrTween(scrub.invalidate().restart());
+
+        /** @type {Promise<void>} */
+        const p$ = new Promise(resolve => scrub.eventCallback('onComplete', () => { resolve(); }));
+
+        scrub.invalidate().restart();
+
+        return p$;
     };
 
     /**
@@ -217,8 +216,8 @@ const createGallerySlider = params => {
 
     const prev = () => moveScrubTo(scrub.vars.t - dtStagger);
 
-    const stop = () => {
-        params.onStop?.();
+    const stop = async () => {
+        await params.onStop?.();
         seamlessLoop.kill();
         scrub.kill();
     };

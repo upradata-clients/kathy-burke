@@ -57,18 +57,25 @@ const createSideCardsMouseFollowAnimation = ({ elementsPerCategory, maxRotation,
 
     const cardsMouseFollowAnimation = elementsPerCategory.map(({ wrapper }) => {
 
+        /** @typedef {{ x: number; y: number;}}  Point2D */
+
         // we need to store the initial rotation values to add the new ones
-        let rotationStart = undefined;
+        /** @type {Point2D} */
+        let rotationStart = { x: 0, y: 0 };
+
+        // -maxRotation.x <= rotation <= maxRotation.x (the same for y)
+        const rNormMax = Math.sqrt((2 * maxRotation.x) ** 2 + (2 * maxRotation.y) ** 2);
+
 
         const mouseFollower = _.createMouseFollower({
             items: [ wrapper ],
             distanceEasing,
             maxDistance: typeof maxDistance === 'function' ? maxDistance({ wrapper }) : maxDistance,
             onStart: () => {
-                rotationStart = {
+                rotationStart = /** @type {Point2D} */({
                     x: gsap.getProperty(wrapper, 'rotationX'),
                     y: gsap.getProperty(wrapper, 'rotationY')
-                };
+                });
             },
             onMouseMove: data => {
                 const d = mouseFollower.getDistanceEase(data);
@@ -80,20 +87,45 @@ const createSideCardsMouseFollowAnimation = ({ elementsPerCategory, maxRotation,
 
                 const deltaRotation = distanceProgressToRotation(d);
 
+                const prevRotation = /** @type {Point2D} */({
+                    x: gsap.getProperty(data.item, 'rotationX'),
+                    y: gsap.getProperty(data.item, 'rotationY')
+                });
+
+                const nextRotation = {
+                    x: rotationStart.x + deltaRotation.x,
+                    y: rotationStart.y - deltaRotation.y
+                };
+
+                const rNorm = Math.sqrt((nextRotation.x - prevRotation.x) ** 2 + (nextRotation.y - prevRotation.y) ** 2);
+
                 gsap.to(data.item, {
-                    duration: 0.5,
+                    duration: 0.5 + 1.0 * rNorm / rNormMax,
                     transformPerspective: 1000,
                     rotationX: rotationStart.x + deltaRotation.x,
                     rotationY: rotationStart.y - deltaRotation.y,
                     ease: 'power2.out'
                 });
+            },
+            onStop: () => {
+                // gsap.set(wrapper, { rotateX: 0, rotateY: 0 }); 
+                gsap.killTweensOf(wrapper);
+                return new Promise(resolve => gsap.set(wrapper, {
+                    clearProps: 'all', onComplete: resolve
+                }));
             }
         });
 
         return { mouseFollower, item: wrapper };
     });
 
-    return cardsMouseFollowAnimation;
+    return {
+        animations: cardsMouseFollowAnimation,
+        start: () => cardsMouseFollowAnimation.forEach(({ mouseFollower }) => mouseFollower.start()),
+        stop: async () => {
+            await Promise.allSettled(cardsMouseFollowAnimation.map(async ({ mouseFollower, item }, i) => mouseFollower.stop()));
+        }
+    };
 };
 
 
@@ -101,30 +133,28 @@ const createSideCardsMouseFollowAnimation = ({ elementsPerCategory, maxRotation,
 
 /**
  * @param {HTMLElement[]} cards
+ * @param {import('./gallery-layout.js').Elements} elements
  */
-const createGallerySlider = cards => {
+const createGallerySlider = (cards, elements) => {
 
     // cards.forEach(card => gsap.set(card, { transformPerspective: 800 }));
     cards.forEach(card => gsap.set(card, { transformOrigin: 'center center' }));
 
-    const sliderWrapper = _.queryThrow('.slider-wrapper');
-    const galleryBackgroundFrame = _.queryThrow('.gallery-background .t-container');
+    const sliderWrapper = _.queryThrow('.slider-wrapper', elements.cardsWrapper);
+    const galleryBackgroundFrame = _.queryThrow('.t-container', elements.galleryBackground);
 
-    gsap.set(sliderWrapper, { width: galleryBackgroundFrame.getBoundingClientRect().width });
+    gsap.set(sliderWrapper, { width: gsap.getProperty(galleryBackgroundFrame, 'width') });
 
     const slider = _.GallerySlider.create({
         cards,
         dtStagger: 0.1,
         duration: 0.1 * (cards.length - 1), // duration of the card animation from x = xPercent% to -xPercent%
         // translation of the card at the beginning of the animation (card side by side => at 1 dt, 100% cards' width)
-        xPercent: ({ dtStagger }) => (100 / dtStagger) / 2,
+        xPercent: ({ dtStagger }) => 0.85 * (100 / dtStagger) / 2,
         eases: {
             time: 'power3.inOut',
         },
         animateCard: ({ item, xPercent, duration: T }) => {
-
-            // duration of the card animation from x = xPercent% to -xPercent%
-
             const tl = gsap.timeline();
 
             const transformationSettings = {
@@ -146,13 +176,13 @@ const createGallerySlider = cards => {
              */
             const addFromTo = ({ from, to, time, type, el = item }) => {
                 return tl.fromTo(el, from, {
-                    ...to,
-                    ...(type === 'symetric' ? symmetricTransformationSettings : transformationSettings)
+                    ...(type === 'symetric' ? symmetricTransformationSettings : transformationSettings),
+                    ...to
                 }, time);
             };
 
 
-            addFromTo({ from: { opacity: 0.3, zIndex: 1 }, to: { opacity: 1, zIndex: 100, ease: 'power1.in' }, time: 0, type: 'symetric' });
+            addFromTo({ from: { opacity: 0.4, zIndex: 1 }, to: { opacity: 1, zIndex: 100, ease: 'linear' }, time: 0, type: 'symetric' });
             addFromTo({ from: { scaleX: 0.3, scaleY: 1 }, to: { scaleX: 1, scaleY: 1, ease: 'expo.in' }, time: 0, type: 'symetric' });
             addFromTo({ from: { xPercent }, to: { xPercent: -xPercent }, time: 0, type: 'normal' });
 
@@ -190,6 +220,7 @@ const createGallerySlider = cards => {
             });
 
 
+
             addFromTo({ from: { rotateY: -80, rotateZ: 5 }, to: { rotateY: 80, rotateZ: -5 }, time: 0, type: 'normal' });
             addFromTo({ from: { z: -1350, rotateX: -5 }, to: { z: 0, rotateX: 0 }, time: 0, type: 'symetric' });
 
@@ -223,11 +254,11 @@ const createSideCardsScrollFollow = ({ galleryBackground, cards }) => {
 
     const cardSidesTL = gsap.timeline({
         scrollTrigger: {
-            markers: true,
+            markers: false,
             trigger: galleryBackgroundContainer,
-            scrub: 1,
-            start: `center-=${imageHeight / 2} bottom`,
-            end: `center+=${imageHeight / 2 + imageHeight} bottom`
+            scrub: 0.7,
+            start: `center-=${0.75 * imageHeight} bottom`,
+            end: `center+=${0.75 * imageHeight} bottom`
         }
     });
 
@@ -288,82 +319,64 @@ const createGalleryAnimation = ({ elements }) => {
     const galleryMenu = _.galleryMenu.getGalleryMenu(elements);
     galleryMenu.setMenuItemsImagesStyle([ { prop: 'background-position', mode: 'lg' } ]);
 
-    /**
-     * @template T
-     * @param {(instance : T | undefined) => T} create
-     * @returns {{ get: () => T; reset: () => void; }}
-     */
-    const lazyFactory = create => {
-        let instance = undefined;
 
-        return {
-            get: () => {
-                instance = instance || create(instance);
-                return instance;
-            },
-            reset: () => {
-                instance = create(instance);
+    const slider = _.lazyFactory(() => createGallerySlider(cards, elements))({
+        destroy: slider => slider.stop()
+    });
+    // /** @param {GallerySlider} slider */
+
+    const sideCardsMouseFollowAnimation = _.lazyFactory(
+        /** @param {number[]} indexes */
+        indexes => createSideCardsMouseFollowAnimation({
+            elementsPerCategory: elements.elementsPerCategory.filter((_, i) => indexes.includes(i)),
+            maxRotation: { x: 3, y: 6 },
+            maxDistance: ({ wrapper }) => {
+                const { width, height } = _.getRect(wrapper);
+                return { x: 0.5 * window.innerWidth / 2 /* width */, y: 0.5 * height };
             }
-        };
-
-    };
-
-
-    const slider = lazyFactory(
-        /** @param {GallerySlider | undefined} slider */
-        slider => {
-            slider?.stop();
-            return createGallerySlider(cards);
-        }
-    );
-
-    const sideCardsMouseFollowAnimation = lazyFactory(
-        /** @param {SideCardsMouseAnimation | undefined} sideCardsMouseFollowAnimation */
-        sideCardsMouseFollowAnimation => {
-            sideCardsMouseFollowAnimation?.forEach(({ mouseFollower }) => mouseFollower.stop());
-
-            return createSideCardsMouseFollowAnimation({
-                elementsPerCategory: elements.elementsPerCategory,
-                maxRotation: { x: 3, y: 6 },
-                maxDistance: ({ wrapper }) => {
-                    const { width, height } = _.getRect(wrapper);
-                    return { x: 0.5 * width, y: 0.5 * height };
-                }
-            });
-        }
-    );
-
-    const sideCardsScrollFollow = lazyFactory(
-        /** @param {SideCardsScrollFollow | undefined} sideCardsScrollFollow */
-        sideCardsScrollFollow => {
-            sideCardsScrollFollow?.kill();
-
-            return createSideCardsScrollFollow({
-                galleryBackground: _.queryThrow('.t-container', elements.galleryBackground),
-                cards: elements.cards
-            });
-        }
-    );
+        })
+    )({
+        destroy: sideCardsMouseFollowAnimation => sideCardsMouseFollowAnimation.stop(),
+        isParamsEqual: (a, b) => a.length === b.length && a.every((v, i) => v === b[ i ])
+    });
 
 
-    const createAnimations = () => {
+    const sideCardsScrollFollow = _.lazyFactory(() => createSideCardsScrollFollow({
+        galleryBackground: _.queryThrow('.t-container', elements.galleryBackground),
+        cards: elements.cards
+    }))({
+        destroy: sideCardsScrollFollow => sideCardsScrollFollow.kill()
+    });
+
+
+    /** {'immediate' | 'lazy' } action */
+    const resetFollowers = action => {
         sideCardsMouseFollowAnimation.reset();
         sideCardsScrollFollow.reset();
-        slider.reset();
     };
 
-    _.onEvent(_.EventNames.gallery.resize, createAnimations);
-    _.onEvent(_.EventNames.gallery.enter, createAnimations);
+    _.onEvent(_.EventNames.gallery.resize, resetFollowers);
+    // _.onEvent(_.EventNames.gallery.enter, resetFollowers);
 
 
 
-    const animateMenuToSmallState = () => {
-        // we scroll to the menu and make it smaller
-        return gsap.timeline()
-            .to(window, { scrollTo: { y: menuContainer, offsetY: 25 }, duration: 1, ease: 'expo.out' })
-            .to(menuContainer, { height: 120, duration: 1, ease: 'expo.out' }, '<10%');
+    let menuHeight = gsap.getProperty(menuContainer, 'height');
+
+    /** @param {'activate' | 'desactivate'} action */
+    const animateActivationMenu = action => {
+        galleryMenu.setMenuItemsImagesStyle([ { prop: 'background-position', mode: action === 'activate' ? 'xs' : 'lg' } ]);
+
+        if (action === 'activate') {
+            menuHeight = gsap.getProperty(menuContainer, 'height');
+
+            return gsap.timeline()
+                // we scroll to the menu and make it smaller
+                .to(window, { scrollTo: { y: menuContainer, offsetY: 25 }, duration: 1, ease: 'expo.out' })
+                .to(menuContainer, { height: 120, duration: 0.5, ease: 'expo.out' }, '<10%');
+        }
+
+        return gsap.timeline().to(menuContainer, { height: menuHeight, duration: 1, ease: 'expo.in' }, '<10%');
     };
-
 
     /**
      * @param {number} i
@@ -388,20 +401,19 @@ const createGalleryAnimation = ({ elements }) => {
         title.classList[ action ]('active');
         galleryTitleHeader.classList[ action ]('active');
 
-        Flip.from(titleState, {
+        return Flip.from(titleState, {
             duration: 0.4, ease: action === 'add' ? 'expo.out' : 'expo.in', toggleClass: 'flipping'
         });
     };
 
 
-    const wrapI = gsap.utils.wrap(0, menuItems.length);
 
     /**
      * @param {number} i 
      * @param {'add'|'remove'} action 
      */
     const setStateCards = (i, action) => {
-        cards[ wrapI(i) ].dataset.cardState = action === 'add' ? 'active' : '';
+        cards[ i ].dataset.cardState = action === 'add' ? 'active' : '';
         // cards[ wrapI(i - 1) ].dataset.cardState = action === 'add' ? 'left' : '';
         // cards[ wrapI(i + 1) ].dataset.cardState = action === 'add' ? 'right' : '';
     };
@@ -437,58 +449,86 @@ const createGalleryAnimation = ({ elements }) => {
 
 
     /**
-     * @param {object} params
-     * @param {number | undefined} params.enterI
-     * @param {number | undefined} params.leaveI
+     * @param {number} index
+     * @param {Object} params
      * @param {boolean} params.isActive
      */
-    const animateSlider = ({ enterI, leaveI, isActive }) => {
+    const activateSideCardsFollowers = async (index, { isActive }) => {
 
-        /** @type {Promise<void> | undefined} */
-        let sliderTL$ = undefined;
+        let p$ = Promise.resolve();
 
-        const isFirst = leaveI === undefined && enterI !== undefined;
+        // const sideCardsMouseFollowAnimationInstance = sideCardsMouseFollowAnimation.instance();
 
-        if (isFirst) {
-            if (isActive)
-                animateMenuToSmallState();
+        // if (sideCardsMouseFollowAnimationInstance) {
+        //     gsap.to(sideCardsMouseFollowAnimationInstance.animations[ index ].item, {
+        //         // rotateX: 0, rotateY: 0,/*  duration: 0.2, ease: 'power4.out' */
+        //         clearProps: 'all', duration: 0
+        //     });
+        // }
 
+        const indexes = cards.map((_, i) => i).filter(i => i !== index);
+
+        await sideCardsMouseFollowAnimation.instance()?.stop();
+        sideCardsMouseFollowAnimation.get(indexes).start();
+
+
+        if (isActive)
+            sideCardsScrollFollow.get().create(index);
+    };
+
+
+    /**
+     * @param {Object} params
+     * @param { 'activated' | 'activating' | 'desactivated' | 'desactivating' } params.state
+     * @param {number} params.from
+     * @param {number} params.to
+     * @param {boolean} params.isInit
+     */
+    const animateSlider = ({ from, to, state, isInit }) => {
+        console.log({ from, to, state, isInit });
+        /** @type {Promise<void>} */
+        let sliderTL$ = Promise.resolve();
+
+        const isSame = from === to;
+
+        if (isInit) {
             gsap.to(galleryTitle, { opacity: 1, duration: 0.5, ease: 'expo.out' });
         }
 
+        if (from !== -1) {
+            setStateCards(from, 'remove');
 
-        if (leaveI !== undefined) {
-            setStateCards(leaveI, 'remove');
+            // sideCardsMouseFollowAnimation.reset();
+            sliderTL$ = sliderTL$.then(() => sideCardsMouseFollowAnimation.instance()?.stop());
 
-            sideCardsMouseFollowAnimation.get().forEach(({ mouseFollower }) => mouseFollower.stop());
-            flipTitles(leaveI, 'remove');
+            if (!isSame && state !== 'desactivating')
+                flipTitles(from, 'remove');
         }
 
-        if (enterI !== undefined) {
-            setStateCards(enterI, 'add');
-            setZoomableCard(enterI);
+        if (to !== -1) {
+            setStateCards(to, 'add');
+            setZoomableCard(to);
 
-            sliderTL$ = slider.get().goTo(enterI).then(() => {});
+            // sideCardsMouseFollowAnimation.instance()?.animations.forEach(({ item }) => gsap.set(item, { rotateX: 0, rotateY: 0, }));
+            // elements.elementsPerCategory.forEach(({ wrapper }) => gsap.set(wrapper, { /* rotateX: 0, rotateY: 0 */clearProps: 'all' }));
 
-            sliderTL$?.then(() => {
-                gsap.to(sideCardsMouseFollowAnimation.get()[ wrapI(enterI) ].item, {
-                    rotateX: 0, rotateY: 0, duration: 0.2, ease: 'power4.out'
-                });
+            sliderTL$ = sliderTL$.then(() => slider.get().goTo(to));
 
-                sideCardsMouseFollowAnimation.get().forEach(({ mouseFollower }, i) => {
-                    if (i !== enterI)
-                        mouseFollower.start();
-                });
+            if (!isSame || isInit)
+                flipTitles(to, 'add');
+        };
+
+        if (from !== -1)
+            sideCardsScrollFollow.instance()?.clear(from);
+
+        if (isInit || state === 'activating' || state === 'desactivating')
+            resetFollowers();
+
+
+        if (to !== -1)
+            sliderTL$.then(() => {
+                activateSideCardsFollowers(to, { isActive: state === 'activated' || state === 'activating' });
             });
-
-            flipTitles(enterI, 'add');
-        }
-
-        if (leaveI !== undefined)
-            sideCardsScrollFollow.get().clear(leaveI);
-
-        if (enterI !== undefined)
-            sideCardsScrollFollow.get().create(enterI);
 
         return sliderTL$;
     };
@@ -496,27 +536,77 @@ const createGalleryAnimation = ({ elements }) => {
 
 
     const setActiveTitle = _.setClassName(elements.galleryTitle, 'active');
+    setActiveTitle('add');
+
     const setActiveCardsBlock = _.setClassName(elements.cardsBlock, 'active');
 
-    const cardsAppearAnimation = createGalleryApparationAnimation(elements.cardsBlock);
+    // const cardsAppearAnimation = createGalleryApparationAnimation(elements.cardsBlock);
+
+    // /** @param {'add'|'remove'} action */
+    // const animateCardsApparition = action => {
+    //     setActiveCardsBlock(action);
+
+    //     const tl = action === 'add' ? cardsAppearAnimation.play() : cardsAppearAnimation.reverse();
+    //     return tl;
+    // };
 
     /** @param {'add'|'remove'} action */
-    const animateCardsApparition = action => {
-        setActiveCardsBlock(action);
+    // const activateCardTitles = action => {
+    //     setActiveTitle(action);
+    //     galleryMenu.setMenuItemsImagesStyle([ { prop: 'background-position', mode: action === 'add' ? 'xs' : 'lg' } ]);
+    // };
 
-        const tl = action === 'add' ? cardsAppearAnimation.play() : cardsAppearAnimation.reverse();
-        return tl;
+
+    const galleryBgContainer = _.queryThrow('.t-container', elements.galleryBackground);
+    const sliderWrapper = _.queryThrow('.slider-wrapper', elements.cardsWrapper);
+
+    const bgWidthOnActive = '50vw';
+
+    const bgWidthAnimation = gsap.timeline({ paused: true })
+        .fromTo(galleryBgContainer, { width: gsap.getProperty(galleryBgContainer, 'width') }, { width: bgWidthOnActive, duration: 0.5, ease: 'expo.out' })
+        .to(sliderWrapper, { width: bgWidthOnActive, duration: 0.5, ease: 'expo.out' }, 0);
+
+    /**
+     * @param {'activate' | 'desactivate'} action
+     * @param {number} cardI
+     */
+    const animateActivationGallery = async (action, cardI) => {
+        setActiveCardsBlock(action === 'activate' ? 'add' : 'remove');
+
+        const p = _.promisifyTimeline;
+
+        await Promise.allSettled([
+            p(animateActivationMenu(action)),
+            p(action === 'activate' ? bgWidthAnimation.play() : bgWidthAnimation.reverse())
+        ]);
+
+        if (action === 'desactivate') {
+            activateSideCardsFollowers(cardI, { isActive: false });
+        }
     };
 
-    /** @param {'add'|'remove'} action */
-    const activateCardTitles = action => {
-        setActiveTitle(action);
-        galleryMenu.setMenuItemsImagesStyle([ { prop: 'background-position', mode: action === 'add' ? 'xs' : 'lg' } ]);
-    };
+    // const onGalleryResize = ({ isActive = false } = {}) => {
+    //     if (isActive) {
+    //         const frame = _.queryThrow('.t-container', elements.galleryBackground);
+    //         const { width } = _.getRect(frame);
 
-    return { animateSlider, animateCardsApparition, activateCardTitles };
+    //         if (width > 0) {
+    //             const sliderWrapper = _.queryThrow('.slider-wrapper', elements.cardsWrapper);
+    //             gsap.set(sliderWrapper, { width, left: '50%', xPercent: -50 });
+    //         }
+    //     }
+    // };
+
+    // _.onEvent(_.EventNames.gallery.resize, event => onGalleryResize(event.detail));
+
+    // _.onEvent(_.EventNames.gallery.enter, event => {
+    //     if (event.detail?.when === 'after')
+    //         onGalleryResize({ isActive: true });
+    // });
+
+    return { animateSlider, setActiveCardsBlock, animateActivationGallery };
 };
 
-
+/** @typedef {Parameters<ReturnType<(typeof createGalleryAnimation)>['animateSlider']>[0]} AnimateSliderParams */
 
 export { createGalleryAnimation, createGallerySlider };

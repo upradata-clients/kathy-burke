@@ -13,6 +13,7 @@
  * @returns {ImageSettings[]}
  */
 const getImagesSettings = images => {
+    return [];
 
     /** @param {string} name */
     const settingNameToProp = name => {

@@ -1,8 +1,44 @@
 // @ts-check
 
 
-/** @type {typeof import('../underscore.js')._} */
-const _ = /** @type {any} */ (window)._;
+import { gsap } from '../../../node_modules/gsap/index.js';
+Object.assign(window, { gsap });
+
+const getModules = async (...modules) => {
+    const exports = (await Promise.allSettled(modules)).map(res => res.status === 'fulfilled' ? res.value : undefined);
+
+    return exports.reduce((mods, mod) => ({ ...mods, ...mod }), {});
+};
+
+
+Object.assign(window, await getModules(
+    import('../../../node_modules/gsap/ScrollTrigger.js'),
+    import('../../../node_modules/gsap/CustomEase.js'),
+    import('../../../node_modules/gsap/Flip.js'),
+    import('../../../node_modules/gsap/ScrollToPlugin.js')
+));
+
+
+gsap.registerPlugin(Flip);
+gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(ScrollToPlugin);
+
+await import('./extra-header.js');
+
+
+const { _ } = await import('../underscore.js');
+
+Object.assign(_, await getModules(
+    import('../mouse-follow.js'),
+    import('../images-settings.js'),
+    import('./gallery-menu.js'),
+    import('./gallery-animation.js'),
+    import('./gallery-layout.local.js'),
+    import('./gallery-slider.js')
+));
+
+const { goTo: menuGoTo } = await import('./menu-hinter.js').then(({ addMenuHinter }) => addMenuHinter());
+_.menuGoTo = menuGoTo;
 
 _.EventNames.gallery = {
     enter: 'gallery:enter',
@@ -31,7 +67,7 @@ _.onLoad(() => {
 
     let isActive = false;
 
-    _.galleryMenu.createGalleryMenuListener({
+    const { goTo } = _.galleryMenu.createGalleryMenuListener({
         elements,
         onEnter: index => {
             isActive = true;
@@ -48,10 +84,11 @@ _.onLoad(() => {
         _.dispatchEvent(_.EventNames.gallery.resize, { isActive });
     }, { passive: true });
 
-    _.onEvent(_.EventNames.hero.firstScrubDone, () => {
-        _.dispatchEvent(_.EventNames.gallery.resize, { isActive });
-        galleryAnimation.animateSlider({ enterI: 3, leaveI: -1, isEntering: false, isLeaving: false });
-    });
+    // .onEvent(_.EventNames.hero.firstScrubDone, () => {
+    _.dispatchEvent(_.EventNames.gallery.resize, { isActive });
+    // galleryAnimation.animateSlider({ to: 3, from: -1, isInit: true, state: 'desactivated' });
+    goTo(3, 'desactivated');
+    // });
 
     // _.dispatchEvent(_.EventNames.gallery.resize, { isActive });
 
