@@ -1,19 +1,26 @@
 // @ts-check
 
-const addMenuHinter = () => {
 
-    const container = document.querySelector('#rec747864295 .t959__container');
-    const items = [ ...container.querySelectorAll('.t959__card') ];
+/** @type {typeof import('../underscore.js')._} */
+const _ = /** @type {any} */ (window)._;
 
 
-    container.querySelector('.t959__card-overlay').setAttribute('style', '');
+const initGalleryMenu = () => {
 
-    items.forEach(item => {
-        container.append(item);
+    const galleryMenuBlock = _.queryThrow('#rec747864295');
+
+    const galleryMenuContainer = _.queryThrow('.t959__container', galleryMenuBlock);
+    const galleryMenuCards = _.queryAllThrow('.t959__card', galleryMenuContainer);
+
+
+    _.queryThrow('.t959__card-overlay', galleryMenuContainer).setAttribute('style', '');
+
+    galleryMenuCards.forEach(item => {
+        galleryMenuContainer.append(item);
         item.classList.remove('t959__card_25');
     });
 
-    items[ 0 ].insertAdjacentHTML('beforeend', `
+    galleryMenuCards[ 0 ].insertAdjacentHTML('beforeend', `
         <div class="card--hint">
             <span class="hinter"></span>
             <span class="hinter"></span>
@@ -22,13 +29,48 @@ const addMenuHinter = () => {
     `.trim());
 
 
-    [ ...container.querySelectorAll('.t959__row') ].forEach(el => el.remove());
+    _.queryAllThrow('.t959__row', galleryMenuContainer).forEach(el => el.remove());
+
+    const hinter = _.queryThrow('.card--hint', galleryMenuCards[ 0 ]);
+    const hinterItems = _.queryAllThrow('.card--hint .hinter', galleryMenuCards[ 0 ]);
+
+
+    /** @param {number} i */
+    const hinterGoTo = i => {
+        const itemHovered = galleryMenuCards[ i ];
+
+        const state = Flip.getState(hinterItems, { props: 'opacity' });
+
+        itemHovered.append(hinter);
+        gsap.set(hinterItems, { opacity: 1 });
+
+        Flip.from(state, { duration: 0.5, ease: 'expo.inOut', stagger: 0.1, overwrite: true });
+    };
+
+
+    return {
+        galleryMenuBlock,
+        galleryMenuContainer,
+        galleryMenuCards,
+        hinter,
+        hinterItems,
+        hinterGoTo
+    };
+};
+
+
+
+/** @typedef {ReturnType<typeof initGalleryMenu>} GalleryMenu2 */
+
+
+/** @param {GalleryMenu2} params */
+const addMenuAppareanceAnimation = ({ galleryMenuCards, galleryMenuContainer }) => {
 
     // menu cards appear animation
-    gsap.from(items, {
+    gsap.from(galleryMenuCards, {
         scrollTrigger: {
             // markers: true,
-            trigger: container,
+            trigger: galleryMenuContainer,
             toggleActions: 'play none none reverse',
             start: 'center bottom'
         },
@@ -40,8 +82,18 @@ const addMenuHinter = () => {
         duration: 0.6,
         ease: 'power4.out'
     });
+};
 
 
+
+
+/** @param {GalleryMenu2} params */
+const addMenuOnHover = ({ galleryMenuCards, galleryMenuContainer, hinterGoTo, hinterItems }) => {
+
+    /**
+     * @param {HTMLElement} el
+     * @param {{ enter?: (this: HTMLElement, ev: PointerEvent) => any, leave?: (this: HTMLElement, ev: PointerEvent) => any }} callbacks
+     */
     const onHover = (el, callbacks) => {
         if (callbacks.enter)
             el.addEventListener('pointerenter', callbacks.enter);
@@ -49,42 +101,23 @@ const addMenuHinter = () => {
             el.addEventListener('pointerleave', callbacks.leave);
     };
 
-    const hinter = items[ 0 ].querySelector('.card--hint');
-    const hinters = [ ...hinter.querySelectorAll('.card--hint .hinter') ];
 
-    /** @param {number} i */
-    const goTo = i => {
-        const itemHovered = items[ i ];
+    let isActive = false;
 
-        const state = Flip.getState(hinters, { props: 'opacity' });
-
-        itemHovered.append(hinter);
-        gsap.set(hinters, { opacity: 1 });
-
-        Flip.from(state, { duration: 0.5, ease: 'expo.inOut', stagger: 0.1, overwrite: true });
-    };
-
-    const addHoverAnimation = () => {
-
-        let isActive = false;
-
-        onHover(container, {
-            enter: () => { isActive = true; },
-            leave: () => {
-                isActive = false;
-                gsap.to(hinters, { opacity: 0, duration: 0.2, ease: 'power4.out', stagger: 0.04, overwrite: true });
-            },
-        });
+    onHover(galleryMenuContainer, {
+        enter: () => { isActive = true; },
+        leave: () => {
+            isActive = false;
+            gsap.to(hinterItems, { opacity: 0, duration: 0.2, ease: 'power4.out', stagger: 0.04, overwrite: true });
+        },
+    });
 
 
-        items.forEach((item, i) => onHover(item, { enter: () => goTo(i) }));
-    };
+    galleryMenuCards.forEach((item, i) => onHover(item, { enter: () => hinterGoTo(i) }));
 
-
-    addHoverAnimation();
-
-    return { goTo };
 };
 
 
-export { addMenuHinter };
+
+
+export { addMenuAppareanceAnimation, addMenuOnHover, initGalleryMenu };

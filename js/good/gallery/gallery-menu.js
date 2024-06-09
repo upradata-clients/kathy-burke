@@ -15,12 +15,10 @@ const _ = /** @type {any} */ (window)._;
 /**
  * @param {import('./gallery-layout.js').Elements} elements
  */
-const getGalleryMenu = elements => {
+const initGalleryMenu = elements => {
 
-    const menuContainer = _.queryThrow('.uc-gallery-menu .t959__container');
-    const menuItems = _.queryAllThrow('.t959__card', menuContainer);
-    const menuItemsTitles = menuItems.map(m => _.queryThrow('.t-card__title', m));
 
+    const menuItemsTitles = elements.menuItems.map(m => _.queryThrow('.t-card__title', m));
     const menuItemsImages = elements.menuItems.map(item => _.queryThrow('.t959__card-image', item));
 
 
@@ -48,10 +46,16 @@ const getGalleryMenu = elements => {
         });
     };
 
+    const params = { menuItems: elements.menuItems, menuContainer: elements.menuContainer };
+
+    const hinter = createMenuHinter(params);
+
+    addMenuAppareanceAnimation(params);
+    addMenuOnHover({ ...params, ...hinter });
 
     return {
-        menuContainer,
-        menuItems,
+        ...params,
+        ...hinter,
         menuItemsTitles,
         menuItemsImages,
         menuItemsImagesSettings,
@@ -60,8 +64,115 @@ const getGalleryMenu = elements => {
 };
 
 /**
- * @typedef {ReturnType<typeof getGalleryMenu>} GalleryMenu
+ * @typedef {ReturnType<typeof initGalleryMenu>} GalleryMenu
  */
+
+
+/** @param {Pick<import('./gallery-layout.js').Elements,'menuItems' | 'menuContainer'>} params */
+const createMenuHinter = ({ menuContainer, menuItems }) => {
+
+    _.queryThrow('.t959__card-overlay', menuContainer).setAttribute('style', '');
+
+    menuItems.forEach(item => {
+        menuContainer.append(item);
+        item.classList.remove('t959__card_25');
+    });
+
+    menuItems[ 0 ].insertAdjacentHTML('beforeend', `
+        <div class="card--hint">
+            <span class="hinter"></span>
+            <span class="hinter"></span>
+            <span class="hinter"></span>
+        </div>
+    `.trim());
+
+
+    _.queryAllThrow('.t959__row', menuContainer).forEach(el => el.remove());
+
+    const hinter = _.queryThrow('.card--hint', menuItems[ 0 ]);
+    const hinterItems = _.queryAllThrow('.card--hint .hinter', menuItems[ 0 ]);
+
+
+    /** @param {number} i */
+    const hinterGoTo = i => {
+        const itemHovered = menuItems[ i ];
+
+        const state = Flip.getState(hinterItems, { props: 'opacity' });
+
+        itemHovered.append(hinter);
+        gsap.set(hinterItems, { opacity: 1 });
+
+        Flip.from(state, { duration: 0.5, ease: 'expo.inOut', stagger: 0.1, overwrite: true });
+    };
+
+
+    return {
+        hinter,
+        hinterItems,
+        hinterGoTo
+    };
+};
+
+
+/** @typedef {ReturnType<typeof createMenuHinter>} Hinter */
+
+
+
+
+/** @param {Pick<import('./gallery-layout.js').Elements,'menuItems' | 'menuContainer'>} params */
+const addMenuAppareanceAnimation = ({ menuItems, menuContainer }) => {
+
+    // menu cards appear animation
+    gsap.from(menuItems, {
+        scrollTrigger: {
+            // markers: true,
+            trigger: menuContainer,
+            toggleActions: 'play none none reverse',
+            start: 'center bottom'
+        },
+        opacity: 0,
+        scale: 0.3,
+        x: 200,
+        y: 50,
+        stagger: 0.1,
+        duration: 0.6,
+        ease: 'power4.out'
+    });
+};
+
+
+
+
+/** @param {Pick<import('./gallery-layout.js').Elements,'menuItems' | 'menuContainer'> & Hinter} params */
+const addMenuOnHover = ({ menuItems, menuContainer, hinterGoTo, hinterItems }) => {
+
+    /**
+     * @param {HTMLElement} el
+     * @param {{ enter?: (this: HTMLElement, ev: PointerEvent) => any, leave?: (this: HTMLElement, ev: PointerEvent) => any }} callbacks
+     */
+    const onHover = (el, callbacks) => {
+        if (callbacks.enter)
+            el.addEventListener('pointerenter', callbacks.enter);
+        if (callbacks.leave)
+            el.addEventListener('pointerleave', callbacks.leave);
+    };
+
+
+    let isActive = false;
+
+    onHover(menuContainer, {
+        enter: () => { isActive = true; },
+        leave: () => {
+            isActive = false;
+            gsap.to(hinterItems, { opacity: 0, duration: 0.2, ease: 'power4.out', stagger: 0.04, overwrite: true });
+        },
+    });
+
+
+    menuItems.forEach((item, i) => onHover(item, { enter: () => hinterGoTo(i) }));
+
+};
+
 
 
 /**  @typedef {import('./gallery-animation.js').AnimateSliderParams} AnimateSliderParams */
@@ -72,8 +183,9 @@ const getGalleryMenu = elements => {
  * @param {(index: number) => void | Promise<void>} [params.onEnter]
  * @param {(params: AnimateSliderParams) => void | Promise<void>} [params.onClickMenuItem]
  * @param {(index: number) => void | Promise<void>} [params.onLeave]
+ * @param {Hinter['hinterGoTo']} params.hinterGoTo
  */
-const createGalleryMenuListener = ({ elements, onEnter, onClickMenuItem, onLeave }) => {
+const createGalleryMenuListener = ({ elements, onEnter, onClickMenuItem, onLeave, hinterGoTo }) => {
 
     /** @type {{menuItem: HTMLElement | undefined; i: number; isInit: boolean; movingI: number | undefined; sliderState: AnimateSliderParams['state']; }} */
     let state = { menuItem: undefined, isInit: false, movingI: undefined, i: -1, sliderState: 'desactivated' };
@@ -109,7 +221,7 @@ const createGalleryMenuListener = ({ elements, onEnter, onClickMenuItem, onLeave
 
         setActiveMenuItem(state.menuItem, 'remove');
         setActiveMenuItem(menuItem, 'add');
-        _.menuGoTo(i);
+        hinterGoTo(i);
 
         if (sliderState ? sliderState === 'activating' : isActivating) {
             _.dispatchEvent(_.EventNames.gallery.enter, { when: 'before' });
@@ -140,9 +252,15 @@ const createGalleryMenuListener = ({ elements, onEnter, onClickMenuItem, onLeave
 
 
     elements.menuItems.forEach((__, i) => {
-        elements.menuItems[ i ].addEventListener('pointerup', () => goTo(i), { passive: true });
-        elements.cards[ i ].addEventListener('pointerup', () => goTo(i), { passive: true });
-        elements.cards[ i ].addEventListener('pointerenter', () => _.menuGoTo(i), { passive: true });
+        [
+            elements.menuItems[ i ],
+            elements.cards[ i ]
+        ].forEach(el => el.addEventListener('pointerup', () => goTo(i), { passive: true }));
+
+        elements.cards[ i ].addEventListener('pointerenter', () => {
+            if (state.movingI !== undefined)
+                hinterGoTo(i);
+        }, { passive: true });
     });
 
 
@@ -150,6 +268,6 @@ const createGalleryMenuListener = ({ elements, onEnter, onClickMenuItem, onLeave
 };
 
 
-const galleryMenu = { getGalleryMenu, createGalleryMenuListener };
+const galleryMenu = { initGalleryMenu, createGalleryMenuListener };
 
 export { galleryMenu };

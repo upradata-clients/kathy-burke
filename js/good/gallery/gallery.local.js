@@ -37,8 +37,7 @@ Object.assign(_, await getModules(
     import('./gallery-slider.js')
 ));
 
-const { goTo: menuGoTo } = await import('./menu-hinter.js').then(({ addMenuHinter }) => addMenuHinter());
-_.menuGoTo = menuGoTo;
+
 
 _.EventNames.gallery = {
     enter: 'gallery:enter',
@@ -63,8 +62,9 @@ _.onLoad(() => {
 
     const elements = _.createElements(galleryCategories);
 
-    const galleryAnimation = _.createGalleryAnimation({ elements });
-
+    const menu = _.galleryMenu.initGalleryMenu(elements);
+    const galleryAnimation = _.createGalleryAnimation({ elements, galleryMenu: menu });
+    
     let isActive = false;
 
     const { goTo } = _.galleryMenu.createGalleryMenuListener({
@@ -77,7 +77,8 @@ _.onLoad(() => {
         onLeave: index => {
             isActive = false;
             return galleryAnimation.animateActivationGallery('desactivate', index);
-        }
+        },
+        hinterGoTo: menu.hinterGoTo
     });
 
     window.addEventListener('resize', () => {

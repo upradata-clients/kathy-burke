@@ -60,7 +60,7 @@ const getGalleryMenu = elements => {
 };
 
 /**
- * @typedef {ReturnType<typeof getGalleryMenu>} GalleryMenu
+ * @typedef {ReturnType<typeof getGalleryMenu>} GalleryMenu3
  */
 
 

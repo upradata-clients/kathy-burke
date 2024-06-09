@@ -311,14 +311,13 @@ const createGalleryApparationAnimation = cardsBlock => {
 /**
  * @param {object} params
  * @param {import('./gallery-layout.js').Elements} params.elements
+ * @param {import('./gallery-menu.js').GalleryMenu} params.galleryMenu
  */
-const createGalleryAnimation = ({ elements }) => {
+const createGalleryAnimation = ({ elements, galleryMenu }) => {
 
-    const { menuContainer, menuItems, cards, galleryTitle } = elements;
+    const { menuContainer, cards, galleryTitle } = elements;
 
-    const galleryMenu = _.galleryMenu.getGalleryMenu(elements);
     galleryMenu.setMenuItemsImagesStyle([ { prop: 'background-position', mode: 'lg' } ]);
-
 
     const slider = _.lazyFactory(() => createGallerySlider(cards, elements))({
         destroy: slider => slider.stop()

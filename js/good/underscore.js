@@ -266,7 +266,6 @@ window._ = {
  * @property {typeof import('./mouse-follow.js').createMouseFollower} createMouseFollower
  * @property {typeof import('./gallery/gallery-layout.js').createElements} createElements
  * @property {typeof import('./gallery/gallery-animation.js').createGalleryAnimation} createGalleryAnimation
- * @property {(i: number) => void} menuGoTo
  */
 
 
