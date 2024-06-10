@@ -107,12 +107,29 @@ const createSideCardsMouseFollowAnimation = ({ elementsPerCategory, maxRotation,
                     ease: 'power2.out'
                 });
             },
-            onStop: () => {
+            onStop: async () => {
                 // gsap.set(wrapper, { rotateX: 0, rotateY: 0 }); 
                 gsap.killTweensOf(wrapper);
                 return new Promise(resolve => gsap.set(wrapper, {
                     clearProps: 'all', onComplete: resolve
                 }));
+
+                // gsap.getTweensOf(wrapper).map(tween => {
+                //     if ('rotationX' in tween.vars || 'rotationY' in tween.vars)
+                //         tween.revert();
+                // });
+
+
+                // await Promise.allSettled(
+                //     gsap.getTweensOf(wrapper).map(tween => {
+                //         if ('rotationX' in tween.vars || 'rotationY' in tween.vars)
+                //             return new Promise(resolve => tween.revert().eventCallback('onComplete', resolve));
+                //     })
+                // );
+                // gsap.set(wrapper, { clearProps: 'rotationX, rotationY' });
+                // const p = _.promisifyTimeline(gsap.set(wrapper, { clearProps: 'rotationX, rotationY' }));
+                // gsap.killTweensOf(wrapper, 'rotationX, rotationY');
+
             }
         });
 
@@ -248,7 +265,7 @@ const createGallerySlider = (cards, elements) => {
 const createSideCardsScrollFollow = ({ galleryBackground, cards }) => {
 
     const galleryBackgroundContainer = galleryBackground;
-    const item = _.queryThrow('.t156__item', galleryBackgroundContainer);
+    const item = _.queryThrow('.t-col', galleryBackgroundContainer);
 
     const imageHeight = _.getRect(item).height;
 
@@ -263,7 +280,7 @@ const createSideCardsScrollFollow = ({ galleryBackground, cards }) => {
     });
 
     /** @param {number} activeI */
-    const sideCards = activeI => cards.filter((_, i) => i !== activeI).map(c => _.queryThrow('.t-container', c));
+    const sideCards = activeI => cards.filter((_, i) => i !== activeI).map(c => _.queryThrow('.t156__wrapper', c));
 
 
     /**
@@ -361,12 +378,13 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
 
     let menuHeight = gsap.getProperty(menuContainer, 'height');
 
-    /** @param {'activate' | 'desactivate'} action */
+    /** @param {'activating' | 'desactivating'} action */
     const animateActivationMenu = action => {
-        galleryMenu.setMenuItemsImagesStyle([ { prop: 'background-position', mode: action === 'activate' ? 'xs' : 'lg' } ]);
+        galleryMenu.setMenuItemsImagesStyle([ { prop: 'background-position', mode: action === 'activating' ? 'xs' : 'lg' } ]);
 
-        if (action === 'activate') {
-            menuHeight = gsap.getProperty(menuContainer, 'height');
+        if (action === 'activating') {
+            if (!menuHeight)
+                menuHeight = gsap.getProperty(menuContainer, 'height');
 
             return gsap.timeline()
                 // we scroll to the menu and make it smaller
@@ -378,31 +396,110 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
     };
 
     /**
-     * @param {number} i
-     * @param {'add'|'remove'} action
+     * @param {Object} params
+     * @param {number} params.from
+     * @param {number} params.to
+     * @param {AnimateSliderParams['state']} params.state
+     * @param {boolean} params.isInit
      */
-    const flipTitles = (i, action) => {
-        const { galleryTitleHeader, menuItemsTitles } = elements;
+    const flipTitles = ({ from, to, state, isInit }) => {
 
-        const title = menuItemsTitles[ i ];
+        const { galleryTitleHeader, galleryTitleHeader2, menuItemsTitles } = elements;
 
-        if (action === 'add') {
-            galleryTitleHeader.innerHTML = title.innerHTML;
+
+        if (state === 'activated' || state === 'activating') {
+            const sideMenuItems = menuItemsTitles.filter((_, i) => i !== to);
+
+            if (from === to) {
+                if (state === 'activating') {
+                    gsap.to(sideMenuItems, { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: 'expo.out', overwrite: true });
+
+                    sideMenuItems.forEach((item, i) => {
+                        item.classList.remove('active');
+                    });
+
+                    menuItemsTitles[ to ].classList.add('active');
+                }
+            }
+
+            if (from === to)
+                return;
+
+            galleryTitleHeader.innerHTML = menuItemsTitles[ to ].innerHTML;
 
             galleryTitleHeader.dataset.flipId = 'gallery-title';
-            title.dataset.flipId = 'gallery-title';
-        } else {
-            galleryTitleHeader.innerHTML = '';
+            menuItemsTitles[ to ].dataset.flipId = 'gallery-title';
+
+            const titleState = Flip.getState([ menuItemsTitles[ to ], galleryTitleHeader ]);
+
+            menuItemsTitles[ from ].classList.remove('active');
+            menuItemsTitles[ to ].classList.add('active');
+
+            galleryTitleHeader.classList.add('active');
+
+            return Flip.from(titleState, {
+                duration: 0.4, ease: 'expo.out' /* flipAction === 'flip' ? 'expo.out' : 'expo.in' */, toggleClass: 'flipping'
+            });
         }
 
-        const titleState = Flip.getState([ title, galleryTitleHeader ]);
+        // const titleAnimation = gsap.timeline({ paused: true }).fromTo(title,
+        //     { opacity: 1, y: 0, scale: 1 },
+        //     { opacity: 0, y: -50, scale: 0.5, duration: 0.5, ease: 'expo.out', overwrite: true, immediateRender: false }
+        // );
 
-        title.classList[ action ]('active');
-        galleryTitleHeader.classList[ action ]('active');
+        // if (flipAction === 'flip')
+        //     titleAnimation.play();
+        // else
+        //     titleAnimation.reverse(0);
 
-        return Flip.from(titleState, {
-            duration: 0.4, ease: action === 'add' ? 'expo.out' : 'expo.in', toggleClass: 'flipping'
-        });
+        // const titleAnimation = gsap.timeline({ paused: true }).fromTo(title,;
+        //     { opacity: 1, y: 0, scale: 1 },
+        //     { opacity: 0, y: -50, scale: 0.5, duration: 0.5, ease: 'expo.out', overwrite: true, immediateRender: false }
+        // );
+
+        // if (from !== -1) {
+        //     const items = from === to ? menuItemsTitles.filter((_, i) => i !== to) : [ menuItemsTitles[ from ] ];
+        //     gsap.to(items, { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: 'expo.out', overwrite: true });
+        // }
+
+        gsap.to(menuItemsTitles, { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: 'expo.out', overwrite: true });
+
+        // if (to !== -1) {
+        //     gsap.fromTo(menuItemsTitles[ to ],
+        //         { /* opacity: 1, */ y: 0, scale: 1 },
+        //         { /* opacity: 0, */ y: 0, scale: 0.8, duration: 0.4, delay: 0.1, ease: 'back.in(4)', overwrite: true, immediateRender: false }
+        //     );
+        //     // const splitText = new SplitText(menuItemsTitles[ to ]);
+
+        //     // gsap.set(menuItemsTitles[ to ], { perspective: 400 });
+        //     // splitText.split({ type: 'chars, words' });
+        //     // gsap.to(splitText.chars, {
+        //     //     duration: 0.6, stagger: 0.02, scale: 0
+        //     //     // scale: 2, opacity: 1, rotationX: -80, transformOrigin: '100% 50%', ease: 'power2.out', stagger: 0.02 
+        //     // });
+        // }
+
+        if (isInit) {
+            galleryTitleHeader.textContent = menuItemsTitles[ to ].textContent;
+            return gsap.fromTo(galleryTitleHeader, { opacity: 0, y: -100 }, { opacity: 1, y: 0, duration: 1, ease: 'expo.out' });
+        }
+
+        if (from === to)
+            return;
+
+        galleryTitleHeader2.textContent = menuItemsTitles[ to ].textContent;
+
+        return gsap.timeline()
+            .to(galleryTitleHeader, { opacity: 0, x: 400, duration: 0.4, ease: 'expo.in', overwrite: true })
+            .fromTo(galleryTitleHeader2, { opacity: 0, x: -400 }, {
+                opacity: 1, x: 0, duration: 0.4, ease: 'expo.out', overwrite: true,
+                onComplete: () => {
+                    galleryTitleHeader.textContent = menuItemsTitles[ to ].textContent;
+                    gsap.set(galleryTitleHeader, { opacity: 1, x: 0 });
+                    gsap.set(galleryTitleHeader2, { opacity: 0 });
+                    galleryTitleHeader2.textContent = '';
+                }
+            }, 0.3);
     };
 
 
@@ -448,11 +545,12 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
 
 
     /**
-     * @param {number} index
      * @param {Object} params
-     * @param {boolean} params.isActive
+     * @param {number} params.from
+     * @param {number} params.to
+     * @param { 'activated' | 'activating' | 'desactivated' | 'desactivating' } params.state
      */
-    const activateSideCardsFollowers = async (index, { isActive }) => {
+    const activateSideCardsFollowers = async ({ state, from, to }) => {
 
         let p$ = Promise.resolve();
 
@@ -465,14 +563,17 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
         //     });
         // }
 
-        const indexes = cards.map((_, i) => i).filter(i => i !== index);
+        const indexes = cards.map((_, i) => i).filter(i => i !== to);
 
-        await sideCardsMouseFollowAnimation.instance()?.stop();
+        await sideCardsMouseFollowAnimation.instance()?.stop(); // in case
         sideCardsMouseFollowAnimation.get(indexes).start();
 
 
-        if (isActive)
-            sideCardsScrollFollow.get().create(index);
+        // if (state === 'activating')
+        //     sideCardsScrollFollow.instance()?.clear(from); // in case
+
+        // if (state === 'activating' || state === 'activated')
+        //     sideCardsScrollFollow.get().create(to);
     };
 
 
@@ -484,7 +585,7 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
      * @param {boolean} params.isInit
      */
     const animateSlider = ({ from, to, state, isInit }) => {
-        console.log({ from, to, state, isInit });
+
         /** @type {Promise<void>} */
         let sliderTL$ = Promise.resolve();
 
@@ -500,60 +601,44 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
             // sideCardsMouseFollowAnimation.reset();
             sliderTL$ = sliderTL$.then(() => sideCardsMouseFollowAnimation.instance()?.stop());
 
-            if (!isSame && state !== 'desactivating')
-                flipTitles(from, 'remove');
+            // if (!isSame && state !== 'desactivating')
+            //     flipTitles({ i: from, action: 'unflip', state, isInit });
         }
+
+        if (isInit || state === 'activating' || state === 'desactivating')
+            resetFollowers();
 
         if (to !== -1) {
             setStateCards(to, 'add');
             setZoomableCard(to);
 
-            // sideCardsMouseFollowAnimation.instance()?.animations.forEach(({ item }) => gsap.set(item, { rotateX: 0, rotateY: 0, }));
-            // elements.elementsPerCategory.forEach(({ wrapper }) => gsap.set(wrapper, { /* rotateX: 0, rotateY: 0 */clearProps: 'all' }));
-
             sliderTL$ = sliderTL$.then(() => slider.get().goTo(to));
 
-            if (!isSame || isInit)
-                flipTitles(to, 'add');
+            //  if (!isSame && state !== 'activated')
+            flipTitles({ from, to, state, isInit });
         };
 
-        if (from !== -1)
-            sideCardsScrollFollow.instance()?.clear(from);
 
-        if (isInit || state === 'activating' || state === 'desactivating')
-            resetFollowers();
-
+        // if (from !== -1)
+        // if (state === 'activated' || state === 'desactivated')
+        //     sideCardsScrollFollow.instance()?.clear(from);
 
         if (to !== -1)
-            sliderTL$.then(() => {
-                activateSideCardsFollowers(to, { isActive: state === 'activated' || state === 'activating' });
-            });
+            sliderTL$.then(() => activateSideCardsFollowers({ from, to, state }));
 
         return sliderTL$;
     };
 
 
 
-    const setActiveTitle = _.setClassName(elements.galleryTitle, 'active');
-    setActiveTitle('add');
+    // const setActiveTitle = _.setClassName(elements.galleryTitle, 'active');
+    // setActiveTitle('add');
 
-    const setActiveCardsBlock = _.setClassName(elements.cardsBlock, 'active');
-
-    // const cardsAppearAnimation = createGalleryApparationAnimation(elements.cardsBlock);
-
-    // /** @param {'add'|'remove'} action */
-    // const animateCardsApparition = action => {
-    //     setActiveCardsBlock(action);
-
-    //     const tl = action === 'add' ? cardsAppearAnimation.play() : cardsAppearAnimation.reverse();
-    //     return tl;
-    // };
-
-    /** @param {'add'|'remove'} action */
-    // const activateCardTitles = action => {
-    //     setActiveTitle(action);
-    //     galleryMenu.setMenuItemsImagesStyle([ { prop: 'background-position', mode: action === 'add' ? 'xs' : 'lg' } ]);
-    // };
+    /** @param {'add' | 'remove' } action */
+    const setActiveCardsBlock = action => {
+        _.setClassName(elements.cardsBlock, 'active')(action);
+        _.setClassName(elements.menu, 'slider-active')(action);
+    };
 
 
     const galleryBgContainer = _.queryThrow('.t-container', elements.galleryBackground);
@@ -566,21 +651,26 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
         .to(sliderWrapper, { width: bgWidthOnActive, duration: 0.5, ease: 'expo.out' }, 0);
 
     /**
-     * @param {'activate' | 'desactivate'} action
-     * @param {number} cardI
+     * @param {Object} params
+     * @param {'activating' | 'desactivating'} params.state
+     * @param {number} params.from
+     * @param {number} params.to
+     * @param {boolean} params.isInit
      */
-    const animateActivationGallery = async (action, cardI) => {
-        setActiveCardsBlock(action === 'activate' ? 'add' : 'remove');
+    const animateActivationGallery = async ({ state, from, to, isInit }) => {
+        setActiveCardsBlock(state === 'activating' ? 'add' : 'remove');
+
+        flipTitles({ from, to, state, isInit });
 
         const p = _.promisifyTimeline;
 
         await Promise.allSettled([
-            p(animateActivationMenu(action)),
-            p(action === 'activate' ? bgWidthAnimation.play() : bgWidthAnimation.reverse())
+            p(animateActivationMenu(state)),
+            p(state === 'activating' ? bgWidthAnimation.play() : bgWidthAnimation.reverse())
         ]);
 
-        if (action === 'desactivate') {
-            activateSideCardsFollowers(cardI, { isActive: false });
+        if (state === 'desactivating') {
+            activateSideCardsFollowers({ from, to, state: 'desactivating' });
         }
     };
 

@@ -139,29 +139,50 @@
 }
 
 
-.uc-gallery-menu .t959__card .t-card__title.active {
+.uc-gallery-menu.slider-active .t959__card .t-card__title.active {
     visibility: hidden;
 }
 
-.uc-gallery-menu .t959__card .t-card__title.flipping {
+.uc-gallery-menu.slider-active .t959__card .t-card__title.flipping {
     visibility: visible;
 }
 
+.uc-gallery-title .gallery-titles {
+    display: flex;
+    justify-content: center;
+    position: relative;
+}
 
-.uc-gallery-title {
+.uc-gallery-title .gallery-titles .t-title {
+        width: 100%;
+            text-align: center;
+}
+
+.gallery-title-header-2 {
+    opacity: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    text-align: center;
+    /* transform: translate(50%, 50%); */
+}
+
+/* .uc-gallery-title {
     display: none;
     opacity: 0;
 }
 
 .uc-gallery-title.active {
     display: block;
-}
+} */
 
-.uc-gallery-title .t030__title {
+.uc-gallery-title.slider-active .t030__title {
     display: none;
 }
 
-.uc-gallery-title .t030__title.active {
+.uc-gallery-title.slider-active .t030__title.active {
     display: block;
 }
 

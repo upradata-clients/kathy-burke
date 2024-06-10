@@ -119,7 +119,10 @@ const makeEaseSymmetric = ease => {
  * @param {gsap.core.Timeline | gsap.core.Tween} timeline
  * @returns {Promise<void>}
  */
-const promisifyTimeline = timeline => new Promise(resolve => timeline.eventCallback('onComplete', resolve));
+const promisifyTimeline = timeline => new Promise(resolve => {
+    timeline.eventCallback('onComplete', resolve);
+    timeline.eventCallback('onReverseComplete', resolve);
+});
 // new Promise(resolve => timeline.then(() => { resolve(); }));
 
 /**

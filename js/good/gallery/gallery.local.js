@@ -64,19 +64,19 @@ _.onLoad(() => {
 
     const menu = _.galleryMenu.initGalleryMenu(elements);
     const galleryAnimation = _.createGalleryAnimation({ elements, galleryMenu: menu });
-    
+
     let isActive = false;
 
     const { goTo } = _.galleryMenu.createGalleryMenuListener({
         elements,
-        onEnter: index => {
+        onActivating: (from, to, isInit) => {
             isActive = true;
-            return galleryAnimation.animateActivationGallery('activate', index);
+            return galleryAnimation.animateActivationGallery({ state: 'activating', from, to, isInit });
         },
         onClickMenuItem: galleryAnimation.animateSlider,
-        onLeave: index => {
+        onDesactivating: (from, to) => {
             isActive = false;
-            return galleryAnimation.animateActivationGallery('desactivate', index);
+            return galleryAnimation.animateActivationGallery({ state: 'desactivating', from, to, isInit: false });
         },
         hinterGoTo: menu.hinterGoTo
     });

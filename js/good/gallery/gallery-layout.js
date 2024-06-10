@@ -132,19 +132,33 @@ const createGalleriesLayout = galleryCategories => {
 /** @param {GalleryCategories} galleryCategories */
 const createElements = galleryCategories => {
 
-    const menuContainer = _.queryThrow('.uc-gallery-menu .t959__container');
+    const menu = _.queryThrow('.uc-gallery-menu');
+    const menuContainer = _.queryThrow('.t959__container', menu);
     const menuItems = _.queryAllThrow('.t959__card', menuContainer);
     const menuItemsTitles = menuItems.map(m => _.queryThrow('.t-card__title', m));
 
     const galleryTitle = _.queryThrow('.uc-gallery-title');
+
     const galleryTitleHeader = _.queryThrow('.t030__title', galleryTitle);
+    const galleryTitleHeader2 =  /** @type {HTMLElement} */(galleryTitleHeader.cloneNode(true));
+
+    galleryTitleHeader.classList.add('gallery-title-header-1');
+    galleryTitleHeader2.classList.add('gallery-title-header-2');
+
+    galleryTitle.insertAdjacentHTML('afterbegin', '<div class="gallery-titles"></div>');
+    const galleryTitles = _.queryThrow('.gallery-titles', galleryTitle);
+
+    galleryTitles.append(galleryTitleHeader, galleryTitleHeader2);
 
     return {
+        menu,
         menuContainer,
         menuItems,
         menuItemsTitles,
         galleryTitle,
+        galleryTitles,
         galleryTitleHeader,
+        galleryTitleHeader2,
         ...createGalleriesLayout(galleryCategories)
     };
 };

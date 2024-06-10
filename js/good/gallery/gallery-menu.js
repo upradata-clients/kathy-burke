@@ -102,7 +102,7 @@ const createMenuHinter = ({ menuContainer, menuItems }) => {
         itemHovered.append(hinter);
         gsap.set(hinterItems, { opacity: 1 });
 
-        Flip.from(state, { duration: 0.5, ease: 'expo.inOut', stagger: 0.1, overwrite: true });
+        Flip.from(state, { duration: 0.5, ease: 'expo.inOut', stagger: 0.05, overwrite: true });
     };
 
 
@@ -163,6 +163,9 @@ const addMenuOnHover = ({ menuItems, menuContainer, hinterGoTo, hinterItems }) =
     onHover(menuContainer, {
         enter: () => { isActive = true; },
         leave: () => {
+            if (isActive)
+                return;
+
             isActive = false;
             gsap.to(hinterItems, { opacity: 0, duration: 0.2, ease: 'power4.out', stagger: 0.04, overwrite: true });
         },
@@ -180,15 +183,15 @@ const addMenuOnHover = ({ menuItems, menuContainer, hinterGoTo, hinterItems }) =
 /**
  * @param {Object} params
  * @param {import('./gallery-layout.js').Elements} params.elements
- * @param {(index: number) => void | Promise<void>} [params.onEnter]
+ * @param {(from: number, to: number, isInit: boolean) => void | Promise<void>} [params.onActivating]
  * @param {(params: AnimateSliderParams) => void | Promise<void>} [params.onClickMenuItem]
- * @param {(index: number) => void | Promise<void>} [params.onLeave]
+ * @param {(from: number, to: number) => void | Promise<void>} [params.onDesactivating]
  * @param {Hinter['hinterGoTo']} params.hinterGoTo
  */
-const createGalleryMenuListener = ({ elements, onEnter, onClickMenuItem, onLeave, hinterGoTo }) => {
+const createGalleryMenuListener = ({ elements, onActivating, onClickMenuItem, onDesactivating, hinterGoTo }) => {
 
     /** @type {{menuItem: HTMLElement | undefined; i: number; isInit: boolean; movingI: number | undefined; sliderState: AnimateSliderParams['state']; }} */
-    let state = { menuItem: undefined, isInit: false, movingI: undefined, i: -1, sliderState: 'desactivated' };
+    let state = { menuItem: undefined, isInit: true, movingI: undefined, i: -1, sliderState: 'desactivated' };
 
     /**
      * @param {HTMLElement | undefined} menuItem - The menu item to modify.
@@ -212,35 +215,40 @@ const createGalleryMenuListener = ({ elements, onEnter, onClickMenuItem, onLeave
         const currentIndex = state.movingI ?? state.i;
 
         const isSame = currentIndex === i;
-        const isActivating = state.sliderState === 'desactivated' || state.sliderState === 'desactivating'; // !state?.isActive;
-        const isDesactivating = isSame && (state.sliderState === 'activated' || state.sliderState === 'activating'); // state?.isActive;
-
-        // const isActive = isEntering ? true : isLeaving ? false : true;
-        const nextGalleryState = sliderState ? sliderState : isActivating ? 'activating' : isDesactivating ? 'desactivating' : 'activated';
-        state = { ...state, menuItem, movingI: i, sliderState: nextGalleryState };
+        const isActivating = state.sliderState === 'desactivated' || state.sliderState === 'desactivating';
+        const isDesactivating = isSame && (state.sliderState === 'activated' || state.sliderState === 'activating');
 
         setActiveMenuItem(state.menuItem, 'remove');
         setActiveMenuItem(menuItem, 'add');
+
+        // const isActive = isEntering ? true : isLeaving ? false : true;
+        const newGalleryState = sliderState ? sliderState : isActivating ? 'activating' : isDesactivating ? 'desactivating' : 'activated';
+
+        /** @type {AnimateSliderParams} */
+        const sliderParams = {
+            from: typeof state.movingI !== 'undefined' ? state.movingI : state.i,
+            to: i,
+            state: newGalleryState,
+            isInit: state.isInit
+        };
+
+        state = { ...state, menuItem, movingI: i, sliderState: newGalleryState };
+
         hinterGoTo(i);
+
 
         if (sliderState ? sliderState === 'activating' : isActivating) {
             _.dispatchEvent(_.EventNames.gallery.enter, { when: 'before' });
-            await waitIfPromise(onEnter?.(i));
+            await waitIfPromise(onActivating?.(sliderParams.from, sliderParams.to, state.isInit));
             _.dispatchEvent(_.EventNames.gallery.enter, { when: 'after' });
         }
 
-        await waitIfPromise(onClickMenuItem?.({
-            // enterI: isLeaving ? -1 : i, leaveI: state?.i ?? -1, isLeaving, isEntering 
-            from: state.i,
-            to: isDesactivating ? -1 : i,
-            state: nextGalleryState,
-            isInit: state.isInit
-        }));
+        await waitIfPromise(onClickMenuItem?.(sliderParams));
 
         state = { ...state, isInit: false };
 
         if (sliderState ? sliderState === 'desactivating' : isDesactivating) {
-            await waitIfPromise(onLeave?.(i));
+            await waitIfPromise(onDesactivating?.(sliderParams.from, sliderParams.to));
             _.dispatchEvent(_.EventNames.gallery.leave);
         }
 
@@ -251,15 +259,41 @@ const createGalleryMenuListener = ({ elements, onEnter, onClickMenuItem, onLeave
     };
 
 
-    elements.menuItems.forEach((__, i) => {
-        [
-            elements.menuItems[ i ],
-            elements.cards[ i ]
-        ].forEach(el => el.addEventListener('pointerup', () => goTo(i), { passive: true }));
+    elements.menuItems.forEach((menuItem, i) => {
+        const card = elements.cards[ i ];
 
-        elements.cards[ i ].addEventListener('pointerenter', () => {
-            if (state.movingI !== undefined)
+        const isStateI = () => typeof state.movingI !== 'undefined' ? state.movingI === i : state.i === i;
+
+        menuItem.addEventListener('pointerup', () => goTo(i), { passive: true });
+
+        card.addEventListener('pointerup', () => {
+            if (state.sliderState === 'desactivated' || state.sliderState === 'desactivating' || !isStateI())
+                goTo(i);
+        }, { passive: true });
+
+        menuItem.addEventListener('pointerenter', () => {
+            if (state.sliderState === 'desactivated' && !isStateI())
+                goTo(i, 'desactivated');
+        }, { passive: true });
+
+
+        const cardOpacityAnimation = gsap.timeline({ paused: true }).to(card, {
+            opacity: 1,
+            duration: 0.3,
+            ease: 'power4.out'
+        });
+
+        card.addEventListener('pointerenter', () => {
+            if (typeof state.movingI !== 'undefined')
                 hinterGoTo(i);
+
+            if (state.sliderState === 'desactivated')
+                cardOpacityAnimation.play();
+        }, { passive: true });
+
+        card.addEventListener('pointerleave', () => {
+            if (state.sliderState === 'desactivated')
+                cardOpacityAnimation.reverse();
         }, { passive: true });
     });
 

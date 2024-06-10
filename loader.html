@@ -21,10 +21,17 @@
             background: white;
 
             overflow: scroll;
-
         }
 
-        .init-loader.active .svg-signature path {
+        .init-loader:not(.active) {
+            display: none;
+        }
+
+        /* .init-loader.active .svg-signature path {
+            stroke-width: 0.7px;
+        } */
+
+        .init-loader .svg-signature path {
             stroke-width: 0.7px;
         }
 
@@ -78,7 +85,7 @@
                 opacity: 1;
             }
         }
-        
+
 
         @keyframes boubat-image-apparition {
             from {
@@ -288,6 +295,23 @@
             setTimeout(() => {
                 document.querySelector('.waiting-loader').classList.add('active');
             }, 1500);
+
+            const removerLoader = () => {
+                const initLoader = document.querySelector('.init-loader');
+
+                gsap.to(initLoader, {
+                    opacity: 0,
+                    duration: 0.7,
+                    ease: 'expo.out',
+                    onComplete: () => {
+                        initLoader.classList.remove('active');
+                    }
+                });
+            };
+
+            setTimeout(() => {
+                _.onReady(removerLoader);
+            }, 4000);
         })();
     </script>
 
