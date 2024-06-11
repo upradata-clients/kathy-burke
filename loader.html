@@ -3,7 +3,7 @@
 
 <head>
     <title>Loader</title>
-    <link rel="stylesheet" type="text/css" href="./loader.css">
+    <link rel="stylesheet" type="text/css" href="./signature-loader.css">
     <style>
         .init-loader {
             opacity: 1;
@@ -310,7 +310,7 @@
             };
 
             setTimeout(() => {
-                _.onReady(removerLoader);
+                _.onDocumentReady(removerLoader);
             }, 4000);
         })();
     </script>

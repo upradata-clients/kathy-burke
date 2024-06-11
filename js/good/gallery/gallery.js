@@ -1,7 +1,7 @@
 // @ts-check
 
 
-/** @type {typeof import('../underscore.js')._} */
+/** @type {typeof import('../common/underscore.js')._} */
 const _ = /** @type {any} */ (window)._;
 
 _.EventNames.gallery = {
@@ -27,21 +27,23 @@ _.onLoad(() => {
 
     const elements = _.createElements(galleryCategories);
 
-    const galleryAnimation = _.createGalleryAnimation({ elements });
+    const menu = _.galleryMenu.initGalleryMenu(elements);
+    const galleryAnimation = _.createGalleryAnimation({ elements, galleryMenu: menu });
 
     let isActive = false;
 
-    _.galleryMenu.createGalleryMenuListener({
+    const { goTo } = _.galleryMenu.createGalleryMenuListener({
         elements,
-        onEnter: index => {
+        onActivating: (from, to, isInit) => {
             isActive = true;
-            return galleryAnimation.animateActivationGallery('activate', index);
+            return galleryAnimation.animateActivationGallery({ state: 'activating', from, to, isInit });
         },
         onClickMenuItem: galleryAnimation.animateSlider,
-        onLeave: index => {
+        onDesactivating: (from, to) => {
             isActive = false;
-            return galleryAnimation.animateActivationGallery('desactivate', index);
-        }
+            return galleryAnimation.animateActivationGallery({ state: 'desactivating', from, to, isInit: false });
+        },
+        hinterGoTo: menu.hinterGoTo
     });
 
     window.addEventListener('resize', () => {
@@ -50,19 +52,21 @@ _.onLoad(() => {
 
     _.onEvent(_.EventNames.hero.firstScrubDone, () => {
         _.dispatchEvent(_.EventNames.gallery.resize, { isActive });
-        galleryAnimation.animateSlider({ enterI: 3, leaveI: -1, isEntering: false, isLeaving: false });
-    });
+        goTo(3, 'desactivated');
+        _.dispatchEvent(_.EventNames.ready.gallery);
+    }, { isCold: true });
 
+    
     // _.dispatchEvent(_.EventNames.gallery.resize, { isActive });
-
-
 
     setTimeout(() => {
         try {
             // @ts-ignore
-            window.lazyload_img.skip_invisible = false;
+            if (window.lazyload_img)
+                // @ts-ignore
+                window.lazyload_img.skip_invisible = false;
             // @ts-ignore
-            window.lazyload_img.update();
+            window.lazyload_img?.update();
         } catch (e) {
             console.error(e);
         }

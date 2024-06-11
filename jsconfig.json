@@ -22,7 +22,9 @@
         "checkJs": true,
     },
     "include": [
-        "js/**/*"
+        "js/**/*.js",
+        "js/**/*.jsx",
+        "js/**/*.mjs",
     ],
     "exclude": [
         "node_modules"

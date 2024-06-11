@@ -1,13 +1,13 @@
 // @ts-check
 
 
-/** @type {typeof import('../underscore.js')._} */
+/** @type {typeof import('../common/underscore.js')._} */
 const _ = /** @type {any} */ (window)._;
 
 /**
- * @typedef {import('../images-settings.js').ImageSettings} ImageSettings
- * @typedef {import('../images-settings.js').ImageSettingsProp} ImageSettingsProp
- * @typedef {import('../images-settings.js').ImageSettingsMode} ImageSettingsMode
+ * @typedef {import('../common/images-settings.js').ImageSettings} ImageSettings
+ * @typedef {import('../common/images-settings.js').ImageSettingsProp} ImageSettingsProp
+ * @typedef {import('../common/images-settings.js').ImageSettingsMode} ImageSettingsMode
  */
 
 

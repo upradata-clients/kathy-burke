@@ -1,9 +1,9 @@
 //@ts-check
 
-import fs from 'fs/promises';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { CustomEase } from './node_modules/gsap/dist/CustomEase.js';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { CustomEase } from '../../node_modules/gsap/dist/CustomEase.js';
 import { JSDOM } from 'jsdom';
 import { svgPathProperties } from 'svg-path-properties';
 
@@ -192,7 +192,7 @@ const generateSignatureLoader = () => {
 };
 
 
-const cssFile = path.join(__dirname, 'loader.css');
+const cssFile = path.join(__dirname, 'signature-loader.css');
 
 await fs.writeFile(cssFile, generateSignatureLoader());
 

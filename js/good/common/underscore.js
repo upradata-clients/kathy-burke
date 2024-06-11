@@ -34,7 +34,7 @@ const onReady = readyState => cb => {
             case 'loading': return { element: document, event: 'DOMContentLoaded' };
             case 'interactive': return { element: document, event: 'DOMContentLoaded' };
             case 'complete': return { element: window, event: 'load' };
-            default: return { element: window, event: 'load' };;
+            default: return { element: window, event: 'load' };
         }
     };
 
@@ -55,27 +55,87 @@ const onReady = readyState => cb => {
 };
 
 
+const uuidv4 = () => {
+    return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
+        (+c ^ crypto.getRandomValues(new Uint8Array(1))[ 0 ] & 15 >> +c / 4).toString(16)
+    );
+};
+
+/** @typedef {{
+ *      element?: Element | Window & typeof globalThis;
+ *      eventListenerOptions?: AddEventListenerOptions;
+ *      isCold?: boolean;
+ * }} OnEventOptions
+ */
+
 /**
  * @param {string} event
  * @param {(event: CustomEvent) => void} fn
- * @param {Element | Window & typeof globalThis | undefined} el
+ * @param {OnEventOptions} [options]
  */
-const onEvent = (event, fn, el = window) => el.addEventListener(event, /** @type {EventListener} */(fn));
+const onEvent = (event, fn, { element = window, isCold = false, eventListenerOptions = { passive: true } } = {}) => {
+
+    if (isCold) {
+        if (dispatchEvent.events[ event ]) {
+            fn(dispatchEvent.events[ event ]);
+            return () => {};
+        }
+    }
+
+    element.addEventListener(event, /** @type {EventListener} */(fn), eventListenerOptions);
+
+    return () => element.removeEventListener(event, /** @type {EventListener} */(fn), eventListenerOptions);
+};
+
+
+
+/**
+ * @param {string[]} events
+ * @param {(events: Record<string, CustomEvent>) => void} fn
+ * @param {OnEventOptions} [options]
+ */
+const onMultipleEvents = (events, fn, options) => {
+
+    const stops = events.map(event => onEvent(event, () => {
+
+        const allEventsDispatched = events.every(event => !!dispatchEvent.events[ event ]);
+
+        if (allEventsDispatched)
+            fn(events.reduce((acc, event) => ({ ...acc, [ event ]: dispatchEvent.events[ event ] }), {}));
+
+    }, options));
+
+
+    return () => stops.forEach(stop => stop());
+};
+
 
 /**
  * @param {string} event
  * @param {any} detail
  * @param {Element | Window & typeof globalThis | undefined} el
  */
-const dispatchEvent = (event, detail = undefined, el = window) => el.dispatchEvent(new CustomEvent(event, { detail }));
+const dispatchEvent = (event, detail = undefined, el = window) => {
+    const customEvent = new CustomEvent(event, { detail });
+    dispatchEvent.events[ event ] = customEvent;
+
+    return el.dispatchEvent(customEvent);
+};
+
+/** @type {Record<string, CustomEvent>} */
+dispatchEvent.events = {};
+
+
 
 const EventNames = {
-    gallery: {
-        enter: 'gallery.enter',
-        leave: 'gallery.leave',
-        resize: 'gallery.resize'
+    ready: {
+        document: 'document:ready',
+        gsap: 'gsap:ready',
+        gallery: 'gallery:ready'
     }
 };
+
+
 
 /**
  * Retrieves an element by its recid.
@@ -102,6 +162,7 @@ const setClassName = (el, className) => action => el?.classList[ action ](classN
  */
 const makeEaseSShape = ease => {
     const parsedEase = gsap.parseEase(ease);
+    /** @param {number} t */
     return t => t < 0.5 ? 0.5 * parsedEase(2 * t) : 1 - 0.5 * parsedEase(2 * (1 - t));
 };
 
@@ -111,6 +172,7 @@ const makeEaseSShape = ease => {
  */
 const makeEaseSymmetric = ease => {
     const parsedEase = gsap.parseEase(ease);
+    /** @param {number} t */
     return t => t < 0.5 ? parsedEase(2 * t) : parsedEase(2 * (1 - t));
 };
 
@@ -200,6 +262,54 @@ const lazyFactory = create => {
 };
 
 
+/** @param {(string|HTMLElement)[]} queries */
+const svgImageToInline = async (...queries) => {
+
+    const images = queries.flatMap(query => typeof query === 'string' ? _.queryAllThrow(query) : query);
+
+    await Promise.allSettled(images.map(async img => {
+        try {
+            const image =/** @type {HTMLImageElement} */(img);
+
+            const data = await fetch(image.src).then(res => res.text());
+
+            const parser = new DOMParser();
+            const svg = parser.parseFromString(data, 'image/svg+xml').querySelector('svg');
+
+            if (!svg)
+                throw new Error('Could not parse SVG');
+
+            if (image.id)
+                svg.id = image.id;
+
+            if (image.className)
+                svg.classList.add(...image.classList);
+
+            /** @type {Element} */(image.parentNode).replaceChild(svg, image);
+        } catch (e) {
+            console.error(e);
+        }
+    }));
+};
+
+
+/** @param {string[]} urls */
+const addScripts = async (...urls) => {
+
+    await Promise.allSettled(
+        urls.map(url => {
+            const script = document.createElement('script');
+            script.src = url;
+            document.head.appendChild(script);
+
+            return new Promise(resolve => {
+                script.addEventListener('load', resolve, { once: true });
+            });
+        })
+    );
+};
+
+
 /** @param {() => void | Record<string, any>} fn */
 const define = fn => {
     const newStuff = fn();
@@ -213,6 +323,7 @@ const define = fn => {
 
 const _ = {
     define,
+    addScripts,
     lazyFactory,
     promisifyTimeline,
     logThrottle,
@@ -220,13 +331,14 @@ const _ = {
     onLoad: onReady('complete'),
     onDOMContentLoaded: onReady('interactive'),
     onEvent,
+    onMultipleEvents,
     dispatchEvent,
     EventNames,
     getElementFromRecid,
+    svgImageToInline,
     getRect,
     setClassName,
-    toArray: gsap.utils.toArray,
-    queryAll: /** @type {(selector: string, el?: HTMLElement) => (HTMLElement|null)[]} */ (gsap.utils.toArray),
+    queryAll: /** @type {(selector: string, el?: HTMLElement) => (HTMLElement|null)[]} */ ((...args) => gsap.utils.toArray(...args)),
     queryAllThrow: /** @type {(selector: string, el?: HTMLElement) => HTMLElement[]} */ (selector, el) => {
         const elts = gsap.utils.toArray(selector, el);
 
@@ -264,11 +376,12 @@ window._ = {
 /**
  * @typedef {Object} Underscore
  * @property {typeof import('./images-settings.js').getImagesSettings} getImagesSettings
- * @property {typeof import('./gallery/gallery-menu.js').galleryMenu} galleryMenu
- * @property {typeof import('./gallery/gallery-slider.js').GallerySlider} GallerySlider
+ * @property {typeof import('../gallery/gallery-menu.js').galleryMenu} galleryMenu
+ * @property {typeof import('../gallery/gallery-slider.js').GallerySlider} GallerySlider
  * @property {typeof import('./mouse-follow.js').createMouseFollower} createMouseFollower
- * @property {typeof import('./gallery/gallery-layout.js').createElements} createElements
- * @property {typeof import('./gallery/gallery-animation.js').createGalleryAnimation} createGalleryAnimation
+ * @property {typeof import('../gallery/gallery-layout.js').createElements} createElements
+ * @property {typeof import('../gallery/gallery-animation.js').createGalleryAnimation} createGalleryAnimation
+ * @property {typeof import('../common/gsap.plugins.js').registerGsapPlugins} registerGsapPlugins
  */
 
 

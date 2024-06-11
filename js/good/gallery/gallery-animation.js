@@ -6,7 +6,7 @@
  */
 
 
-/** @type {typeof import('../underscore.js')._} */
+/** @type {typeof import('../common/underscore.js')._} */
 const _ = /** @type {any} */ (window)._;
 
 /** @typedef {'x' | 'y'} Axis */
@@ -412,7 +412,7 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
 
             if (from === to) {
                 if (state === 'activating') {
-                    gsap.to(sideMenuItems, { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: 'expo.out', overwrite: true });
+                    gsap.to(menuItemsTitles, { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: 'expo.out', overwrite: true });
 
                     sideMenuItems.forEach((item, i) => {
                         item.classList.remove('active');
@@ -457,27 +457,31 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
         //     { opacity: 0, y: -50, scale: 0.5, duration: 0.5, ease: 'expo.out', overwrite: true, immediateRender: false }
         // );
 
-        // if (from !== -1) {
-        //     const items = from === to ? menuItemsTitles.filter((_, i) => i !== to) : [ menuItemsTitles[ from ] ];
-        //     gsap.to(items, { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: 'expo.out', overwrite: true });
-        // }
+        if (state === 'desactivated') {
+            if (from !== -1) {
+                const items = from === to ? menuItemsTitles.filter((_, i) => i !== to) : [ menuItemsTitles[ from ] ];
+                gsap.to(items, { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: 'expo.out', overwrite: true });
+            }
 
-        gsap.to(menuItemsTitles, { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: 'expo.out', overwrite: true });
+            // gsap.to(menuItemsTitles, { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: 'expo.out', overwrite: true });
 
-        // if (to !== -1) {
-        //     gsap.fromTo(menuItemsTitles[ to ],
-        //         { /* opacity: 1, */ y: 0, scale: 1 },
-        //         { /* opacity: 0, */ y: 0, scale: 0.8, duration: 0.4, delay: 0.1, ease: 'back.in(4)', overwrite: true, immediateRender: false }
-        //     );
-        //     // const splitText = new SplitText(menuItemsTitles[ to ]);
+            if (to !== -1) {
+                gsap.fromTo(menuItemsTitles[ to ],
+                    { /* opacity: 1, */ y: 0, scale: 1 },
+                    { /* opacity: 0, */ y: 0, scale: 0.8, duration: 0.4, delay: 0.1, ease: 'ease.out', overwrite: true, immediateRender: false }
+                );
+                // const splitText = new SplitText(menuItemsTitles[ to ]);
 
-        //     // gsap.set(menuItemsTitles[ to ], { perspective: 400 });
-        //     // splitText.split({ type: 'chars, words' });
-        //     // gsap.to(splitText.chars, {
-        //     //     duration: 0.6, stagger: 0.02, scale: 0
-        //     //     // scale: 2, opacity: 1, rotationX: -80, transformOrigin: '100% 50%', ease: 'power2.out', stagger: 0.02 
-        //     // });
-        // }
+                // gsap.set(menuItemsTitles[ to ], { perspective: 400 });
+                // splitText.split({ type: 'chars, words' });
+                // gsap.to(splitText.chars, {
+                //     duration: 0.6, stagger: 0.02, scale: 0
+                //     // scale: 2, opacity: 1, rotationX: -80, transformOrigin: '100% 50%', ease: 'power2.out', stagger: 0.02 
+                // });
+            }
+        } else {
+            gsap.to(menuItemsTitles, { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: 'expo.out', overwrite: true });
+        }
 
         if (isInit) {
             galleryTitleHeader.textContent = menuItemsTitles[ to ].textContent;

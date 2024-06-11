@@ -26,17 +26,18 @@ gsap.registerPlugin(ScrollToPlugin);
 await import('./extra-header.js');
 
 
-const { _ } = await import('../underscore.js');
+const { _ } = await import('../common/underscore.js');
 
 Object.assign(_, await getModules(
-    import('../mouse-follow.js'),
-    import('../images-settings.js'),
+    import('../common/mouse-follow.js'),
+    // import('../common/images-settings.js'),
     import('./gallery-menu.js'),
     import('./gallery-animation.js'),
     import('./gallery-layout.local.js'),
     import('./gallery-slider.js')
 ));
 
+_.getImagesSettings = () => [];
 
 
 _.EventNames.gallery = {

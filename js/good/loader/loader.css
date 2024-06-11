@@ -1,0 +1,225 @@
+body.loading {
+    overflow: hidden;
+}
+
+
+.init-loader__wrapper {
+    opacity: 1;
+    z-index: 10000;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.init-loader__wrapper:not(.active) {
+    display: none;
+}
+
+.init-loader {
+    display: flex;
+    flex-direction: column;
+    gap: 150px;
+    justify-content: center;
+    align-items: center;
+    background: white;
+    width: 100%;
+    height: 100%;
+    /* overflow: scroll; */
+}
+
+
+/* .init-loader.active .svg-signature path {
+            stroke-width: 0.7px;
+        } */
+
+.init-loader .svg-signature path {
+    stroke-width: 0.7px;
+}
+
+.boubat {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 3rem;
+
+    /* flex-direction: row;
+            flex-wrap: wrap; */
+}
+
+.image {
+    height: auto;
+    object-fit: cover;
+    /* clip-path:  path('m157.61 11.416c-118.06-23.125-148.36-12.304-157.1 43.378-6.1845 96.857 45.223 120.25 96.193 103.26 72.137-24.043 144.49-121.98 60.906-146.64z'); */
+}
+
+.boubat__image {
+    width: 30vw;
+    clip-path: url(#bouba-clip);
+    clip-path: inset(0 0 0 0 round 30% 80% 80% 28% / 29% 37% 68% 73%);
+    /* inset(0 0 0 0 round 27% 75% 80% 28% / 29% 37% 68% 73%); */
+    /* animation:
+                transform 50s ease-in-out infinite both alternate,
+                movement 40s ease-in-out infinite both; */
+    /* clip-path: inset(0% 50% 50% 10% round 60% 50% 60% 45% / 50% 50% 70% 80%); */
+    /* clip-path: inset(0% 50% 50% 10% round 50%); */
+    /* clip-path: inset(0 50% 0% 10% round 20% 20% 20% 20% / 20% 20% 20% 20%); */
+    transform: perspective(600px) translateZ(0px) rotateY(8deg) rotateX(5deg);
+
+    animation:
+        boubat-image-apparition 0.8s ease-out both,
+        apparition 1.2s ease-out both,
+        boubat-image-transform 30s linear 0s infinite both alternate;
+}
+
+.boubat__text {
+    animation: apparition 0.5s ease-out 1s both;
+}
+
+
+@keyframes apparition {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+
+@keyframes boubat-image-apparition {
+    from {
+        transform: perspective(1130px) translateZ(0px) rotateY(-31deg) rotateX(11deg) translate3d(210px, -10px, -40px) scale(0.8, 0.8);
+    }
+
+    to {
+        transform: perspective(600px) translateZ(0px) rotateY(8deg) rotateX(5deg);
+    }
+
+    /* 0% {
+                clip-path: inset(0% 50% 50% 10% round 60% 50% 60% 45% / 50% 50% 70% 80%);
+            }
+
+            30% {
+                clip-path: (0 50% 0% 10% round 20% 20% 20% 20% / 20% 20% 20% 20%);
+            }
+
+            50% {
+                clip-path: inset(0% 40% 20% 10% round 60% 50% 60% 45% / 50% 50% 70% 80%);
+            }
+
+            70% {
+                clip-path: inset(0 10% 10% 5% round 30% 80% 80% 28% / 29% 37% 68% 73%);
+            }
+
+            100% {
+                clip-path: inset(0 0 0 0 round 30% 80% 80% 28% / 29% 37% 68% 73%)
+            } */
+}
+
+@keyframes boubat-image-transform {
+
+    /* https://dev.to/equinusocio/making-a-css-blob-37nb */
+    0%,
+    100% {
+        clip-path: inset(0 0 0 0 round 30% 80% 80% 28% / 29% 37% 68% 73%);
+    }
+
+    14% {
+        clip-path: inset(0 0 0 0 round 57% 60% 76% 25% / 35% 38% 68% 73%);
+    }
+
+    28% {
+        clip-path: inset(0 0 0 0 round 57% 60% 36% 25% / 35% 38% 68% 73%);
+    }
+
+    45% {
+        clip-path: inset(0 0 0 0 round 57% 60% 36% 75% / 35% 38% 68% 73%);
+    }
+
+    75% {
+        clip-path: inset(0 10% 0 10% round 57% 60% 76% 30% / 35% 38% 85% 73%);
+    }
+}
+
+
+@keyframes movement {
+
+    0%,
+    100% {
+        transform: none;
+    }
+
+    50% {
+        transform: translateY(20%) rotateY(10deg);
+    }
+}
+
+
+.boubat__text {
+    width: 25vw;
+}
+
+.svg-signature {
+    position: absolute;
+    bottom: 7%;
+    right: 4%;
+    color: rgb(75, 75, 75);
+}
+
+.boubat__image__wrapper {
+    filter: drop-shadow(4px 3px 7px rgba(0, 0, 0, 0.2));
+    /* 
+            drop-shadow( -20px -20px 60px rgb(201, 201, 201)) drop-shadow(20px 20px 60px #ffffff);
+            drop-shadow(20px 20px 60px #bebebe), drop-shadow(-20px -20px 60px #ffffff);
+            */
+}
+
+.waiting-loader {
+    position: absolute;
+    left: 30px;
+    bottom: 30px;
+    display: flex;
+    gap: 10px;
+    opacity: 0;
+    transform-origin: left;
+    transform: scaleX(0);
+    transition: all 0.3s ease-out;
+}
+
+.waiting-loader.active {
+    transform: scaleX(1);
+    opacity: 1;
+}
+
+.waiting-loader__text {
+    font-size: 1rem;
+}
+
+.waiting-loader .progress {
+    width: 3rem;
+    height: 0.9rem;
+    border-radius: 200px;
+    color: #999999;
+    border: 2.2px solid #575757;
+    position: relative;
+}
+
+.waiting-loader .progress::before {
+    content: "";
+    position: absolute;
+    margin: 2.2px;
+    inset: 0 100% 0 0;
+    border-radius: inherit;
+    background: currentColor;
+    animation: progress-loader 2s ease-in-out infinite alternate;
+}
+
+@keyframes progress-loader {
+    100% {
+        inset: 0;
+    }
+}

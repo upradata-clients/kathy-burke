@@ -1,6 +1,6 @@
 // @ts-check
 
-/** @type {typeof import('../underscore.js')._} */
+/** @type {typeof import('../../underscore.js')._} */
 const _ = /** @type {any} */ (window)._;
 
 const addMenuHinter = () => {

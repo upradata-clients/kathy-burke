@@ -6,7 +6,7 @@
  */
 
 
-/** @type {typeof import('../underscore.js')._} */
+/** @type {typeof import('../common/underscore.js')._} */
 const _ = /** @type {any} */ (window)._;
 
 
@@ -42,7 +42,7 @@ const createGalleriesLayout = galleryCategories => {
         const wrapper = _.queryThrow('.t156__wrapper', block);
 
         const images = blocks.flatMap((block, i) => {
-            const images = _.toArray('.t156__item', block);
+            const images = _.queryAllThrow('.t156__item', block);
 
             if (i === 0) {
                 block.setAttribute('class', `gallery gallery-${categoryI} card r t-rec`);
