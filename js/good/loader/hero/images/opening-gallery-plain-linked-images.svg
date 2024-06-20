@@ -1,0 +1,88 @@
+<svg preserveAspectRatio="xMidYMid slice" version="1.0" viewBox="0 0 1920 1079" xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink">
+    <defs>
+        <clipPath id="clipPath11982">
+            <rect id="rect11984" x="7.1054e-15" y="245.04" width="142.96" height="384.55" fill="#b03515" opacity=".28752"
+                  stop-color="#000000" style="stroke-width:1.0032" />
+        </clipPath>
+        <clipPath id="clipPath12100">
+            <rect id="rect12102" x="625.58" y="367.33" width="111.23" height="226.38" fill="#b03515" opacity=".28752"
+                  stop-color="#000000" />
+        </clipPath>
+        <clipPath id="clipPath12104">
+            <rect id="rect12106" x="857.17" y="367.33" width="164.5" height="226.38" fill="#b03515" opacity=".28752" stop-color="#000000"
+                  style="stroke-width:1.2161" />
+        </clipPath>
+        <clipPath id="clipPath12108">
+            <rect id="rect12110" x="1152.1" y="366.96" width="164.5" height="226.38" fill="#b03515" opacity=".28752" stop-color="#000000"
+                  style="stroke-width:1.2161" />
+        </clipPath>
+        <clipPath id="clipPath12161">
+            <rect id="rect12163" x="1726.6" y="250.87" width="193.81" height="315.74" fill="#b03515" opacity=".28752" stop-color="#000000"
+                  style="stroke-width:1.0006" />
+        </clipPath>
+        <filter id="filter14587" x="-.06574" y="-.051061" width="1.1315" height="1.1021" style="color-interpolation-filters:sRGB">
+            <feGaussianBlur id="feGaussianBlur14589" stdDeviation="5.8701102" />
+        </filter>
+        <clipPath id="clipPath14836">
+            <rect id="rect14838" x="196.93" y="329.12" width="106.17" height="276.88" fill="#b03515" opacity=".28752" stop-color="#000000"
+                  style="stroke-width:1.0011" />
+        </clipPath>
+    </defs>
+    <image id="image12785" x="-.12011" y="-.02" width="1920.2" height="1079" xlink:href="./images/gallery.jpg" />
+    <g id="g14886" class="canvas" transform="matrix(.77934 0 0 .82233 63.96 653.3)" fill="#fff">
+        <path id="path14882" transform="matrix(.96339 0 0 .98021 50.368 -6.6562)" d="m1611.5-65.035h-214.3v-275.91h214.3z"
+              style="fill-opacity:.26882;fill:#000;filter:url(#filter14587);stroke-width:1.4423" />
+        <path id="path14884" d="m1607.3-74.022h-211.07v-274.18h211.07z" style="stroke-width:1.4268" />
+    </g>
+    <g id="g14593" class="canvas" transform="matrix(.49535 0 0 1.0022 -494.65 678.27)" fill="#fff">
+        <path id="path14222" transform="matrix(1.0011 0 0 .99352 -1.8441 -1.9314)" d="m1611.5-65.035h-214.3v-275.91h214.3z"
+              style="fill-opacity:.26882;fill:#000;filter:url(#filter14587);stroke-width:1.4423" />
+        <path id="path11809" d="m1610.5-72.29h-214.3v-275.91h214.3z" style="stroke-width:1.4423" />
+    </g>
+    <image id="image12018" transform="translate(.016893 1.1446e-5)" x="84.931" y="328.93" width="218.9" height="277.18"
+           clip-path="url(#clipPath14836)" xlink:href="./images/OpeningGallery/2-small.jpeg" />
+    <g id="g14850" class="canvas" transform="matrix(.77934 0 0 .82233 -230.94 653.66)" fill="#fff">
+        <path id="path14846" transform="matrix(.96339 0 0 .98021 50.368 -6.6562)" d="m1611.5-65.035h-214.3v-275.91h214.3z"
+              style="fill-opacity:.26882;fill:#000;filter:url(#filter14587);stroke-width:1.4423" />
+        <path id="path14848" d="m1607.3-74.022h-211.07v-274.18h211.07z" style="stroke-width:1.4268" />
+    </g>
+    <image id="image12066" class="painting-5" x="849.82" y="366.41" width="179.85" height="226.38" clip-path="url(#clipPath12104)"
+           xlink:href="./images/OpeningGallery/6-small.jpeg" />
+    <g id="g14898" class="canvas" transform="matrix(.7751 0 0 .98784 644.4 594.82)" fill="#fff">
+        <path id="path14894" transform="matrix(1.0848 0 0 1.1399 -117.62 50.056)" d="m1611.5-65.035h-214.3v-275.91h214.3z"
+              style="fill-opacity:.26882;fill:#000;filter:url(#filter14587);stroke-width:1.4423" />
+        <path id="path14896" d="m1646.3-30.849h-250.12v-317.35h250.12z" style="stroke-width:1.671" />
+    </g>
+    <image id="image12090" x="1693.6" y="250.87" width="252.59" height="315.74" clip-path="url(#clipPath12161)"
+           xlink:href="./images/OpeningGallery/8-small.jpeg" />
+    <g id="g14892" class="canvas" transform="matrix(.52577 0 0 .82238 -108.25 653.68)" fill="#fff">
+        <path id="path14888" transform="matrix(.96339 0 0 .98021 50.368 -6.6562)" d="m1611.5-65.035h-214.3v-275.91h214.3z"
+              style="fill-opacity:.26882;fill:#000;filter:url(#filter14587);stroke-width:1.4423" />
+        <path id="path14890" d="m1607.3-74.022h-211.07v-274.18h211.07z" style="stroke-width:1.4268" />
+    </g>
+    <image id="image12042" x="575.94" y="367.05" width="178.78" height="226.38" clip-path="url(#clipPath12100)"
+           xlink:href="./images/OpeningGallery/4-small.jpeg" />
+    <image id="image12054" x="1148.1" y="366.41" width="178.78" height="226.38" clip-path="url(#clipPath12108)"
+           xlink:href="./images/OpeningGallery/5-small.jpeg" />
+    <g id="g14868" class="canvas" transform="matrix(.99214 0 0 .99197 42.158 596.2)" fill="#fff">
+        <path id="path14864" transform="matrix(1.1812 0 0 1.1399 -250.9 50.056)" d="m1611.5-65.035h-214.3v-275.91h214.3z"
+              style="fill-opacity:.26882;fill:#000;filter:url(#filter14587);stroke-width:1.4423" />
+        <path id="path14866" d="m1646.3-30.849h-250.12v-317.35h250.12z" style="stroke-width:1.671" />
+    </g>
+    <image id="image12078" x="1427.5" y="250.87" width="250.84" height="315.74" xlink:href="./images/OpeningGallery/7-small.jpeg" />
+    <g id="g14844" class="canvas" transform="matrix(1.0029 0 0 .99492 -1045.2 676.22)" fill="#fff">
+        <path id="path14840" transform="matrix(1.0011 0 0 .99352 -1.8441 -1.9314)" d="m1611.5-65.035h-214.3v-275.91h214.3z"
+              style="fill-opacity:.26882;fill:#000;filter:url(#filter14587);stroke-width:1.4423" />
+        <path id="path14842" d="m1610.5-72.29h-214.3v-275.91h214.3z" style="stroke-width:1.4423" />
+    </g>
+    <image id="image12030" x="353.83" y="328.93" width="216.89" height="276.54" xlink:href="./images/OpeningGallery/3-small.jpeg" />
+    <g id="g14856" class="canvas" transform="matrix(.66004 0 0 1.3784 -921.01 726.24)" fill="#fff">
+        <path id="path14852" transform="matrix(.95362 0 0 .99352 75.391 -1.9314)" d="m1611.5-65.035h-214.3v-275.91h214.3z"
+              style="fill-opacity:.26882;fill:#000;filter:url(#filter14587);stroke-width:1.4423" />
+        <path id="path14854" d="m1610.5-72.29h-214.3v-275.91h214.3z" style="stroke-width:1.4423" />
+    </g>
+    <image id="image11978" transform="translate(-.224 .47901)" x="-117.41" y="245.54" width="305.2" height="384.55"
+           clip-path="url(#clipPath11982)"
+           xlink:href="./images/OpeningGallery/1-small.jpeg" />
+</svg>

@@ -264,7 +264,7 @@ const createHeroToImagePinAnimation = ({ heroBlock, signatureBlock, notreDameBlo
         const notreDameHand = _.queryThrow('svg .notre-dame-hand', notreDameBlock);
         const notreDameSky = _.queryThrow('svg .notre-dame-sky', notreDameBlock);
 
-        const centralPainting = _.queryThrow('#painting-5', heroContainer);
+        const centralPainting = _.queryThrow('.painting-5', heroContainer);
 
         // notreDameTitle.classList.add('hand-font');
 
@@ -419,11 +419,11 @@ const createHeroToImagePinAnimation = ({ heroBlock, signatureBlock, notreDameBlo
                 start: 0,
                 to: { duration: 0.5, opacity: 0, ease: 'expo.out' }
             },
-            /* {
+            {
                 target: hero.container, // scales up
                 start: 0.01,
                 to: { duration: 1, scale: 1.5, ease: 'power2.inOut' }
-            }, */
+            },
             {
                 target: hero.svg.notreDameImgInPainting, // appears in the middle frame
                 start: 0.2,
