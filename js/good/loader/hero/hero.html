@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Hero</title>
+    <link rel="stylesheet" type="text/css" href="./hero.css">
+    <!-- <script defer type="module" src="./hero.local.js"></script> -->
+    <script defer type="module">
+        import { initHero, createHeroToImagePinAnimation } from './hero.local.js';
+        createHeroToImagePinAnimation(await initHero());
+    </script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .uc-hero-block {
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+        }
+
+        .uc-signature {
+            position: absolute;
+            bottom: 100px;
+            right: 100px;
+        }
+    </style>
+</head>
+
+
+<body>
+    <!-- <div class="uc-hero-block">
+        <img src="../../../../../images/Images/opening-gallery-plain.svg">
+    </div> -->
+
+    <div id="rec753197454" class="r t-rec uc-hero-block r_showed r_anim svg-active">
+        <div class="t107">
+            <div class="t-align_center" itemscope="" itemtype="http://schema.org/ImageObject">
+                <meta itemprop="image" content="https://static.tildacdn.net/tild6665-6266-4430-a463-313161373735/opening-gallery-plai.svg">
+                <meta itemprop="caption" content="A gallery of paintings made by Kathy Burke">
+                <img src="../../../../../images/Images/opening-gallery-plain.svg">
+            </div>
+        </div>
+    </div>
+
+
+    <div class="uc-signature">
+        <img src="../../../../../images/signature4-2.svg">
+    </div>
+
+    <!-- <div class="uc-hero-img-copy">
+        <img src="../../../../../images/Images/opening-gallery-plain.svg">
+    </div> -->
+
+    <div id="rec751628600" class="r t-rec uc-notre-dame-block r_showed r_anim"><!-- T107 -->
+        <div class="t107">
+            <div class="t-align_center" itemscope="" itemtype="http://schema.org/ImageObject">
+                <img class="t-img t-width t107__width t-width_100 loaded" src="../../../../../images/cathedral-mood-video-thumbnail2.svg" />
+                <!-- src="https://optim.tildacdn.net/tild6565-3635-4238-b465-613736323063/-/format/webp/KATHY_BURKE_PORTRAIT.jpeg" -->
+            </div>
+        </div>
+    </div>
+
+
+
+    <div id="rec753299780" class="r t-rec uc-nd-title-block r_showed r_anim" data-record-type="795"><!-- T795 -->
+        <div class="t795">
+            <div class="t-container t-align_center">
+                <div class="t-col t-col_10 t-prefix_1">
+                    <h3 class="t795__title t-title t-title_xs t-margin_auto" field="title">
+                        From#a long series#of the view#from my window
+                    </h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="background-color: antiquewhite; height: 1000px;">
+        <p>Some text</p>
+    </div>
+</body>
+
+</html>

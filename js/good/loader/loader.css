@@ -1,5 +1,6 @@
 body.loading {
     overflow: hidden;
+    margin: 0;
 }
 
 
@@ -47,6 +48,13 @@ body.loading {
 
     /* flex-direction: row;
             flex-wrap: wrap; */
+}
+
+.boubat__description {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translate(-50%, 0);
 }
 
 .image {

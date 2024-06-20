@@ -380,195 +380,100 @@ const debounce = (f, time) => {
 
 /**
  * @template {Record<string, gsap.TweenTarget>} T
- * @typedef {(keyof T) & string | gsap.core.Timeline | gsap.core.Tween | object} AddToTimelineTarget
+ * @typedef {(keyof T) & string | gsap.core.Timeline | gsap.core.Tween | Element | Element[]} AddToTimelineTarget
  */
 
 
 /**
-
- * @template {readonly any[]} Elts
- * @typedef {Object} _AddToTimelineOption
- 
+ * @typedef {Object} AnimationsSetting
  * @property {gsap.Position} [start]
  * @property {number} [duration]
- * @property {gsap.core.Timeline} [timeline]
- * @property {CreateTimelinesOptions & { ease?: gsap.EaseString | gsap.EaseFunction; createAnimation: (params: { element: InferArray<Elts>, index: number, globalTimeline: gsap.core.Timeline; }) => AddToTimelineOptions; elements: Elts; }} [timelines] 
+ * @property {'from' | 'to' | 'set' | 'timeline'} [type]
+ * @property {gsap.core.Timeline | gsap.core.Tween} [timeline]
  * @property {AddToTimelineTarget<{}>} [target]
+ * @property {Omit<gsap.TweenVars, 'duration'>} [options]
  */
-
-
-/**
- * @typedef {Partial<Record<'from' | 'to' | 'set', gsap.TweenVars>> & { fromTo?: Record<'from' | 'to', gsap.TweenVars>; }} _AddToTimelineOptionActions
- */
-
-/**
- * @template {readonly any[]} [Elts=readonly any[]]
- * @typedef {_AddToTimelineOption<Elts> & _AddToTimelineOptionActions } AddToTimelineOption
- */
-
-/**
- * @template {readonly any[]} [Elts=readonly any[]]
- * @typedef {AddToTimelineOption<Elts> | AddToTimelineOption<Elts>[]} AddToTimelineOptions
- */
-
 
 /**
  * @template T
- * @template {readonly T[]} Elts
- * @param {readonly AddToTimelineOption<Elts>[]} listOfOptions
+ * @typedef {Record<keyof T, AnimationsSetting | readonly AnimationsSetting[]>} AnimationsSettings
  */
-const addToTimeline = (...listOfOptions) => {
 
-    /**
-     * @param {gsap.core.Timeline} timeline
-     * @param {gsap.core.Timeline | gsap.core.Tween} tl
-     * @param {gsap.Position | undefined} start
-     * @param {gsap.TweenVars | undefined} options
-     */
-    const addTimeline = (timeline, tl, start, options) => {
-        timeline.add(tl, start);
+/** @typedef {gsap.TweenVars & { start?: gsap.Position, type?: 'from' | 'to' | 'set' }} AddToTimelineOptions */
 
-        const opts = Object.entries(options || {}).reduce((opts, [ k, v ]) => typeof v === 'undefined' ? opts : { ...opts, [ k ]: v }, {});
 
-        if (Object.keys(opts).length === 0)
-            return timeline;
+/**
+ * @template {Record<string, gsap.TweenTarget>} T
+ * 
+ * @param {Object} params
+ * @param {gsap.core.Timeline} params.timeline
+ * @param {AddToTimelineTarget<T>} params.target
+ * @param {T} [params.elements]
+ * @param {AnimationsSettings<T>} [params.animationsSettings]
+ * @param {AddToTimelineOptions} [params.options]
+ */
+const addToTimeline = ({ timeline, target, elements, animationsSettings, options = {} }) => {
 
-        tl.paused(true);
-        return timeline.to(tl, opts, start);
+    /** @param {AnimationsSetting} [setting] */
+    const getOptions = setting => {
+        const { start, type, ...opts } = options;
+        const d = type === 'set' ? { duration: 0 } : setting?.duration !== undefined ? { duration: setting.duration } : {};
+
+        return { ...d, ...setting?.options, ...opts };
     };
 
 
-    listOfOptions.forEach(options => {
-        const { start, timeline = gsap, timelines, duration, from, to, fromTo, set, target } = options;
+    /**
+     * @param {gsap.core.Timeline | gsap.core.Tween} tl
+     * @param {gsap.Position | undefined} start
+     * @param {AddToTimelineOptions} options
+     */
+    const addTimeline = (tl, start, options) => {
+        timeline.add(tl, start);
 
-        if (timelines) {
+        if (Object.keys(options).length === 0)
+            return timeline;
 
-            const { createAnimation, ease, ...timelinesOptions } = timelines;
-
-            const { timeline: tl, duration } = createTimelines(timelines.elements, (tl, element, index, globalTimeline) => {
-                const newOptions = createAnimation({ element, index, globalTimeline });
-                const listOfOptions = (Array.isArray(newOptions) ? newOptions : [ newOptions ]).map(opts => ({ ...opts, timeline: tl }));
-               
-                addToTimeline(...listOfOptions);
-            }, timelinesOptions);
-
-            if (timelinesOptions.withScrub)
-                return timeline.fromTo(tl, { time: 0 }, { time: duration, duration, ease }, start);
-
-            if (!options.timeline)
-                throw new Error('timeline is not defined in options');
+        tl.paused(true);
+        return timeline.to(tl, options, start);
+    };
 
 
-            return options.timeline.add(tl, start);
+    if (typeof target !== 'string') {
+        const { start, type = 'to' } = options;
+
+        if ((target instanceof gsap.core.Timeline || target instanceof gsap.core.Tween) /* && Object.keys(opts).length === 0 */)
+            return addTimeline(target, start, getOptions());
+
+        return timeline[ type ](target, getOptions(), start);
+    }
+
+
+    const setting = animationsSettings ? animationsSettings[ target ] : [];
+    const listOfSetting = /** @type {AnimationsSetting[]} */(Array.isArray(setting) ? setting : [ setting ]);
+
+    listOfSetting.forEach(setting => {
+        const { type = 'to', start: s } = setting;
+        const { start = s } = options;
+
+        if (type === 'timeline' && !setting.timeline)
+            throw new Error('timeline is not defined in setting');
+
+        if (!elements)
+            throw new Error('elements is not defined');
+
+        const opts = getOptions(setting);
+
+        if (type === 'timeline') {
+            if (!setting.timeline)
+                throw new Error('timeline is not defined in setting');
+
+            return addTimeline(setting.timeline, start, opts);
         }
 
-        const getTweenOptions = () => {
-            if (fromTo) return /** @type {const} */({ options: fromTo, type: 'fromTo' });
-            if (from) return /** @type {const} */({ options: from, type: 'from' });
-            if (to) return /** @type {const} */({ options: to, type: 'to' });
-            if (set) return /** @type {const} */({ options: set, type: 'set' });
-            return {};
-        };
-
-        const tweenOpts = getTweenOptions();
-
-        /** @param {gsap.TweenVars | undefined} opts */
-        const tweenOptions = opts => ({ duration, ...opts });
-
-        if (target instanceof gsap.core.Timeline || target instanceof gsap.core.Tween) {
-            if (!options.timeline)
-                throw new Error('timeline is not defined in options');
-
-            return addTimeline(options.timeline, target, start, tweenOptions(tweenOpts.options));
-        }
-
-        if (!target)
-            throw new Error('target is not defined in options');
-
-        if (tweenOpts.type === undefined)
-            throw new Error('animation type (set, from, to, fromTo) is not defined in options');
-
-        if (tweenOpts.type === 'fromTo')
-            return timeline.fromTo(target, tweenOpts.options.from, tweenOptions(tweenOpts.options.to), start);
-
-        return timeline[ tweenOpts.type ](target, tweenOptions(tweenOpts.options), start);
+        return timeline[ type ](setting.target || elements[ target ], opts, start);
     });
 };
-
-
-/**
- * @template T
- * @template {readonly T[]} Elts
- * @param {AddToTimelineOption<Elts>} options
- */
-const bindAddToTimeline = options => {
-    /** @param {readonly AddToTimelineOption<Elts>[]} opts */
-    return (...opts) => addToTimeline(...opts.map(option => ({ ...options, ...option })));
-};
-
-/**
- * @template T
- * @typedef {T extends readonly (infer U)[] ? U : never} InferArray
- */
-
-
-/**
- * @typedef {Object} CreateTimelinesOptions
- * 
- * @property {number} [start]
- * @property {number} [stagger]
- * @property {(i: number, start: number, stagger: number) => gsap.Position} [time]
- * @property {boolean} [withScrub]
- * @property {() => gsap.core.Timeline} [createTimeline]
- */
-
-/**
- * @template {readonly any[]} [Elts=readonly any[]]
- * @typedef {(tl: gsap.core.Timeline, element: InferArray<Elts>, index: number, globalTimeline: gsap.core.Timeline) => void} CreateAnimation
- */
-
-/**
- * @template T
- * @template {readonly T[]} Elts
- * 
- * @param {Elts} elements
- * @param {CreateAnimation<Elts>} createAnimation
- * @param {CreateTimelinesOptions} [options]
- */
-const createTimelines = (elements, createAnimation, options = {}) => {
-    const {
-        start = 0,
-        stagger = 0,
-        withScrub = false,
-        createTimeline = () => gsap.timeline({ paused: withScrub, id: 'createTimelines-tl' })
-    } = options;
-
-    const time = options.time || ((i, start = 0, stagger = 0) => start + i * stagger);
-
-    const globalTL = createTimeline();
-
-    elements.forEach((element, i) => {
-        const timeline = gsap.timeline({ paused: true /* withScrub */, id: `createTimelines-tl-${i}` });
-
-        createAnimation(timeline, /** @type {InferArray<Elts>} */(element), i, globalTL);
-        const position = time(i, start, stagger);
-
-        globalTL.add(timeline, position);
-        globalTL.to(timeline, { time: timeline.duration(), duration: timeline.duration() }, position);
-
-        // timeline.eventCallback('onStart', () => { console.log('start', i); });
-        // timeline.eventCallback('onComplete', () => { console.log('complete', i); });
-    });
-
-    // if (withScrub)
-    //     tl.to(tl, { time: duration, duration });
-
-    return { timeline: globalTL, duration: globalTL.duration() };
-};
-
-
-
-
 
 /** @param {string[]} urls */
 const addScripts = async (...urls) => {
@@ -792,10 +697,11 @@ const _ = {
     addScripts,
     createTextSplit,
     createLazySingleton: createLazySingleton,
-    promisifyTimeline, createTimelines, addToTimeline, bindAddToTimeline,
+    promisifyTimeline,
     logThrottle,
     createMultipleSetTimeoutCalls,
     queryAll, queryAllThrow, queryThrow,
+    addToTimeline,
     onReady, onLoad: onReady('complete'), onDOMContentLoaded: onReady('interactive'),
     onEvent, onMultipleEvents, dispatchEvent, createDispatchEventOnce, EventNames,
     getElementFromRecid,

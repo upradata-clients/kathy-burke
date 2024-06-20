@@ -21,8 +21,6 @@ const createHeroAnimation = async () => {
     heroBlock.classList.add('svg-active');
     heroBlockImg.classList.add('svg-active');
 
-
-
     heroBlock.append(signatureBlock);
 
 
@@ -124,13 +122,12 @@ const createHeroToImagePinAnimation = () => {
 
     /**
      * @param {number} a
-     * @param {number} b
      */
-    const middle = (a, b) => (a - b) / 2;
+    const half = a => a / 2;
 
     const delta = {
-        x: middle(heroRect.width, paintingRect.width) / heroRect.width,
-        y: middle(heroRect.height, paintingRect.height) / heroRect.height,
+        x: half(heroRect.width - paintingRect.width) / heroRect.width,
+        y: half(heroRect.height - paintingRect.height) / heroRect.height,
     };
 
 
@@ -210,7 +207,12 @@ const createHeroToImagePinAnimation = () => {
 
 };
 
-_.onEvent(_.EventNames.ready.gsap, async () => {
+
+
+_.onMultipleEvents([
+    _.EventNames.ready.gsap,
+    _.EventNames.ready.document
+], async () => {
     await createHeroAnimation();
     createHeroToImagePinAnimation();
 }, { isCold: true });

@@ -336,12 +336,12 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
 
     galleryMenu.setMenuItemsImagesStyle([ { prop: 'background-position', mode: 'lg' } ]);
 
-    const slider = _.lazyFactory(() => createGallerySlider(cards, elements))({
+    const slider = _.createLazySingleton(() => createGallerySlider(cards, elements))({
         destroy: slider => slider.stop()
     });
     // /** @param {GallerySlider} slider */
 
-    const sideCardsMouseFollowAnimation = _.lazyFactory(
+    const sideCardsMouseFollowAnimation = _.createLazySingleton(
         /** @param {number[]} indexes */
         indexes => createSideCardsMouseFollowAnimation({
             elementsPerCategory: elements.elementsPerCategory.filter((_, i) => indexes.includes(i)),
@@ -357,7 +357,7 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
     });
 
 
-    const sideCardsScrollFollow = _.lazyFactory(() => createSideCardsScrollFollow({
+    const sideCardsScrollFollow = _.createLazySingleton(() => createSideCardsScrollFollow({
         galleryBackground: _.queryThrow('.t-container', elements.galleryBackground),
         cards: elements.cards
     }))({

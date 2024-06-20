@@ -1,5 +1,15 @@
 // @ts-check
 
+/**
+ * @typedef {import("gsap")} gsap
+ */
+
+/** @type {typeof import('../common/underscore.js')._} */
+// const _ = /** @type {any} */ (window)._;
+
+import { _ } from '../common/underscore.js';
+
+
 document.body.classList.add('loading');
 
 const loader =/** @type {HTMLElement} */(document.querySelector('.init-loader__wrapper'));
@@ -7,41 +17,37 @@ const loader =/** @type {HTMLElement} */(document.querySelector('.init-loader__w
 document.body.prepend(loader);
 loader.classList.add('active');
 
-/**
- * @typedef {import("gsap")} gsap
- */
-
-/** @type {typeof import('../common/underscore.js')._} */
-const _ = /** @type {any} */ (window)._;
-
 
 /** @param {string} path */
 const fromGsap = path => `https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/${path}`;
 
 
-_.addScripts(
-    fromGsap('gsap.js'),
-    fromGsap('ScrollTrigger.js'),
-    fromGsap('Flip.js'),
-    fromGsap('ScrollToPlugin.js'),
-    fromGsap('CustomEase.min.js'),
-).then(() => {
-    gsap.registerPlugin(Flip);
-    gsap.registerPlugin(ScrollTrigger);
-    gsap.registerPlugin(ScrollToPlugin);
-    _.registerGsapPlugins();
+const isLocal = [ 'localhost', '127.0.0.1' ].some(host => window.location.hostname === host);
 
-    // create the scrollSmoother before your scrollTriggers
-    ScrollSmoother.create({
-        content: _.queryThrow('#allrecords'), // the element that scrolls
-        smooth: 1, // how long (in seconds) it takes to "catch up" to the native scroll position
-        effects: true, // looks for data-speed and data-lag attributes on elements
-        smoothTouch: 0.1, // much shorter smoothing time on touch devices (default is NO smoothing on touch devices)
+if (!isLocal) {
+    _.addScripts(
+        fromGsap('gsap.js'),
+        fromGsap('ScrollTrigger.js'),
+        fromGsap('Flip.js'),
+        fromGsap('ScrollToPlugin.js'),
+        fromGsap('CustomEase.min.js'),
+    ).then(() => {
+        gsap.registerPlugin(Flip);
+        gsap.registerPlugin(ScrollTrigger);
+        gsap.registerPlugin(ScrollToPlugin);
+        _.registerGsapPlugins();
+
+        // create the scrollSmoother before your scrollTriggers
+        ScrollSmoother.create({
+            content: _.queryThrow('#allrecords'), // the element that scrolls
+            smooth: 1, // how long (in seconds) it takes to "catch up" to the native scroll position
+            effects: true, // looks for data-speed and data-lag attributes on elements
+            smoothTouch: 0.1, // much shorter smoothing time on touch devices (default is NO smoothing on touch devices)
+        });
+
+        _.dispatchEvent(_.EventNames.ready.gsap);
     });
-
-    _.dispatchEvent(_.EventNames.ready.gsap);
-});
-
+}
 
 setTimeout(() => {
     _.queryThrow('.waiting-loader').classList.add('active');
