@@ -110,8 +110,18 @@ const getAbsoluteRectTopLeft = (element, options) => getAbsoluteRect(element, { 
 const getAbsoluteRectXY = (element, options) => getAbsoluteRect(element, { ...options, type: POSITION_TYPE.XY });
 
 
-/** @param {Rect<number, 'xy'>} rect */
-const centerOfRect = rect => ({ ...rect, x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 });
+/** @param {Partial<Record<'x' | 'y', number>>} position */
+const positionOfRect = position => {
+    const { x: px = 0, y: py = 0 } = position;
+
+    /** @param {Rect<number, 'xy'>} rect */
+    return rect => ({ ...rect, x: rect.x + rect.width * px, y: rect.y + rect.height * py });
+};
+
+
+// /** @param {Rect<number, 'xy'>} rect */
+const centerOfRect = positionOfRect({ x: 0.5, y: 0.5 });
+// rect => ({ ...rect, x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 });
 
 
 /**
@@ -422,24 +432,32 @@ const createHeroToImagePinAnimation = ({ hero, signature, notreDame }) => {
         });
 
         // GSDevTools.create({ animation: tlScrub });
+        const restartScrub = _.debounceRestart(() => {
+            const to = tlScrub.time();
+
+            tlScrub.time(0);
+            tlScrub.invalidate();
+            tlScrub.tweenTo(to);
+        }, 100);
 
         const createResizeObserver = () => {
             let isFirst = false;
 
             const resizeObserver = new ResizeObserver(entries => {
-                if (!isFirst) {
-                    isFirst = true;
-                    return;
-                }
+                /*     if (!isFirst) {
+                        isFirst = true;
+                        return;
+                    } */
 
-                const to = tlScrub.time();
+                /* const to = tlScrub.time();
 
                 tlScrub.time(0);
                 tlScrub.invalidate();
-                tlScrub.tweenTo(to);
+                tlScrub.tweenTo(to); */
+                restartScrub();
             });
 
-            [ gallery.svg.gallery, notreDame.svg.sky ].forEach(target => resizeObserver.observe(target));
+            [ /* gallery.svg.gallery, notreDame.svg.sky, */ document.documentElement ].forEach(target => resizeObserver.observe(target));
         };
 
         createResizeObserver();
@@ -477,20 +495,23 @@ const createHeroToImagePinAnimation = ({ hero, signature, notreDame }) => {
                 target: gallery.svg.gallery, // < 900px center gallery container
                 start: 0.01,
                 matchMedia: matchMediaBreakpoints.tablet.name,
-                to: {
-                    duration: 1,
-                    x: getLazyPositionElementTo({
-                        to: hero,
-                        getRect: makeCompose(getAbsoluteRectXY, centerOfRect)
-                    }).x,
-                    // x: {
-                    //     condition: () => window.innerWidth <= 900,
-                    //     value: getLazyPositionElementTo({
-                    //         to: hero,
-                    //         getRect: makeCompose(getAbsoluteRectXY, centerOfRect)
-                    //     }).x,
-                    // },
-                    ease: 'power2.out'
+                fromTo: {
+                    from: { x: 0 },
+                    to: {
+                        duration: 1,
+                        x: getLazyPositionElementTo({
+                            to: hero,
+                            getRect: makeCompose(getAbsoluteRectXY, centerOfRect)
+                        }).x,
+                        // x: {
+                        //     condition: () => window.innerWidth <= 900,
+                        //     value: getLazyPositionElementTo({
+                        //         to: hero,
+                        //         getRect: makeCompose(getAbsoluteRectXY, centerOfRect)
+                        //     }).x,
+                        // },
+                        ease: 'power2.out'
+                    }
                 }
             },
             {
@@ -542,12 +563,23 @@ const createHeroToImagePinAnimation = ({ hero, signature, notreDame }) => {
             },
             {
                 target: notreDame.container, start: 1.01,
-                // propCondition: () => window.innerWidth <= 970,
                 matchMedia: matchMediaBreakpoints.tablet.name,
                 fromTo: {
-                    from: { width: '100%', xPercent: 0 },
+                    from: { width: '100%', xPercent: 0 /* x: 0 */ },
                     to: {
-                        duration: 1, width: 1400, xPercent: -50, ease: 'power2.out'
+                        duration: 1, width: 1400, xPercent: () => {
+                            const w1 = 1400; //  getAbsoluteRectXY(notreDame.container).width;
+                            const w2 = getAbsoluteRectXY(notreDame.block).width;
+
+                            const w = (w2 - w1) / w1;
+
+                            return w * 100; // -50;
+                        },
+                        /* x: (index, target) => getLazyPositionElementTo({
+                            to: notreDame.block,
+                            getRect: makeCompose(getAbsoluteRectXY, positionOfRect({ x: 1, y: 0.5 }))
+                        }).x(index, target), */
+                        ease: 'power2.out'
                     }
                 }
             },
@@ -562,20 +594,6 @@ const createHeroToImagePinAnimation = ({ hero, signature, notreDame }) => {
                         y: getLazyPositionElementTo({ to: notreDame.block, getRect: getAbsoluteRectXY, margins: { top: 100 } }).y
                         // ...getLazyPositionElementTo({ to: notreDame.block, getRect: makeCompose(getAbsoluteRectXY, centerOfRect) })
                     },
-                    /*   x2: [
-                          {
-                              matchMedia: matchMediaBreakpoints.tablet.name,
-                              value: getLazyPositionElementTo({ to: notreDame.block, getRect: makeCompose(getAbsoluteRectXY, centerOfRect) }).x
-                          },
-                          {
-                              matchMedia: matchMediaBreakpoints.desktop.name,
-                              value: getLazyPositionElementTo({ to: notreDame.svg.sky }).x
-                          }
-                      ], */
-                    // ...(window.innerWidth > 970 ? getLazyPositionElementTo({ to: notreDame.svg.sky }) : getLazyPositionElementTo({
-                    //     to: notreDame.block,
-                    //     getRect: makeCompose(getAbsoluteRectXY, centerOfRect)
-                    // }))
                 },
             },
             {

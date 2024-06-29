@@ -378,6 +378,23 @@ const debounce = (f, time) => {
 };
 
 
+/**
+ * @param {() => any} f 
+ * @param {number} time 
+ */
+const debounceRestart = (f, time) => {
+    let timeout = undefined;
+
+    return () => {
+        if (timeout)
+            clearTimeout(timeout);
+
+        timeout = setTimeout(() => {
+            f();
+            timeout = undefined;
+        }, time);
+    };
+};
 
 /**
  * @template T
@@ -714,7 +731,7 @@ const addToTimeline = (...listOfOptions) => {
                     return [
                         ...list,
                         [ k, {
-                            value: k === 'ease' || k === 'duration' ? value : makeFunctionBasedValueIfConfition(value, condition),
+                            value: k === 'ease' || k === 'duration' || k === 'stagger' ? value : makeFunctionBasedValueIfConfition(value, condition),
                             matchMedias: m ? getMatchMedias(m) : [ { media: MATCH_MEDIA_ALL } ]
                         } ]
                     ];
@@ -1122,7 +1139,7 @@ const _ = {
     promisifyTimeline, createTimelines, addToTimeline, bindAddToTimeline: bindOptionsAddToTimeline,
     logThrottle,
     createMultipleSetTimeoutCalls,
-    queryAll, queryAllThrow, queryThrow,
+    queryAll, queryAllThrow, queryThrow, debounce, debounceRestart,
     onReady, onLoad: onReady('complete'), onDOMContentLoaded: onReady('interactive'),
     onEvent, onMultipleEvents, dispatchEvent, createDispatchEventOnce, EventNames,
     getElementFromRecid,
