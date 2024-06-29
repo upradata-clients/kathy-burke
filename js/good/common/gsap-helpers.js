@@ -507,13 +507,77 @@ const promisifyTimeline = timeline => new Promise(resolve => {
     timeline.eventCallback('onReverseComplete', resolve);
 });
 
+const gsapValue = {
+    /** @param {number} v */
+    addRel: v => `+=${v}`,
+    /** @param {number} v */
+    removeRel: v => `-=${v}`,
+};
 
+const gsapTime = /** @type {const} */({
+    end: {
+        add: gsapValue.addRel,
+        remove: gsapValue.removeRel,
+        percentage: {
+            // same as previousEnd.percentage.ofInserted
+            ofInsertedAnim: {
+                /** @param {number} v */
+                add: v => `+=${v}%`,
+                /** @param {number} v */
+                remove: v => `-=${v}%`
+            },
+        }
+    },
+    previousEnd: {
+        /** @param {number} v */
+        add: v => `>${v}`,
+        /** @param {number} v */
+        remove: v => `>-${v}`,
+        percentage: {
+            ofInserted: {
+                /** @param {number} v */
+                add: v => `>+=${v}%`,
+                /** @param {number} v */
+                remove: v => `>-=${v}%`
+            },
+            ofPrevious: {
+                /** @param {number} v */
+                add: v => `>${v}%`,
+                /** @param {number} v */
+                remove: v => `>-${v}%`
+            }
+        }
+    },
+    previousStart: {
+        /** @param {number} v */
+        add: v => `<${v}`,
+        /** @param {number} v */
+        remove: v => `<-${v}`,
+        percentage: {
+            ofInserted: {
+                /** @param {number} v */
+                add: v => `<+=${v}%`,
+                /** @param {number} v */
+                remove: v => `<-=${v}%`
+            },
+            ofPrevious: {
+                /** @param {number} v */
+                add: v => `<${v}%`,
+                /** @param {number} v */
+                remove: v => `<-${v}%`
+            }
+        }
+    },
+
+});
 
 const gsapHelpers = {
     promisifyTimeline,
     addToTimeline,
     bindOptionsAddToTimeline,
-    createTimelines
+    createTimelines,
+    gsapValue,
+    gsapTime
 };
 
 
