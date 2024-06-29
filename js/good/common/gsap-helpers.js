@@ -106,6 +106,7 @@ const isConditionedTweenVar = v => typeof v === 'object' && 'value' in v;
  * @property {(index: number, target: gsap.TweenTarget, targets: gsap.TweenTarget[]) => boolean} [propCondition]
  * @property {Record<string, MatchMedia['media']>} [matchMediaDefinitions]
  * @property {ReadonlyListOrElement<MatchMediaOption>} [matchMedia]
+ * @property {readonly AddToTimelineOption<any>[]} [matchMedias]
  */
 
 
@@ -323,7 +324,7 @@ const addToTimeline = (...listOfOptions) => {
                     // ['x'] is arbitrary, it could be any key
                     const [ k, val ] =  /** @type {[ TweenVarsKeys, PossiblyConditionedTweenVar<'x'> ]} */(keyValue);
 
-                    const values = ensureArray(val);
+                    const values = /** @type {readonly ConditionedTweenVar<'x'>[]}*/(ensureArray(val));
 
                     const conditionedTweenVars = values.map(v => {
                         return isConditionedTweenVar(v) ?
@@ -342,13 +343,14 @@ const addToTimeline = (...listOfOptions) => {
                         value: undefined
                     }));
 
-
                     const m = matchMedias.length === 0 ? options.matchMedia : matchMedias;
 
                     return [
                         ...list,
                         [ k, {
-                            value: k === 'ease' || k === 'duration' || k === 'stagger' ? value : makeFunctionBasedValueIfConfition(value, condition),
+                            value: k === 'id' || k === 'ease' || k === 'duration' || k === 'stagger' ?
+                                value :
+                                makeFunctionBasedValueIfConfition(value, condition),
                             matchMedias: m ? getMatchMedias(m) : [ { media: MATCH_MEDIA_ALL } ]
                         } ]
                     ];
@@ -371,7 +373,7 @@ const addToTimeline = (...listOfOptions) => {
             };
 
 
-            return getListOfOptionsWithMediaQuery(tweenOpts).reduce((optsWithMQ, [ k, { value, matchMedias } ]) => {
+            const optionsByMatchMedia = getListOfOptionsWithMediaQuery(tweenOpts).reduce((optsWithMQ, [ k, { value, matchMedias } ]) => {
                 return matchMedias.reduce((o, m) => {
                     const mediaStr = withMatchMedia ? getMatchMedia(matchMediaDefinitions, m.media) : MATCH_MEDIA_ALL;
 
@@ -385,6 +387,8 @@ const addToTimeline = (...listOfOptions) => {
                     };
                 }, optsWithMQ);
             },/** @type {OptionsByMatchMedia} */({}));
+
+            return optionsByMatchMedia;
         };
 
 
@@ -404,6 +408,13 @@ const addToTimeline = (...listOfOptions) => {
                     addTimeline(options.timeline, target, start, addDuration(vars));
                 });
         }
+
+        if (options.matchMedias && options.matchMedias.length > 0) {
+            const { matchMedias, ...restOpts } = options;
+            matchMedias.forEach(addToOpts => { addToTimeline({ ...restOpts, ...addToOpts }); });
+            return;
+        }
+
 
         if (!target)
             throw new Error('target is not defined in options');
@@ -508,63 +519,71 @@ const promisifyTimeline = timeline => new Promise(resolve => {
 });
 
 const gsapValue = {
-    /** @param {number} v */
-    addRel: v => `+=${v}`,
-    /** @param {number} v */
-    removeRel: v => `-=${v}`,
+    /** @param {number} [v] */
+    addRel: (v = 0) => `+=${v}`,
+    /** @param {number} [v] */
+    removeRel: (v = 0) => `-=${v}`,
 };
 
 const gsapTime = /** @type {const} */({
+    atEnd: undefined,
+    atStart: 0,
+    atPreviousEnd: '>',
+    atPreviousStart: '<',
+    start: {
+        /** @param {number} [v] */
+        add: (v = 0) => v,
+    },
     end: {
         add: gsapValue.addRel,
         remove: gsapValue.removeRel,
         percentage: {
             // same as previousEnd.percentage.ofInserted
             ofInsertedAnim: {
-                /** @param {number} v */
-                add: v => `+=${v}%`,
-                /** @param {number} v */
-                remove: v => `-=${v}%`
+                /** @param {number} [v] */
+                add: (v = 0) => `+=${v}%`,
+                /** @param {number} [v] */
+                remove: (v = 0) => `-=${v}%`
             },
         }
     },
     previousEnd: {
-        /** @param {number} v */
-        add: v => `>${v}`,
-        /** @param {number} v */
-        remove: v => `>-${v}`,
+        /** @param {number} [v] */
+        add: (v = 0) => `>${v}`,
+        /** @param {number} [v] */
+        remove: (v = 0) => `>-${v}`,
         percentage: {
             ofInserted: {
-                /** @param {number} v */
-                add: v => `>+=${v}%`,
-                /** @param {number} v */
-                remove: v => `>-=${v}%`
+                /** @param {number} [v] */
+                add: (v = 0) => `>+=${v}%`,
+                /** @param {number} [v] */
+                remove: (v = 0) => `>-=${v}%`
             },
             ofPrevious: {
-                /** @param {number} v */
-                add: v => `>${v}%`,
-                /** @param {number} v */
-                remove: v => `>-${v}%`
+                /** @param {number} [v] */
+                add: (v = 0) => `>${v}%`,
+                /** @param {number} [v] */
+                remove: (v = 0) => `>-${v}%`
             }
         }
     },
     previousStart: {
-        /** @param {number} v */
-        add: v => `<${v}`,
-        /** @param {number} v */
-        remove: v => `<-${v}`,
+        /** @param {number} [v] */
+        add: (v = 0) => `<${v}`,
+        /** @param {number} [v] */
+        remove: (v = 0) => `<-${v}`,
         percentage: {
             ofInserted: {
-                /** @param {number} v */
-                add: v => `<+=${v}%`,
-                /** @param {number} v */
-                remove: v => `<-=${v}%`
+                /** @param {number} [v] */
+                add: (v = 0) => `<+=${v}%`,
+                /** @param {number} [v] */
+                remove: (v = 0) => `<-=${v}%`
             },
             ofPrevious: {
-                /** @param {number} v */
-                add: v => `<${v}%`,
-                /** @param {number} v */
-                remove: v => `<-${v}%`
+                /** @param {number} [v] */
+                add: (v = 0) => `<${v}%`,
+                /** @param {number} [v] */
+                remove: (v = 0) => `<-${v}%`
             }
         }
     },
