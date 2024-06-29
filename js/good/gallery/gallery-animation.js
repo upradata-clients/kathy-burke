@@ -6,8 +6,6 @@
  */
 
 
-/** @type {typeof import('../common/underscore.js')._} */
-const _ = /** @type {any} */ (window)._;
 
 /** @typedef {'x' | 'y'} Axis */
 
@@ -162,7 +160,7 @@ const createGallerySlider = (cards, elements) => {
 
     gsap.set(sliderWrapper, { width: gsap.getProperty(galleryBackgroundFrame, 'width') });
 
-    const slider = _.GallerySlider.create({
+    const slider = _.gallery.GallerySlider.create({
         cards,
         dtStagger: 0.1,
         duration: 0.1 * (cards.length - 1), // duration of the card animation from x = xPercent% to -xPercent%

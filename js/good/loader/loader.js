@@ -1,13 +1,13 @@
 // @ts-check
+import { registerUnderScore } from '../common/register-underscore.js';
 
 /**
  * @typedef {import("gsap")} gsap
  */
 
-/** @type {typeof import('../common/underscore.js')._} */
-// const _ = /** @type {any} */ (window)._;
 
-import { _ } from '../common/underscore.js';
+const _ = await registerUnderScore({ isLocal: true });
+
 
 
 document.body.classList.add('loading');
@@ -22,9 +22,8 @@ loader.classList.add('active');
 const fromGsap = path => `https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/${path}`;
 
 
-const isLocal = [ 'localhost', '127.0.0.1' ].some(host => window.location.hostname === host);
 
-if (!isLocal) {
+if (!_.isLocal) {
     _.addScripts(
         fromGsap('gsap.js'),
         fromGsap('ScrollTrigger.js'),
@@ -37,13 +36,7 @@ if (!isLocal) {
         gsap.registerPlugin(ScrollToPlugin);
         _.registerGsapPlugins();
 
-        // create the scrollSmoother before your scrollTriggers
-        ScrollSmoother.create({
-            content: _.queryThrow('#allrecords'), // the element that scrolls
-            smooth: 1, // how long (in seconds) it takes to "catch up" to the native scroll position
-            effects: true, // looks for data-speed and data-lag attributes on elements
-            smoothTouch: 0.1, // much shorter smoothing time on touch devices (default is NO smoothing on touch devices)
-        });
+       
 
         _.dispatchEvent(_.EventNames.ready.gsap);
     });

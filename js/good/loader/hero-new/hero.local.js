@@ -406,9 +406,7 @@ const createHeroToImagePinAnimation = ({ hero, signature, notreDame }) => {
             id: 'hero-scrub-tl'
         });
 
-        GSDevTools.create({ animation: tlScrub });
-
-        window.tlScrub = tlScrub;
+        // GSDevTools.create({ animation: tlScrub });
 
         const restartScrub = _.debounceRestart(() => {
             const to = tlScrub.time();

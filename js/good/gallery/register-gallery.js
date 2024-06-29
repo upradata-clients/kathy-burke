@@ -1,6 +1,7 @@
 // @ts-check
 
 import * as galleryLayout from './gallery-layout.js';
+import * as galleryLayoutLocal from './gallery-layout.local.js';
 import * as galleryMenu from './gallery-menu.js';
 import * as gallerySlider from './gallery-slider.js';
 import * as galleryAnimation from './gallery-animation.js';
@@ -16,7 +17,7 @@ const registerGallery = _ => {
 
     _.define(() => ({
         gallery: {
-            ...galleryLayout,
+            ...(_.isLocal ? galleryLayoutLocal : galleryLayout),
             ...galleryMenu,
             ...gallerySlider,
             ...galleryAnimation,

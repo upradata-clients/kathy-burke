@@ -6,9 +6,6 @@
  */
 
 
-/** @type {typeof import('../common/underscore.js')._} */
-const _ = /** @type {any} */ (window)._;
-
 
 /**
  * An array that holds the categories for the gallery.

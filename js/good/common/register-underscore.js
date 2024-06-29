@@ -9,7 +9,18 @@ import * as mouseFollow from './mouse-follow.js';
 import { registerGallery } from './../gallery/register-gallery.js';
 import { gsap as _gsap } from '../../../node_modules/gsap/index.js';
 
+const global_ = () => /** @type {UnderScore} */(/** @type {any} */(globalThis)._);
 
+
+const createScrollSmoother = () => {
+    // create the scrollSmoother before your scrollTriggers
+    ScrollSmoother.create({
+        content: document.querySelector('#allrecords'), // global_().queryThrow('#allrecords'), // the element that scrolls
+        smooth: 1, // how long (in seconds) it takes to "catch up" to the native scroll position
+        effects: true, // looks for data-speed and data-lag attributes on elements
+        smoothTouch: 0.1, // much shorter smoothing time on touch devices (default is NO smoothing on touch devices)
+    });
+};
 
 /**
  * @template {boolean} [T=false]
@@ -22,8 +33,6 @@ import { gsap as _gsap } from '../../../node_modules/gsap/index.js';
 const registerUnderScore = (options = {}) => {
     const { isLocal = false } = options;
 
-    const global_ = () => /** @type {UnderScore} */(/** @type {any} */(globalThis)._);
-
     global_().define(() => helpers);
     global_().define(() => textSplit);
     global_().define(() => gsapHelpers);
@@ -32,16 +41,21 @@ const registerUnderScore = (options = {}) => {
 
     registerGallery(global_());
 
+    const finishRegister = () => {
+        createScrollSmoother();
+        return global_();
+    };
+
     if (!isLocal) {
         gsapPlugins.registerGsapPlugins();
         // @ts-ignore
-        return global_();
+        return finishRegister();
 
     }
 
     Object.assign(window, { gsap: _gsap });
     // @ts-ignore
-    return gsapPluginsAMD.registerGsapPlugins().then(() => global_());
+    return gsapPluginsAMD.registerGsapPlugins().then(() => finishRegister());
 };
 
 

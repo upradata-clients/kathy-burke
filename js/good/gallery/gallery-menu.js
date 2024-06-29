@@ -1,9 +1,6 @@
 // @ts-check
 
 
-/** @type {typeof import('../common/underscore.js')._} */
-const _ = /** @type {any} */ (window)._;
-
 /**
  * @typedef {import('../common/images-settings.js').ImageSettings} ImageSettings
  * @typedef {import('../common/images-settings.js').ImageSettingsProp} ImageSettingsProp
