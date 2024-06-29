@@ -1,0 +1,165 @@
+.t-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.pin-spacer {
+    width: 100% !important;
+}
+
+.hero {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+}
+
+.container {
+    width: 100%;
+    height: 100%;
+}
+
+.hero :is(img, svg) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.hero .signature {
+    position: absolute;
+    bottom: 50px;
+    right: 70px;
+    width: 150px;
+    height: auto;
+}
+
+
+.signature {
+    opacity: 1;
+}
+
+.signature path {
+    stroke-width: 0.7px;
+}
+
+
+.notre-dame {
+    position: absolute;
+    top: 0;
+    left: 0;
+    /*right: 0;
+    bottom: 0;*/
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: white;
+    /*clip-path: inset(100% 0% 100% 0%);*/
+    opacity: 0;
+    z-index: 1000;
+}
+
+
+.notre-dame__title {
+    position: absolute;
+    top: 0;
+    left: 0;
+    /* top: 9%;
+    left: 56%;
+    transform: translate(-50%, -50%); */
+    color: rgb(131 131 131);
+    /*  rgb(131 159 189); */
+    font-size: 16px;
+    font-weight: 500;
+    /* padding: 20px 56px;
+    background: white;
+    border-radius: 6px; */
+    opacity: 0;
+    perspective: 1000px;
+}
+
+@media screen and (max-width: 970px) {
+    .notre-dame__title {
+        top: 8%;
+    }
+}
+
+/* @media (max-aspect-ratio: 1/1) {
+    .notre-dame__title {
+        transform: none;
+        left: 10%;
+    }
+}
+
+@media (max-aspect-ratio: 1.3/1) {
+    .notre-dame__title {
+        transform: none;
+        left: 20%;
+    }
+} */
+
+.notre-dame__title,
+.notre-dame__title :is(.group, .word, .char-wrapper, .char) {
+    /* display: inline-block; */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transform-origin: 50% 50%;
+    perspective: 1000px;
+}
+
+.notre-dame__title {
+    gap: 1rem;
+}
+
+.notre-dame__title .group {
+    padding: 12px 20px;
+    /* background-color: rgba(255, 255, 255, 1); */
+    border-radius: 4px;
+    gap: 0.4ex;
+}
+
+.notre-dame__title .char {}
+
+/* .notre-dame__title .char-wrapper {
+    padding: 0px 0px;
+    background-color: #ff00001f;
+    border-radius: 5px;
+} */
+
+
+.notre-dame-in-painting {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 8.57%;
+    height: 20.90%;
+}
+
+
+
+@media screen and (max-width: 970px /* 900px */) {
+    .gallery-container {
+        width: 1400px;
+        overflow: hidden;
+    }
+
+    .svg-gallery {
+        transform: translateX(-4%);
+    }
+}
+
+@media screen and (max-width: 970px) {
+    /* .notre-dame-container {
+        width: 1400px;
+        transform: translateX(-50%);
+        overflow: hidden;
+    } */
+
+    .notre-dame__title .group {
+        padding: 21px 13px;
+    }
+}
