@@ -45,7 +45,7 @@ const isMatchMedia = media => typeof media === 'object' && 'media' in media;
  * @typedef {Object} ConditionedTweenVarsFunctionBasedValue
  * @property {TweenVarsType<T> | gsap.FunctionBasedValue<TweenVarsType<T>>} value
  * @property {(index: number, target: gsap.TweenTarget, targets: gsap.TweenTarget[]) => boolean} [condition]
- * @property {MatchMediaOption | readonly MatchMediaOption[]} [matchMedia]
+ * @property {ReadonlyListOrElement<MatchMediaOption>} [matchMedia]
  */
 
 
@@ -56,13 +56,14 @@ const isMatchMedia = media => typeof media === 'object' && 'media' in media;
 
 /**
  * @template {TweenVarsKeys} [K=TweenVarsKeys]
- * @typedef {TweenVars[K] | ConditionedTweenVar<K> | readonly ConditionedTweenVar<K>[]} PossiblyConditionedTweenVar
+ * @typedef {TweenVars[K] | ReadonlyListOrElement<ConditionedTweenVar<K>>} PossiblyConditionedTweenVar
  */
 
 
 /**
  * @typedef {{ [K in TweenVarsKeys]?: PossiblyConditionedTweenVar<K> }} _PossiblyConditionedTweenVars
- * @typedef {_PossiblyConditionedTweenVars & { matchMedia?: { media: MatchMediaOption | readonly MatchMediaOption[]; } & _PossiblyConditionedTweenVars }} PossiblyConditionedTweenVars
+ * @typedef {ReadonlyListOrElement<{ media: ReadonlyListOrElement<MatchMediaOption> } & _PossiblyConditionedTweenVars> } _PossiblyConditionedTweenVarsMM
+ * @typedef {_PossiblyConditionedTweenVars & { matchMedia?: _PossiblyConditionedTweenVarsMM }} PossiblyConditionedTweenVars
  */
 
 
@@ -104,7 +105,7 @@ const isConditionedTweenVar = v => typeof v === 'object' && 'value' in v;
  * @property {() => boolean} [condition]
  * @property {(index: number, target: gsap.TweenTarget, targets: gsap.TweenTarget[]) => boolean} [propCondition]
  * @property {Record<string, MatchMedia['media']>} [matchMediaDefinitions]
- * @property {MatchMediaOption | readonly MatchMediaOption[]} [matchMedia]
+ * @property {ReadonlyListOrElement<MatchMediaOption>} [matchMedia]
  */
 
 
@@ -125,8 +126,19 @@ const isConditionedTweenVar = v => typeof v === 'object' && 'value' in v;
 
 /**
  * @template {readonly any[]} [Elts=readonly any[]]
- * @typedef {AddToTimelineOption<Elts> | AddToTimelineOption<Elts>[]} AddToTimelineOptions
+ * @typedef {ReadonlyListOrElement<AddToTimelineOption<Elts>>} AddToTimelineOptions
  */
+
+/**
+ * @template {ReadonlyListOrElement<any>} T
+ * @param {T} v
+ * @returns {T extends ReadonlyListOrElement<infer U> ? U[] : never}
+ */
+const ensureArray = v => {
+    // @ts-ignore
+    return Array.isArray(v) ? v : [ v ];
+};
+
 
 
 /**
@@ -186,7 +198,7 @@ const addToTimeline = (...listOfOptions) => {
             return [];
 
         /** @type {readonly MatchMediaOption[]} */
-        const matchMedias = Array.isArray(matchMedia) ? matchMedia : [ matchMedia ];
+        const matchMedias = ensureArray(matchMedia);
 
         return matchMedias.map(matchM => {
             if (typeof matchM === 'string')
@@ -304,15 +316,14 @@ const addToTimeline = (...listOfOptions) => {
                 /**
                  * @param {ListOfConditionedTV} allList
                  * @param {_PossiblyConditionedTweenVars} opts
-                 * @param {MatchMediaOption | readonly MatchMediaOption[]} [conditionedTVarsMatchMedia]
+                 * @param {ReadonlyListOrElement<MatchMediaOption>} [conditionedTVarsMatchMedia]
                  * @returns {ListOfConditionedTV}
                  */
                 const getListOfConditionedTV = (allList, opts, conditionedTVarsMatchMedia) => Object.entries(opts).reduce((list, keyValue) => {
                     // ['x'] is arbitrary, it could be any key
                     const [ k, val ] =  /** @type {[ TweenVarsKeys, PossiblyConditionedTweenVar<'x'> ]} */(keyValue);
 
-                    /** @type {PossiblyConditionedTweenVar<'x'>[]} */
-                    const values = Array.isArray(val) ? val : [ val ];
+                    const values = ensureArray(val);
 
                     const conditionedTweenVars = values.map(v => {
                         return isConditionedTweenVar(v) ?
@@ -348,8 +359,12 @@ const addToTimeline = (...listOfOptions) => {
                 const list = getListOfConditionedTV([], opts);
 
                 if (tweenOptsMatchMedia) {
-                    const { media, ...matchMediaOpts } = tweenOptsMatchMedia;
-                    return getListOfConditionedTV(list, matchMediaOpts, media);
+                    const tweenOptsMatchMedias = ensureArray(tweenOptsMatchMedia);
+
+                    return tweenOptsMatchMedias.reduce((l, m) => {
+                        const { media, ...matchMediaOpts } = m;
+                        return getListOfConditionedTV(l, matchMediaOpts, media);
+                    }, list);
                 }
 
                 return list;

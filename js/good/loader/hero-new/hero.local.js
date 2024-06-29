@@ -406,12 +406,13 @@ const createHeroToImagePinAnimation = ({ hero, signature, notreDame }) => {
             id: 'hero-scrub-tl'
         });
 
-        // GSDevTools.create({ animation: tlScrub });
+        GSDevTools.create({ animation: tlScrub });
         const restartScrub = _.debounceRestart(() => {
             const to = tlScrub.time();
 
             tlScrub.time(0);
             tlScrub.invalidate();
+            // tlScrub.time(to);
             tlScrub.tweenTo(to);
         }, 100);
 
@@ -419,16 +420,11 @@ const createHeroToImagePinAnimation = ({ hero, signature, notreDame }) => {
             let isFirst = false;
 
             const resizeObserver = new ResizeObserver(entries => {
-                /*     if (!isFirst) {
-                        isFirst = true;
-                        return;
-                    } */
+                if (!isFirst) {
+                    isFirst = true;
+                    return;
+                }
 
-                /* const to = tlScrub.time();
-
-                tlScrub.time(0);
-                tlScrub.invalidate();
-                tlScrub.tweenTo(to); */
                 restartScrub();
             });
 
@@ -561,13 +557,17 @@ const createHeroToImagePinAnimation = ({ hero, signature, notreDame }) => {
                 target: notreDame.titleSplit.container, start: 2.02 /* '+=0.01' */,
                 set: {
                     opacity: () => 1,
-                    ...getLazyPositionElementTo({ to: notreDame.svg.sky }),
-                    matchMedia: {
-                        media: matchMediaBreakpoints.tablet.name,
-                        x: getLazyPositionElementTo({ to: notreDame.block, getRect: makeCompose(getAbsoluteRectXY, centerOfRect) }).x,
-                        y: getLazyPositionElementTo({ to: notreDame.block, getRect: getAbsoluteRectXY, margins: { top: 100 } }).y
-                        // ...getLazyPositionElementTo({ to: notreDame.block, getRect: makeCompose(getAbsoluteRectXY, centerOfRect) })
-                    },
+                    matchMedia: [
+                        {
+                            media: matchMediaBreakpoints.tablet.name,
+                            x: getLazyPositionElementTo({ to: notreDame.block, getRect: makeCompose(getAbsoluteRectXY, centerOfRect) }).x,
+                            y: getLazyPositionElementTo({ to: notreDame.block, getRect: getAbsoluteRectXY, margins: { top: 100 } }).y
+                        },
+                        {
+                            media: matchMediaBreakpoints.desktop.name,
+                            ...getLazyPositionElementTo({ to: notreDame.svg.sky }),
+                        }
+                    ],
                 },
             },
             {
