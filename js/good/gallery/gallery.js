@@ -1,8 +1,9 @@
 // @ts-check
+import * as galleryLayout from './gallery-layout';
+import * as galleryMenu from './gallery-menu';
+import * as gallerySlider from './gallery-slider';
+import * as galleryAnimation from './gallery-animation';
 
-
-/** @type {typeof import('../common/underscore.js')._} */
-const _ = /** @type {any} */ (window)._;
 
 _.EventNames.gallery = {
     enter: 'gallery:enter',
@@ -11,6 +12,14 @@ _.EventNames.gallery = {
 };
 
 
+_.define(() => ({
+    gallery: {
+        ...galleryLayout,
+        ...galleryMenu,
+        ...gallerySlider,
+        ...galleryAnimation
+    }
+}));
 
 _.onLoad(() => {
 
@@ -25,14 +34,14 @@ _.onLoad(() => {
         { name: 'The Empty Studio', imagesRecids: [ '571579939', '571579804' ] }
     ];
 
-    const elements = _.createElements(galleryCategories);
+    const elements = _.gallery.createElements(galleryCategories);
 
-    const menu = _.galleryMenu.initGalleryMenu(elements);
-    const galleryAnimation = _.createGalleryAnimation({ elements, galleryMenu: menu });
+    const menu = _.gallery.galleryMenu.initGalleryMenu(elements);
+    const galleryAnimation = _.gallery.createGalleryAnimation({ elements, galleryMenu: menu });
 
     let isActive = false;
 
-    const { goTo } = _.galleryMenu.createGalleryMenuListener({
+    const { goTo } = _.gallery.galleryMenu.createGalleryMenuListener({
         elements,
         onActivating: (from, to, isInit) => {
             isActive = true;
@@ -56,7 +65,7 @@ _.onLoad(() => {
         _.dispatchEvent(_.EventNames.ready.gallery);
     }, { isCold: true });
 
-    
+
     // _.dispatchEvent(_.EventNames.gallery.resize, { isActive });
 
     setTimeout(() => {

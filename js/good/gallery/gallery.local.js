@@ -1,50 +1,9 @@
 // @ts-check
+import { registerUnderScore } from '../common/register-underscore.js';
 
-
-import { gsap } from '../../../node_modules/gsap/index.js';
-Object.assign(window, { gsap });
-
-const getModules = async (...modules) => {
-    const exports = (await Promise.allSettled(modules)).map(res => res.status === 'fulfilled' ? res.value : undefined);
-
-    return exports.reduce((mods, mod) => ({ ...mods, ...mod }), {});
-};
-
-
-Object.assign(window, await getModules(
-    import('../../../node_modules/gsap/ScrollTrigger.js'),
-    import('../../../node_modules/gsap/CustomEase.js'),
-    import('../../../node_modules/gsap/Flip.js'),
-    import('../../../node_modules/gsap/ScrollToPlugin.js')
-));
-
-
-gsap.registerPlugin(Flip);
-gsap.registerPlugin(ScrollTrigger);
-gsap.registerPlugin(ScrollToPlugin);
+const _ = await registerUnderScore({ isLocal: true });
 
 await import('./extra-header.js');
-
-
-const { _ } = await import('../common/underscore.js');
-
-Object.assign(_, await getModules(
-    import('../common/mouse-follow.js'),
-    // import('../common/images-settings.js'),
-    import('./gallery-menu.js'),
-    import('./gallery-animation.js'),
-    import('./gallery-layout.local.js'),
-    import('./gallery-slider.js')
-));
-
-_.getImagesSettings = () => [];
-
-
-_.EventNames.gallery = {
-    enter: 'gallery:enter',
-    leave: 'gallery:leave',
-    resize: 'gallery:resize'
-};
 
 
 
@@ -61,14 +20,14 @@ _.onLoad(() => {
         { name: 'The Empty Studio', imagesRecids: [ '571579939', '571579804' ] }
     ];
 
-    const elements = _.createElements(galleryCategories);
+    const elements = _.gallery.createElements(galleryCategories);
 
-    const menu = _.galleryMenu.initGalleryMenu(elements);
-    const galleryAnimation = _.createGalleryAnimation({ elements, galleryMenu: menu });
+    const menu = _.gallery.galleryMenu.initGalleryMenu(elements);
+    const galleryAnimation = _.gallery.createGalleryAnimation({ elements, galleryMenu: menu });
 
     let isActive = false;
 
-    const { goTo } = _.galleryMenu.createGalleryMenuListener({
+    const { goTo } = _.gallery.galleryMenu.createGalleryMenuListener({
         elements,
         onActivating: (from, to, isInit) => {
             isActive = true;

@@ -1,7 +1,34 @@
 // @ts-check
-import { registerUnderScore } from '../../common/register-underscore.js';
+import { _ } from '../../common/underscore.js';
+import { gsap as _gsap } from '../../../../node_modules/gsap/index.js';
+import { registerGsapPlugins } from '../../common/gsap-plugins.umd.js';
 
-const _ = await registerUnderScore({ isLocal: true });
+
+const gsap =/** @type {import('gsap')['gsap']} */(/** @type {any} */(_gsap));
+Object.assign(window, { gsap });
+
+const getModules = async (...modules) => {
+    const exports = (await Promise.allSettled(modules)).map(res => res.status === 'fulfilled' ? res.value : undefined);
+
+    return exports.reduce((mods, mod) => ({ ...mods, ...mod }), {});
+};
+
+
+Object.assign(window, await getModules(
+    import('../../../../node_modules/gsap/ScrollTrigger.js'),
+    import('../../../../node_modules/gsap/CustomEase.js'),
+    import('../../../../node_modules/gsap/Flip.js'),
+    import('../../../../node_modules/gsap/ScrollToPlugin.js')
+));
+
+
+gsap.registerPlugin(Flip);
+gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(ScrollToPlugin);
+
+registerGsapPlugins();
+
+(await import('../../common/GSDevTools3.min.js')).registerGSDevTools();
 
 
 _.EventNames.hero = {
@@ -187,7 +214,6 @@ const makeCompose = (...fns) => {
  * @param {(element: Element) => Rect<number, 'xy'>} [opts.getRect]
  * @param {AbsoluteRectOptions<'xy'>} [opts.getAbsoluteRectOptions]
  * @param {Partial<Record<'top' | 'left', number>>} [opts.margins]
- * @param {boolean} [opts.isRelative]
  */
 const getLazyPositionElementTo = opts => {
     const {
@@ -196,8 +222,7 @@ const getLazyPositionElementTo = opts => {
         usePercent = false,
         decimalPrecision = 0,
         getRect = el => getAbsoluteRect(el, { ...opts.getAbsoluteRectOptions, type: POSITION_TYPE.XY }),
-        margins,
-        isRelative = false
+        margins
     } = opts;
 
     const getLazyPosition = getLazyData(
@@ -226,7 +251,7 @@ const getLazyPositionElementTo = opts => {
                 diff.top = diff.y;
             }
 
-            return `${isRelative ? '+=' : ''}${round2Decimals(diff[ prop ], decimalPrecision)}${usePercent ? '%' : ''}`;
+            return `+=${round2Decimals(diff[ prop ], decimalPrecision)}${usePercent ? '%' : ''}`;
         });
 
 
@@ -439,6 +464,7 @@ const createHeroToImagePinAnimation = ({ hero, signature, notreDame }) => {
 
 
 
+
         // because of a bug with scrollTrigger when page loads when scrollTrigger is not 0
         // we wait the scrub is done with notreDameImgInPainting animation to get the position of notreDameImgInPainting
 
@@ -453,8 +479,8 @@ const createHeroToImagePinAnimation = ({ hero, signature, notreDame }) => {
 
         const matchMediaDefinitions = Object.values(matchMediaBreakpoints).reduce((o, { name, value }) => ({ ...o, [ name ]: value }), {});
 
-        const addToScrub = _.bindOptionsAddToTimeline({ timeline: tlScrub, matchMediaDefinitions });
-        const addToNotreDame = _.bindOptionsAddToTimeline({ timeline: notreDameTL, matchMediaDefinitions });
+        const addToScrub = _.bindAddToTimeline({ timeline: tlScrub, matchMediaDefinitions });
+        const addToNotreDame = _.bindAddToTimeline({ timeline: notreDameTL, matchMediaDefinitions });
 
         createSignatureSignatureAnimation({ signature });
 

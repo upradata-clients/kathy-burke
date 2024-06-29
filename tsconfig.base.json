@@ -8,7 +8,8 @@
         "experimentalDecorators": true,
         "lib": [
             "ESNext",
-            "DOM"
+            "DOM",
+            "DOM.Iterable"
         ],
         "skipLibCheck": true,
         "moduleResolution": "node",
@@ -20,6 +21,11 @@
         "typeRoots": [
             "src/@types",
             "node_modules/@types"
-        ]
+        ],
+        "checkJs": true,
+        "strictNullChecks": true,
+        "strictPropertyInitialization": true,
+        "strictBindCallApply": true,
+        "forceConsistentCasingInFileNames": true
     }
 }

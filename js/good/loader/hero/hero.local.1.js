@@ -1,7 +1,7 @@
 // @ts-check
 import { _ } from '../../common/underscore.js';
 import { gsap as _gsap } from '../../../../node_modules/gsap/index.js';
-import { registerGsapPlugins } from '../../common/gsap.plugins.umd.js';
+import { registerGsapPlugins } from '../../common/gsap-plugins.umd.js';
 
 
 const gsap =/** @type {import('gsap')['gsap']} */(/** @type {any} */(_gsap));

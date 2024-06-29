@@ -1,0 +1,12 @@
+import * as gsapPlugins from './gsap-plugins';
+import * as gsapPluginsUMD from './gsap-plugins.umd';
+
+declare global {
+    // export type GsapPlugins = typeof gsapPlugins;
+
+    export interface UnderScore {
+        gsapPlugins: typeof gsapPlugins;
+        gsapPluginsUMD: typeof gsapPluginsUMD;
+
+    }
+}

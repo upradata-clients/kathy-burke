@@ -10,7 +10,8 @@
         "experimentalDecorators": true,
         "lib": [
             "ESNext",
-            "DOM"
+            "DOM",
+            "DOM.Iterable"
         ],
         "skipLibCheck": true,
         "moduleResolution": "node",
@@ -20,11 +21,20 @@
         "baseUrl": ".",
         "paths": {},
         "checkJs": true,
+        "strictNullChecks": true,
+        "strictPropertyInitialization": true,
+        "strictBindCallApply": true,
+        "forceConsistentCasingInFileNames": true
+        /* "typeRoots": [
+            "node_modules/@types",
+            "./js"
+        ] */
     },
     "include": [
         "js/**/*.js",
         "js/**/*.jsx",
         "js/**/*.mjs",
+        "js/**/*.ts",
     ],
     "exclude": [
         "node_modules"

@@ -1,10 +1,5 @@
 // @ts-check
 
-/**
- * @typedef {import("gsap").gsap}
- */
-
-
 
 /** @param {any} data */
 const logThrottle = data => {
@@ -16,12 +11,14 @@ const logThrottle = data => {
 
 logThrottle.__data = [];
 
+
 const logger = () => {
     if (logThrottle.__data.length > 0)
         console.log(logThrottle.__data);
 
     logThrottle.__data = [];
 };
+
 
 /**
  * @param {DocumentReadyState} readyState
@@ -55,11 +52,7 @@ const onReady = readyState => cb => {
 };
 
 
-const uuidv4 = () => {
-    return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
-        (+c ^ crypto.getRandomValues(new Uint8Array(1))[ 0 ] & 15 >> +c / 4).toString(16)
-    );
-};
+
 
 /** @typedef {{
  *      element?: Element | Window & typeof globalThis;
@@ -148,7 +141,7 @@ const createDispatchEventOnce = (event, detail, options) => {
             return;
 
         isDispatched = true;
-        return _.dispatchEvent(event, detail, options);
+        return dispatchEvent(event, detail, options);
     };
 };
 
@@ -169,7 +162,7 @@ const EventNames = {
  * Retrieves an element by its recid.
  * @param {string} recid - The recid of the element to retrieve.
  */
-const getElementFromRecid = recid => _.queryThrow(`#rec${recid}`);
+const getElementFromRecid = recid => queryThrow(`#rec${recid}`);
 
 /**
  * Gets the bounding client rect of an element.
@@ -205,14 +198,7 @@ const makeEaseSymmetric = ease => {
 };
 
 
-/**
- * @param {gsap.core.Timeline | gsap.core.Tween} timeline
- * @returns {Promise<void>}
- */
-const promisifyTimeline = timeline => new Promise(resolve => {
-    timeline.eventCallback('onComplete', resolve);
-    timeline.eventCallback('onReverseComplete', resolve);
-});
+
 
 
 /**
@@ -287,7 +273,7 @@ const createLazySingleton = create => {
 /** @param {(string|HTMLElement)[]} queries */
 const svgImageToInline = async (...queries) => {
 
-    const images = queries.flatMap(query => typeof query === 'string' ? _.queryAllThrow(query) : query);
+    const images = queries.flatMap(query => typeof query === 'string' ? queryAllThrow(query) : query);
 
     await Promise.allSettled(images.map(async img => {
         try {
@@ -314,12 +300,13 @@ const svgImageToInline = async (...queries) => {
     }));
 };
 
+
 /**
  * @param {string | SVGSVGElement} svgTarget
  * @param {Record<'x' | 'y', number>} position
  */
 const setSvgPosition = (svgTarget, position) => {
-    const svg =/** @type {SVGSVGElement} */(typeof svgTarget === 'string' ? _.queryThrow(svgTarget) : svgTarget);
+    const svg =/** @type {SVGSVGElement} */(typeof svgTarget === 'string' ? queryThrow(svgTarget) : svgTarget);
 
     const setPosition = () => {
         // preserveAspectRatio="xMinYMin slice"
@@ -341,7 +328,7 @@ const setSvgPosition = (svgTarget, position) => {
     };
 
 
-    _.onEvent(_.EventNames.resize, createMultipleSetTimeoutCalls(setPosition, [ 0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 ]));
+    onEvent(EventNames.resize, createMultipleSetTimeoutCalls(setPosition, [ 0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 ]));
     setPosition();
 };
 
@@ -379,270 +366,28 @@ const debounce = (f, time) => {
 
 
 /**
- * @template {Record<string, gsap.TweenTarget>} T
- * @typedef {(keyof T) & string | gsap.core.Timeline | gsap.core.Tween | Element | Element[]} AddToTimelineTarget
+ * @param {() => any} f 
+ * @param {number} time 
  */
+const debounceRestart = (f, time) => {
+    let timeout = undefined;
 
+    return () => {
+        if (timeout)
+            clearTimeout(timeout);
 
-/**
- * @typedef {Object} AnimationsSetting
- * @property {gsap.Position} [start]
- * @property {number} [duration]
- * @property {'from' | 'to' | 'set' | 'timeline'} [type]
- * @property {gsap.core.Timeline | gsap.core.Tween} [timeline]
- * @property {AddToTimelineTarget<{}>} [target]
- * @property {Omit<gsap.TweenVars, 'duration'>} [options]
- */
-
-/**
- * @template T
- * @typedef {Record<keyof T, AnimationsSetting | readonly AnimationsSetting[]>} AnimationsSettings
- */
-
-/** @typedef {gsap.TweenVars & { start?: gsap.Position, type?: 'from' | 'to' | 'set' }} AddToTimelineOptions */
-
-
-/**
- * @template {Record<string, gsap.TweenTarget>} T
- * 
- * @param {Object} params
- * @param {gsap.core.Timeline} params.timeline
- * @param {AddToTimelineTarget<T>} params.target
- * @param {T} [params.elements]
- * @param {AnimationsSettings<T>} [params.animationsSettings]
- * @param {AddToTimelineOptions} [params.options]
- */
-const addToTimeline = ({ timeline, target, elements, animationsSettings, options = {} }) => {
-
-    /** @param {AnimationsSetting} [setting] */
-    const getOptions = setting => {
-        const { start, type, ...opts } = options;
-        const d = type === 'set' ? { duration: 0 } : setting?.duration !== undefined ? { duration: setting.duration } : {};
-
-        return { ...d, ...setting?.options, ...opts };
-    };
-
-
-    /**
-     * @param {gsap.core.Timeline | gsap.core.Tween} tl
-     * @param {gsap.Position | undefined} start
-     * @param {AddToTimelineOptions} options
-     */
-    const addTimeline = (tl, start, options) => {
-        timeline.add(tl, start);
-
-        if (Object.keys(options).length === 0)
-            return timeline;
-
-        tl.paused(true);
-        return timeline.to(tl, options, start);
-    };
-
-
-    if (typeof target !== 'string') {
-        const { start, type = 'to' } = options;
-
-        if ((target instanceof gsap.core.Timeline || target instanceof gsap.core.Tween) /* && Object.keys(opts).length === 0 */)
-            return addTimeline(target, start, getOptions());
-
-        return timeline[ type ](target, getOptions(), start);
-    }
-
-
-    const setting = animationsSettings ? animationsSettings[ target ] : [];
-    const listOfSetting = /** @type {AnimationsSetting[]} */(Array.isArray(setting) ? setting : [ setting ]);
-
-    listOfSetting.forEach(setting => {
-        const { type = 'to', start: s } = setting;
-        const { start = s } = options;
-
-        if (type === 'timeline' && !setting.timeline)
-            throw new Error('timeline is not defined in setting');
-
-        if (!elements)
-            throw new Error('elements is not defined');
-
-        const opts = getOptions(setting);
-
-        if (type === 'timeline') {
-            if (!setting.timeline)
-                throw new Error('timeline is not defined in setting');
-
-            return addTimeline(setting.timeline, start, opts);
-        }
-
-        return timeline[ type ](setting.target || elements[ target ], opts, start);
-    });
-};
-
-/** @param {string[]} urls */
-const addScripts = async (...urls) => {
-
-    await Promise.allSettled(
-        urls.map(url => {
-            const script = document.createElement('script');
-            script.src = url;
-            document.head.appendChild(script);
-
-            return new Promise(resolve => {
-                script.addEventListener('load', resolve, { once: true });
-            });
-        })
-    );
-};
-
-
-/** @param {() => void | Record<string, any>} fn */
-const define = fn => {
-    const newStuff = fn();
-
-    if (newStuff) {
-        // @ts-ignore
-        window._ = { ...(window._ || {}), ...newStuff };
-    }
-};
-
-
-/**
- * @typedef {Object} TextSplit
- * @property {HTMLElement} container
- * @property {HTMLElement[]} groups
- * @property {HTMLElement[]} words
- * @property {HTMLElement[]} chars
- * @property {{ group: HTMLElement; words: { word: HTMLElement; chars: HTMLElement[] }[]; chars: HTMLElement[] }[] } all
- */
-
-/**
- * @param {HTMLElement} element
- * @param {Object} [gsapOptions]
- * @param {Partial<Record<'char' | 'word' | 'group', string | RegExp>>} [gsapOptions.separator]
- * @param {Partial<Record<'char' | 'word' | 'group' | 'groups', string>>} [gsapOptions.cssClass]
- * @param {{ 
- *      group?: (options: { groupI: number; words: HTMLElement[]}) => HTMLElement;
- *      word?: (options: { groupI: number; wordI: number; chars: HTMLElement[] }) => HTMLElement;
- *      char?: (options: { groupI: number; wordI: number;  charI: number, char: string }) => HTMLElement;}
- * } [gsapOptions.createElement]
- * 
- * @returns {TextSplit}
- */
-const createTextSplit = (element, options = {}) => {
-    const {
-        group: groupSeparator,
-        word: wordSeparator = /\s+/,
-        char: charSeparator = ''
-    } = options.separator || {};
-
-    const {
-        groups: groupsCssClass = 'groups',
-        group: groupCssClass = 'group',
-        word: wordCssClass = 'word',
-        char: charCssClass = 'char'
-    } = options.cssClass || {};
-
-    const {
-        char: createChar = ({ charI = 0, char }) => {
-            const el = document.createElement('span');
-            el.append(char);
-            el.classList.add(charCssClass, `${charCssClass}-${charI}`);
-            return el;
-        },
-        word: createWord = ({ wordI, chars }) => {
-            const el = document.createElement('div');
-            el.classList.add(wordCssClass, `${wordCssClass}-${wordI}`);
-            el.append(...chars);
-            return el;
-        },
-        group: createGroup = ({ groupI, words }) => {
-            const el = document.createElement('div');
-            el.classList.add(groupCssClass, `${groupCssClass}-${groupI}`);
-            el.append(...words);
-            return el;
-        }
-    } = options.createElement || {};
-
-
-    const content = element.textContent;
-
-    if (!content)
-        return { all: [], groups: [], words: [], chars: [], container: element };
-
-
-    /**
-     * @param {string} content
-     * @param {number} groupI
-     * @param {HTMLElement} container
-     */
-    const createWords = (content, groupI, container) => {
-
-        const words = content.split(wordSeparator).map(w => w.trim()).filter(w => w);
-
-        const wordsElts = words.map((w, i) => {
-            const chars = w.split(charSeparator);
-
-            const charsElts = chars.map((c, j) => createChar({ groupI, wordI: i, charI: j, char: c }));
-            const wordElt = createWord({ groupI, wordI: i, chars: charsElts });
-
-            return wordElt;
-        });
-
-        container.append(...wordsElts);
-
-        const wordsData = wordsElts.map(word => ({
-            word,
-            chars: /** @type {HTMLElement[]} */([ ...word.children ])
-        }));
-
-        return {
-            words: wordsData,
-            chars: wordsData.flatMap(({ chars }) => chars)
-        };
-    };
-
-    const createGroups = () => {
-        const groups = groupSeparator ? content.split(groupSeparator).map(w => w.trim()).filter(w => w) : [ content ];
-
-        return groups.map((groupStr, i) => {
-            const wordsDiv = document.createElement('div');
-            wordsDiv.classList.add('words');
-
-            const { words, chars } = createWords(groupStr, i, wordsDiv);
-            const group = createGroup({ groupI: i, words: words.map(({ word }) => word) });
-
-            return { group, words, chars };
-        });
-    };
-
-    const createSplit = () => {
-        const groups = createGroups();
-
-        if (groups.length === 1) {
-            element.replaceWith(groups[ 0 ].group);
-            return { groups, container: groups[ 0 ].group };
-        }
-
-        {
-            const groupsDiv = document.createElement('div');
-            groupsDiv.classList.add(groupsCssClass);
-
-            groupsDiv.append(...groups.map(({ group }) => group));
-            element.replaceWith(groupsDiv);
-
-            return { groups, container: groupsDiv };
-        }
-    };
-
-    const { groups, container } = createSplit();
-    container.style.cssText += element.style.cssText;
-    container.classList.add(...element.classList);
-
-    return {
-        container,
-        all: groups,
-        groups: groups.map(({ group }) => group),
-        words: groups.flatMap(({ words }) => words.map(({ word }) => word)),
-        chars: groups.flatMap(({ words }) => words.flatMap(({ chars }) => chars)),
+        timeout = setTimeout(() => {
+            f();
+            timeout = undefined;
+        }, time);
     };
 };
+
+
+
+
+const isLocal = [ 'localhost', '127.0.0.1' ].some(host => window.location.hostname === host);
+
 
 
 /** @type {(selector: string, el?: Element) => (HTMLElement | null)[]} */
@@ -652,7 +397,9 @@ const queryAll = (...args) => gsap.utils.toArray(...args);
  * @template {string} K
  * @typedef {K extends keyof HTMLElementTagNameMap ? HTMLElementTagNameMap[K]:
  *  K extends 'svg' ? SVGSVGElement : 
- *  K extends 'svg path' ? SVGPathElement: 
+ *  K extends `svg.${string}` ? SVGSVGElement : 
+ *  K extends 'path' ? SVGPathElement:
+ *  K extends `${string} path` ? SVGPathElement:
  *  HTMLElement} HTMLElementByKey
  */
 
@@ -692,16 +439,55 @@ const queryThrow = (selector, el = document.documentElement) => {
     return /** @type {any} */ (elt);
 };
 
-const _ = {
-    define,
+
+const getNavigator = () => {
+
+    if ((navigator.userAgent.indexOf("Opera") || navigator.userAgent.indexOf('OPR')) != -1)
+        return 'Opera';
+
+    if (navigator.userAgent.indexOf("Edg") != -1)
+        return 'Edge';
+
+    if (navigator.userAgent.indexOf("Chrome") != -1)
+        return 'Chrome';
+
+    if (navigator.userAgent.indexOf("Safari") != -1)
+        return 'Safari';
+
+    if (navigator.userAgent.indexOf("Firefox") != -1)
+        return 'Firefox';
+
+    if ((navigator.userAgent.indexOf("MSIE") != -1) || (!!/** @type {any} */(document).documentMode == true)) //IF IE > 10
+        return 'IE';
+
+    return 'unknown';
+};
+
+
+/** @param {string[]} urls */
+const addScripts = async (...urls) => {
+
+    await Promise.allSettled(
+        urls.map(url => {
+            const script = document.createElement('script');
+            script.src = url;
+            document.head.appendChild(script);
+
+            return new Promise(resolve => {
+                script.addEventListener('load', resolve, { once: true });
+            });
+        })
+    );
+};
+
+const helpers = {
+    isLocal,
+    getNavigator,
     addScripts,
-    createTextSplit,
     createLazySingleton: createLazySingleton,
-    promisifyTimeline,
     logThrottle,
     createMultipleSetTimeoutCalls,
-    queryAll, queryAllThrow, queryThrow,
-    addToTimeline,
+    queryAll, queryAllThrow, queryThrow, debounce, debounceRestart,
     onReady, onLoad: onReady('complete'), onDOMContentLoaded: onReady('interactive'),
     onEvent, onMultipleEvents, dispatchEvent, createDispatchEventOnce, EventNames,
     getElementFromRecid,
@@ -709,35 +495,7 @@ const _ = {
     getRect,
     setClassName,
     makeEaseSShape, makeEaseSymmetric
-    // ...gsap.utils
-};
-
-// @ts-ignore
-window._ = {
-    // @ts-ignore
-    ...window._,
-    ..._
 };
 
 
-/** @typedef {typeof _} _Underscore */
-
-
-/**
- * @typedef {Object} Underscore
- * @property {typeof import('./images-settings.js').getImagesSettings} getImagesSettings
- * @property {typeof import('../gallery/gallery-menu.js').galleryMenu} galleryMenu
- * @property {typeof import('../gallery/gallery-slider.js').GallerySlider} GallerySlider
- * @property {typeof import('./mouse-follow.js').createMouseFollower} createMouseFollower
- * @property {typeof import('../gallery/gallery-layout.js').createElements} createElements
- * @property {typeof import('../gallery/gallery-animation.js').createGalleryAnimation} createGalleryAnimation
- * @property {typeof import('./gsap-plugins.js').registerGsapPlugins} registerGsapPlugins
- */
-
-
-
-// workaround of to merge types
-const _all = /** @type {Underscore & _Underscore} */(/** @type {any} */ (window)._);
-
-
-export { _all as _ };
+export { helpers };

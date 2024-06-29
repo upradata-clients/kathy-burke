@@ -1,5 +1,6 @@
 // @ts-check
 
+
 _.EventNames.hero = {
     firstScrubDone: 'hero:first-scrub-done'
 };

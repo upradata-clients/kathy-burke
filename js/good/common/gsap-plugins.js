@@ -1,3 +1,6 @@
+// @ts-nocheck
+
+
 const registerDrawSvgPlugin = () => {
     !function (e, t) {
         "object" == typeof exports && "undefined" != typeof module ? t(exports) : "function" == typeof define && define.amd ? define([ "exports" ], t) : t((e = e || self).window = e.window || {});
@@ -871,6 +874,11 @@ const registerGsapPlugins = () => {
     registerDrawSvgPlugin();
     registerSplitText();
     registerScrollSmoothPlugin();
+
+    gsap.registerPlugin(Flip);
+    gsap.registerPlugin(CustomEase);
+    gsap.registerPlugin(ScrollTrigger);
+    gsap.registerPlugin(ScrollToPlugin);
 };
 
 export { registerGsapPlugins };

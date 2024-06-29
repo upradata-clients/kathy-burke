@@ -1,7 +1,7 @@
 // @ts-check
 import { _ } from '../../common/underscore.js';
 import { gsap as _gsap } from '../../../../node_modules/gsap/index.js';
-import { registerGsapPlugins } from '../../common/gsap.plugins.umd.js';
+import { registerGsapPlugins } from '../../common/gsap-plugins.umd.js';
 
 
 const gsap =/** @type {import('gsap')['gsap']} */(/** @type {any} */(_gsap));
@@ -361,7 +361,7 @@ const createHeroToImagePinAnimation = ({ heroBlock, signatureBlock, notreDameBlo
         const notreDameImgInPainting = createNotreDameImageInPainting();
         setHeroTransformOriginInPaintingCenter();
 
-       // _.setSvgPosition(/** @type {SVGSVGElement} */(/** @type {unknown} */(_.queryThrow('svg', notreDameBlock))), { x: 0.8, y: 0.5 });
+        // _.setSvgPosition(/** @type {SVGSVGElement} */(/** @type {unknown} */(_.queryThrow('svg', notreDameBlock))), { x: 0.8, y: 0.5 });
 
         return { centralPainting, heroContainer, notreDameImgInPainting, notreDameBlock, notreDameTitle, notreDameHand, notreDameSky };
     };

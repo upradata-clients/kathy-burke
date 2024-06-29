@@ -6,12 +6,12 @@
         "module": "ESNext",
     },
     "include": [
-        "src"
+        "js"
     ],
     "exclude": [
         "node_modules",
-        "src/**/*.example.ts",
-        "src/**/*.spec.ts"
+        "js/**/*.example.ts",
+        "js/**/*.spec.ts"
     ],
     "ts-node": {
         // It is faster to skip typechecking.
