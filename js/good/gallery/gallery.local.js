@@ -1,5 +1,5 @@
 // @ts-check
-import { registerUnderScore } from '../common/register-underscore-old.js';
+import { registerUnderScore } from '../lib/register-underscore-old.js';
 
 const _ = await registerUnderScore({ isLocal: true });
 

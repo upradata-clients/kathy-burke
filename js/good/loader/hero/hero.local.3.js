@@ -1,8 +1,8 @@
 // @ts-check
-import { _ } from '../../common/underscore.js';
-import * as dummy from '../../common/underscore.js';
+import { _ } from '../../lib/underscore.js';
+import * as dummy from '../../lib/underscore.js';
 import { gsap as _gsap } from '../../../../node_modules/gsap/index.js';
-import { registerGsapPlugins } from '../../common/gsap-plugins.umd.js';
+import { registerGsapPlugins } from '../../lib/gsap-plugins.umd.js';
 
 
 const gsap =/** @type {import('gsap')['gsap']} */(/** @type {any} */(_gsap));
@@ -29,7 +29,7 @@ gsap.registerPlugin(ScrollToPlugin);
 
 registerGsapPlugins();
 
-(await import('../../common/GSDevTools3.min.js')).registerGSDevTools();
+(await import('../../lib/GSDevTools3.min.js')).registerGSDevTools();
 
 
 _.EventNames.hero = {
@@ -651,7 +651,7 @@ const createHeroToImagePinAnimation = ({ heroBlock, signatureBlock, notreDameBlo
 
 
         /**
-         * @satisfies {import('../../common/underscore.js').AnimationsSettings<typeof heroElements>}
+         * @satisfies {import('../../lib/underscore.js').AnimationsSettings<typeof heroElements>}
          */
         const heroSettings = {
             signature: {
@@ -715,8 +715,8 @@ const createHeroToImagePinAnimation = ({ heroBlock, signatureBlock, notreDameBlo
 
 
         /**
-         * @param {import('../../common/underscore.js').AddToTimelineTarget<typeof heroElements>} target
-         * @param {import('../../common/underscore.js').AddToTimelineOptions} [options]
+         * @param {import('../../lib/underscore.js').AddToTimelineTarget<typeof heroElements>} target
+         * @param {import('../../lib/underscore.js').AddToTimelineOptions} [options]
          */
         const addToScrub = (target, options = {}) => {
             return _.addToTimeline({ timeline: tlScrub, target, elements: heroElements, animationsSettings: heroSettings, options });
@@ -724,8 +724,8 @@ const createHeroToImagePinAnimation = ({ heroBlock, signatureBlock, notreDameBlo
 
 
         /**
-         * @param {import('../../common/underscore.js').AddToTimelineTarget<typeof notreDameElements>} target
-         * @param {import('../../common/underscore.js').AddToTimelineOptions} [options]
+         * @param {import('../../lib/underscore.js').AddToTimelineTarget<typeof notreDameElements>} target
+         * @param {import('../../lib/underscore.js').AddToTimelineOptions} [options]
          */
         // const addToNotreDame = (target, options = {}) => {
         //     return _.addToTimeline({

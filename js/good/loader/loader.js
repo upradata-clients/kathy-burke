@@ -1,5 +1,5 @@
 // @ts-check
-import { registerUnderScore } from '../common/register-underscore.js';
+import { registerUnderScore } from '../lib/register-underscore.js';
 
 /**
  * @typedef {import("gsap")} gsap
@@ -36,7 +36,7 @@ if (!_.isLocal) {
         gsap.registerPlugin(ScrollToPlugin);
         _.registerGsapPlugins();
 
-       
+
 
         _.dispatchEvent(_.EventNames.ready.gsap);
     });

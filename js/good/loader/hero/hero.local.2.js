@@ -1,7 +1,7 @@
 // @ts-check
-import { _ } from '../../common/underscore.js';
+import { _ } from '../../lib/underscore.js';
 import { gsap as _gsap } from '../../../../node_modules/gsap/index.js';
-import { registerGsapPlugins } from '../../common/gsap-plugins.umd.js';
+import { registerGsapPlugins } from '../../lib/gsap-plugins.umd.js';
 
 
 const gsap =/** @type {import('gsap')['gsap']} */(/** @type {any} */(_gsap));
@@ -28,7 +28,7 @@ gsap.registerPlugin(ScrollToPlugin);
 
 registerGsapPlugins();
 
-(await import('../../common/GSDevTools3.min.js')).registerGSDevTools();
+(await import('../../lib/GSDevTools3.min.js')).registerGSDevTools();
 
 
 _.EventNames.hero = {

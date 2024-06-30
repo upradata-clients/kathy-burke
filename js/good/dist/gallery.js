@@ -8,7 +8,7 @@ _.define(() => {
      */
 
 
-    /** @type {typeof import('../common/underscore.js')._} */
+    /** @type {typeof import('../lib/underscore.js')._} */
     const _ = /** @type {any} */ (window)._;
 
 
@@ -50,7 +50,7 @@ _.define(() => {
         // we move all images to first images block
         const imagesBlocksPerCategory = galleryCategories.map(({
             imagesRecids
-        }) => [...imagesRecids.map(_.getElementFromRecid)]);
+        }) => [ ...imagesRecids.map(_.getElementFromRecid) ]);
 
 
         /**
@@ -61,7 +61,7 @@ _.define(() => {
          */
         const mergeItemsInFirstBlockOfCategory = (blocks, categoryI) => {
 
-            const block = blocks[0];
+            const block = blocks[ 0 ];
             const wrapper = _.queryThrow('.t156__wrapper', block);
 
             const images = blocks.flatMap((block, i) => {
@@ -69,7 +69,7 @@ _.define(() => {
 
                 if (i === 0) {
                     block.setAttribute('class', `gallery gallery-${categoryI} card r t-rec`);
-                    [...wrapper.children].filter(el => el.innerHTML === '').forEach(el => el.remove());
+                    [ ...wrapper.children ].filter(el => el.innerHTML === '').forEach(el => el.remove());
                 } else {
                     wrapper.append(...images);
                     block.remove();
@@ -98,7 +98,7 @@ _.define(() => {
          */
         const createCardsContainer = elementsPerCategory => {
 
-            const firstCategory = elementsPerCategory[0];
+            const firstCategory = elementsPerCategory[ 0 ];
 
             firstCategory.block.insertAdjacentHTML(
                 'beforebegin',
@@ -127,7 +127,7 @@ _.define(() => {
             galleryBackground.className = 'gallery-background';
 
             // we remove all item contents from the skeleton
-            [...galleryBackground.querySelectorAll('.t156__item')].forEach(el => el.replaceChildren());
+            [ ...galleryBackground.querySelectorAll('.t156__item') ].forEach(el => el.replaceChildren());
 
             cardsBlock.append(galleryBackground);
 
@@ -199,13 +199,13 @@ _.define(() => {
     // @ts-check
 
 
-    /** @type {typeof import('../common/underscore.js')._} */
+    /** @type {typeof import('../lib/underscore.js')._} */
     const _ = /** @type {any} */ (window)._;
 
     /**
-     * @typedef {import('../common/images-settings.js').ImageSettings} ImageSettings
-     * @typedef {import('../common/images-settings.js').ImageSettingsProp} ImageSettingsProp
-     * @typedef {import('../common/images-settings.js').ImageSettingsMode} ImageSettingsMode
+     * @typedef {import('../lib/images-settings.js').ImageSettings} ImageSettings
+     * @typedef {import('../lib/images-settings.js').ImageSettingsProp} ImageSettingsProp
+     * @typedef {import('../lib/images-settings.js').ImageSettingsMode} ImageSettingsMode
      */
 
 
@@ -240,16 +240,16 @@ _.define(() => {
                         mode: 'value'
                     } : style;
 
-                    const value = imagesSettings[prop]?.[mode];
+                    const value = imagesSettings[ prop ]?.[ mode ];
 
                     return value ? {
                         ...cssStyles,
-                        [prop]: imagesSettings[prop][mode]
+                        [ prop ]: imagesSettings[ prop ][ mode ]
                     } : cssStyles;
                 }, {});
 
                 if (cssStyles)
-                    gsap.set(menuItemsImages[i], cssStyles);
+                    gsap.set(menuItemsImages[ i ], cssStyles);
             });
         };
 
@@ -294,7 +294,7 @@ _.define(() => {
             item.classList.remove('t959__card_25');
         });
 
-        menuItems[0].insertAdjacentHTML('beforeend', `
+        menuItems[ 0 ].insertAdjacentHTML('beforeend', `
         <div class="card--hint">
             <span class="hinter"></span>
             <span class="hinter"></span>
@@ -305,13 +305,13 @@ _.define(() => {
 
         _.queryAllThrow('.t959__row', menuContainer).forEach(el => el.remove());
 
-        const hinter = _.queryThrow('.card--hint', menuItems[0]);
-        const hinterItems = _.queryAllThrow('.card--hint .hinter', menuItems[0]);
+        const hinter = _.queryThrow('.card--hint', menuItems[ 0 ]);
+        const hinterItems = _.queryAllThrow('.card--hint .hinter', menuItems[ 0 ]);
 
 
         /** @param {number} i */
         const hinterGoTo = i => {
-            const itemHovered = menuItems[i];
+            const itemHovered = menuItems[ i ];
 
             const state = Flip.getState(hinterItems, {
                 props: 'opacity'
@@ -465,7 +465,7 @@ _.define(() => {
          * @param {AnimateSliderParams['state']} [sliderState]
          */
         const goTo = async (i, sliderState) => {
-            const menuItem = elements.menuItems[i];
+            const menuItem = elements.menuItems[ i ];
 
             const currentIndex = state.movingI ?? state.i;
 
@@ -531,7 +531,7 @@ _.define(() => {
 
 
         elements.menuItems.forEach((menuItem, i) => {
-            const card = elements.cards[i];
+            const card = elements.cards[ i ];
 
             const isStateI = () => typeof state.movingI !== 'undefined' ? state.movingI === i : state.i === i;
 
@@ -608,7 +608,7 @@ _.define(() => {
      */
 
 
-    /** @type {typeof import('../common/underscore.js')._} */
+    /** @type {typeof import('../lib/underscore.js')._} */
     const _ = /** @type {any} */ (window)._;
 
     /** @typedef {'x' | 'y'} Axis */
@@ -655,9 +655,9 @@ _.define(() => {
 
         /** @param {Record<Axis,number>} distanceProgress */
         const distanceProgressToRotation = distanceProgress => {
-            return Object.fromEntries(['x', 'y'].map(axis => [
+            return Object.fromEntries([ 'x', 'y' ].map(axis => [
                 axis,
-                gsap.utils.mapRange(-1, 1, -maxRotation[axis], maxRotation[axis], distanceProgress[axis === 'x' ? 'y' : 'x'])
+                gsap.utils.mapRange(-1, 1, -maxRotation[ axis ], maxRotation[ axis ], distanceProgress[ axis === 'x' ? 'y' : 'x' ])
             ]));
         };
 
@@ -679,7 +679,7 @@ _.define(() => {
 
 
             const mouseFollower = _.createMouseFollower({
-                items: [wrapper],
+                items: [ wrapper ],
                 distanceEasing,
                 maxDistance: typeof maxDistance === 'function' ? maxDistance({
                     wrapper
@@ -1061,10 +1061,10 @@ _.define(() => {
             galleryTitle
         } = elements;
 
-        galleryMenu.setMenuItemsImagesStyle([{
+        galleryMenu.setMenuItemsImagesStyle([ {
             prop: 'background-position',
             mode: 'lg'
-        }]);
+        } ]);
 
         const slider = _.lazyFactory(() => createGallerySlider(cards, elements))({
             destroy: slider => slider.stop()
@@ -1087,14 +1087,14 @@ _.define(() => {
                         height
                     } = _.getRect(wrapper);
                     return {
-                        x: 0.5 * window.innerWidth / 2 /* width */ ,
+                        x: 0.5 * window.innerWidth / 2 /* width */,
                         y: 0.5 * height
                     };
                 }
             })
         )({
             destroy: sideCardsMouseFollowAnimation => sideCardsMouseFollowAnimation.stop(),
-            isParamsEqual: (a, b) => a.length === b.length && a.every((v, i) => v === b[i])
+            isParamsEqual: (a, b) => a.length === b.length && a.every((v, i) => v === b[ i ])
         });
 
 
@@ -1121,10 +1121,10 @@ _.define(() => {
 
         /** @param {'activating' | 'desactivating'} action */
         const animateActivationMenu = action => {
-            galleryMenu.setMenuItemsImagesStyle([{
+            galleryMenu.setMenuItemsImagesStyle([ {
                 prop: 'background-position',
                 mode: action === 'activating' ? 'xs' : 'lg'
-            }]);
+            } ]);
 
             if (action === 'activating') {
                 if (!menuHeight)
@@ -1193,28 +1193,28 @@ _.define(() => {
                             item.classList.remove('active');
                         });
 
-                        menuItemsTitles[to].classList.add('active');
+                        menuItemsTitles[ to ].classList.add('active');
                     }
                 }
 
                 if (from === to)
                     return;
 
-                galleryTitleHeader.innerHTML = menuItemsTitles[to].innerHTML;
+                galleryTitleHeader.innerHTML = menuItemsTitles[ to ].innerHTML;
 
                 galleryTitleHeader.dataset.flipId = 'gallery-title';
-                menuItemsTitles[to].dataset.flipId = 'gallery-title';
+                menuItemsTitles[ to ].dataset.flipId = 'gallery-title';
 
-                const titleState = Flip.getState([menuItemsTitles[to], galleryTitleHeader]);
+                const titleState = Flip.getState([ menuItemsTitles[ to ], galleryTitleHeader ]);
 
-                menuItemsTitles[from].classList.remove('active');
-                menuItemsTitles[to].classList.add('active');
+                menuItemsTitles[ from ].classList.remove('active');
+                menuItemsTitles[ to ].classList.add('active');
 
                 galleryTitleHeader.classList.add('active');
 
                 return Flip.from(titleState, {
                     duration: 0.4,
-                    ease: 'expo.out' /* flipAction === 'flip' ? 'expo.out' : 'expo.in' */ ,
+                    ease: 'expo.out' /* flipAction === 'flip' ? 'expo.out' : 'expo.in' */,
                     toggleClass: 'flipping'
                 });
             }
@@ -1236,7 +1236,7 @@ _.define(() => {
 
             if (state === 'desactivated') {
                 if (from !== -1) {
-                    const items = from === to ? menuItemsTitles.filter((_, i) => i !== to) : [menuItemsTitles[from]];
+                    const items = from === to ? menuItemsTitles.filter((_, i) => i !== to) : [ menuItemsTitles[ from ] ];
                     gsap.to(items, {
                         opacity: 1,
                         y: 0,
@@ -1250,7 +1250,7 @@ _.define(() => {
                 // gsap.to(menuItemsTitles, { opacity: 1, y: 0, scale: 1, duration: 0.4, ease: 'expo.out', overwrite: true });
 
                 if (to !== -1) {
-                    gsap.fromTo(menuItemsTitles[to], {
+                    gsap.fromTo(menuItemsTitles[ to ], {
                         /* opacity: 1, */
                         y: 0,
                         scale: 1
@@ -1285,7 +1285,7 @@ _.define(() => {
             }
 
             if (isInit) {
-                galleryTitleHeader.textContent = menuItemsTitles[to].textContent;
+                galleryTitleHeader.textContent = menuItemsTitles[ to ].textContent;
                 return gsap.fromTo(galleryTitleHeader, {
                     opacity: 0,
                     y: -100
@@ -1300,7 +1300,7 @@ _.define(() => {
             if (from === to)
                 return;
 
-            galleryTitleHeader2.textContent = menuItemsTitles[to].textContent;
+            galleryTitleHeader2.textContent = menuItemsTitles[ to ].textContent;
 
             return gsap.timeline()
                 .to(galleryTitleHeader, {
@@ -1320,7 +1320,7 @@ _.define(() => {
                     ease: 'expo.out',
                     overwrite: true,
                     onComplete: () => {
-                        galleryTitleHeader.textContent = menuItemsTitles[to].textContent;
+                        galleryTitleHeader.textContent = menuItemsTitles[ to ].textContent;
                         gsap.set(galleryTitleHeader, {
                             opacity: 1,
                             x: 0
@@ -1340,7 +1340,7 @@ _.define(() => {
          * @param {'add'|'remove'} action 
          */
         const setStateCards = (i, action) => {
-            cards[i].dataset.cardState = action === 'add' ? 'active' : '';
+            cards[ i ].dataset.cardState = action === 'add' ? 'active' : '';
             // cards[ wrapI(i - 1) ].dataset.cardState = action === 'add' ? 'left' : '';
             // cards[ wrapI(i + 1) ].dataset.cardState = action === 'add' ? 'right' : '';
         };
@@ -1500,8 +1500,8 @@ _.define(() => {
         const bgWidthOnActive = '50vw';
 
         const bgWidthAnimation = gsap.timeline({
-                paused: true
-            })
+            paused: true
+        })
             .fromTo(galleryBgContainer, {
                 width: gsap.getProperty(galleryBgContainer, 'width')
             }, {
@@ -1713,7 +1713,7 @@ _.define(() => {
             const cycleDuration = dtStagger * items.length;
             // the duration of just one animateFunc() (we'll populate it in the .forEach() below...
             const cardAnimationDuration = cardAnimation({
-                item: items[0],
+                item: items[ 0 ],
                 index: 0,
                 xPercent,
                 dtStagger,
@@ -1723,7 +1723,7 @@ _.define(() => {
             // loop through 3 times so we can have an extra cycle at the start and end - we'll scrub the playhead only on the 2nd cycle
             items.concat(items).concat(items).forEach((_, i) => {
                 const anim = cardAnimation({
-                    item: items[i % items.length],
+                    item: items[ i % items.length ],
                     index: i,
                     xPercent,
                     dtStagger,
@@ -1769,13 +1769,13 @@ _.define(() => {
                     immediateRender: false
                 })
                 .fromTo(element, {
-                        xPercent
-                    }, {
-                        xPercent: -xPercent,
-                        duration: duration,
-                        ease: 'none',
-                        immediateRender: false
-                    },
+                    xPercent
+                }, {
+                    xPercent: -xPercent,
+                    duration: duration,
+                    ease: 'none',
+                    immediateRender: false
+                },
                     0
                 );
 
@@ -1893,7 +1893,7 @@ _.define(() => {
     // @ts-check
 
 
-    /** @type {typeof import('../common/underscore.js')._} */
+    /** @type {typeof import('../lib/underscore.js')._} */
     const _ = /** @type {any} */ (window)._;
 
     _.EventNames.gallery = {
@@ -1907,34 +1907,34 @@ _.define(() => {
     _.onLoad(() => {
 
         /** @type {import('./gallery-layout.js').GalleryCategories} */
-        const galleryCategories = [{
-                name: 'Invisible guests',
-                imagesRecids: ['746428010', '746428004']
-            },
-            {
-                name: 'Cathedral Moods',
-                imagesRecids: ['571578108', '746400014']
-            },
-            {
-                name: 'Miniatures',
-                imagesRecids: ['571579724', '571592065']
-            },
-            {
-                name: 'Paris Portraits',
-                imagesRecids: ['571579825', '571579742']
-            },
-            {
-                name: 'Model Sessions',
-                imagesRecids: ['571579925', '571579800']
-            },
-            {
-                name: 'Movie Stills',
-                imagesRecids: ['571579932', '571579802']
-            },
-            {
-                name: 'The Empty Studio',
-                imagesRecids: ['571579939', '571579804']
-            }
+        const galleryCategories = [ {
+            name: 'Invisible guests',
+            imagesRecids: [ '746428010', '746428004' ]
+        },
+        {
+            name: 'Cathedral Moods',
+            imagesRecids: [ '571578108', '746400014' ]
+        },
+        {
+            name: 'Miniatures',
+            imagesRecids: [ '571579724', '571592065' ]
+        },
+        {
+            name: 'Paris Portraits',
+            imagesRecids: [ '571579825', '571579742' ]
+        },
+        {
+            name: 'Model Sessions',
+            imagesRecids: [ '571579925', '571579800' ]
+        },
+        {
+            name: 'Movie Stills',
+            imagesRecids: [ '571579932', '571579802' ]
+        },
+        {
+            name: 'The Empty Studio',
+            imagesRecids: [ '571579939', '571579804' ]
+        }
         ];
 
         const elements = _.createElements(galleryCategories);

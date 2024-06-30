@@ -1,8 +1,7 @@
 // @ts-check
-import { _ } from '../../common/underscore.js';
-import * as dummy from '../../common/underscore.js';
+import { _ } from '../../lib/underscore.js';
 import { gsap as _gsap } from '../../../../node_modules/gsap/index.js';
-import { registerGsapPlugins } from '../../common/gsap-plugins.umd.js';
+import { registerGsapPlugins } from '../../lib/gsap-plugins.umd.js';
 
 
 const gsap =/** @type {import('gsap')['gsap']} */(/** @type {any} */(_gsap));
@@ -29,7 +28,7 @@ gsap.registerPlugin(ScrollToPlugin);
 
 registerGsapPlugins();
 
-(await import('../../common/GSDevTools3.min.js')).registerGSDevTools();
+(await import('../../lib/GSDevTools3.min.js')).registerGSDevTools();
 
 
 _.EventNames.hero = {
@@ -105,7 +104,7 @@ const centerOfRect = rect => ({ ...rect, x: rect.x + rect.width / 2, y: rect.y +
 /**
  * @template {readonly string[]} Props
  * @template T
- * @template {import('../../common/underscore.js').InferArray<Props>} Prop
+ * @template {import('../../lib/underscore.js').InferArray<Props>} Prop
  * @template {(index: number, target: Element, targets: Element[]) => T} LazyFactory
  * 
  * @param {Props} props
@@ -465,7 +464,7 @@ const createHeroToImagePinAnimation = ({ heroBlock, signatureBlock, notreDameBlo
                     withScrub: true, time: () => '>-=70%',
                     ease: 'expo.out',
                     createAnimation: ({ element, index: i }) => {
-                        const { chars } = /** @type {import('../../common/underscore.js').InferArray<typeof notreDame.split.all>} */(element);
+                        const { chars } = /** @type {import('../../lib/underscore.js').InferArray<typeof notreDame.split.all>} */(element);
                         const duration = 2;
 
                         return [

@@ -13,14 +13,14 @@ const fromHere = (...paths) => path.resolve(__dirname, ...paths);
 
 
 const globalJsFiles = [
-    fromHere('./common/underscore.js'),
-    fromHere('./common/gsap.plugins.js')
+    fromHere('./lib/underscore.js'),
+    fromHere('./lib/gsap.plugins.js')
 ];
 
 
 const libJsFiles = [
-    fromHere('./common/mouse-follow.js'),
-    fromHere('./common/images-settings.js'),
+    fromHere('./lib/mouse-follow.js'),
+    fromHere('./lib/images-settings.js'),
 ];
 
 const galleryJsFiles = [
