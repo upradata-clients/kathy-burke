@@ -14,7 +14,7 @@
 
 
 
-/** @typedef {{ images: HTMLElement[]; wrapper: HTMLElement; block: HTMLElement; }} CategoryElements} */
+/** @typedef {{ images: HTMLElement[]; wrapper: HTMLElement; block: HTMLElement; }} CategoryElements */
 
 
 /**

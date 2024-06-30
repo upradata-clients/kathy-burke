@@ -1,6 +1,9 @@
 // @ts-check
 
 
+/** @type {typeof import('../underscore.js')._} */
+const _ = /** @type {any} */ (window)._;
+
 
 const initGalleryMenu = () => {
 

@@ -5,8 +5,8 @@ import * as galleryAnimation from './gallery-animation';
 
 
 declare global {
-    export type Gallery2 = typeof galleryLayout & typeof galleryMenu & typeof gallerySlider & typeof galleryAnimation;
+    export type Gallery = typeof galleryLayout & typeof galleryMenu & typeof gallerySlider & typeof galleryAnimation;
     export interface UnderScore {
-        gallery2: Gallery2;
+        gallery: Gallery;
     }
 }

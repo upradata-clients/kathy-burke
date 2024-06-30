@@ -1,0 +1,221 @@
+.gallery {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    justify-content: center;
+    align-items: center;
+    padding-bottom: 185px;
+}
+
+.cards {
+    display: flex;
+    width: 100%;
+    height: auto;
+    justify-content: center;
+    opacity: 1;
+    /*0;*/
+    /*display: none;*/
+    position: relative;
+}
+
+/*.cards.active {
+        display: flex;
+    }*/
+
+/*top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;*/
+
+.cards__wrapper {
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    position: absolute;
+    overflow: hidden;
+}
+
+.slider-wrapper {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    height: 100%;
+    width: auto;
+    /*width: 420px;*/
+    /*width: 100%;*/
+    /*width: calc(0.3 * var(--gallery-menu-width));*/
+    /* width in JS being the same size as gallery background frame*/
+}
+
+.slider-wrapper .card .t-col {
+    margin: 0;
+}
+
+.card {
+    position: absolute;
+    right: 0;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    padding: 0 !important;
+    margin: 0;
+    opacity: 0;
+    transition: opacity 0.4s ease-out;
+}
+
+/*:is(.card[data-card-state="left"], .card[data-card-state="right"]):hover*/
+.card:not([data-card-state="active"]):hover {
+    opacity: 1 !important;
+}
+
+.gallery-background {
+    width: 100%;
+    z-index: -1;
+    padding: 0;
+}
+
+
+:is(.gallery-background, .card) .t-col {
+    box-sizing: border-box;
+    padding: 24px;
+}
+
+.cards.active :is(.gallery-background, .card) .t-col {
+    padding: 44px;
+}
+
+.card .t-img {
+    cursor: unset;
+}
+
+.cards.active .card[data-card-state="active"] .t-img {
+    cursor: zoom-in;
+}
+
+
+.cards .t156__wrapper {
+    height: auto;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(110px, 1fr));
+    grid-template-rows: repeat(2, 200px);
+    grid-gap: 6px 6px;
+    /*perspective: 800px;*/
+}
+
+.cards.active .t156__wrapper {
+    grid-template-rows: repeat(2, 380px);
+    /*300px*/
+    grid-gap: 13px 13px;
+}
+
+.slider-wrapper {
+    perspective: 800px;
+}
+
+
+@media screen and (max-width: 960px) {
+    .t156__wrapper {
+        grid-template-columns: repeat(2, minmax(100px, 1fr));
+        grid-template-rows: repeat(4, 420px);
+    }
+}
+
+
+.cards .t156__item {
+    border-radius: 6px;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    overflow: hidden;
+}
+
+.cards .t156__item img {
+    object-fit: cover;
+    height: 100%;
+    border-radius: 6px;
+    transition: all 0.3s ease-out;
+}
+
+
+.cards .t156__item img:hover {
+    transform: scale(1.05);
+    filter: brightness(1.3);
+}
+
+
+.uc-gallery-menu.slider-active .t959__card .t-card__title.active {
+    visibility: hidden;
+}
+
+.uc-gallery-menu.slider-active .t959__card .t-card__title.flipping {
+    visibility: visible;
+}
+
+.uc-gallery-title .gallery-titles {
+    display: flex;
+    justify-content: center;
+    position: relative;
+}
+
+.uc-gallery-title .gallery-titles .t-title {
+    width: 100%;
+    text-align: center;
+}
+
+.gallery-title-header-2 {
+    opacity: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    text-align: center;
+    /* transform: translate(50%, 50%); */
+}
+
+/* .uc-gallery-title {
+    display: none;
+    opacity: 0;
+}
+
+.uc-gallery-title.active {
+    display: block;
+} */
+
+.uc-gallery-title.slider-active .t030__title {
+    display: none;
+}
+
+.uc-gallery-title.slider-active .t030__title.active {
+    display: block;
+}
+
+
+.gallery-background .t156 {
+    display: flex;
+    justify-content: center;
+    width: auto;
+}
+
+.gallery-background .t-container {
+    width: auto;
+    /*width: 420px;*/
+    /*var(--gallery-menu-width, 90vw);*/
+    max-width: none;
+    margin: 0;
+}
+
+/*.cards.active .gallery-background .t-container {
+        width: 50vw;
+    }*/
+.gallery-background .t-col {
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    box-shadow: 0px 0px 62px 22px rgb(0 0 0 / 20%);
+    border-radius: 12px;
+}

@@ -13,7 +13,7 @@ const _ = /** @type {any} */ (window)._;
 
 
 /**
- * @param {import('./gallery-layout.js').Elements} elements
+ * @param {import('./gallery-layout.local.js').Elements} elements
  */
 const getGalleryMenu = elements => {
 
@@ -68,7 +68,7 @@ const getGalleryMenu = elements => {
 
 /**
  * @param {Object} params
- * @param {import('./gallery-layout.js').Elements} params.elements
+ * @param {import('./gallery-layout.local.js').Elements} params.elements
  * @param {() => void | Promise<void>} [params.onStart]
  * @param {(params: { enterI: number | undefined; leaveI: number | undefined }) => void | Promise<void>} [params.onClickMenuItem]
  * @param {() => void | Promise<void>} [params.onLeave]

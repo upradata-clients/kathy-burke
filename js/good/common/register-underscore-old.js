@@ -6,7 +6,7 @@ import { helpers } from './helpers.js';
 import * as textSplit from './text-split.js';
 import * as imagesSettings from './images-settings.js';
 import * as mouseFollow from './mouse-follow.js';
-import { registerGallery } from './../gallery-new/register-gallery.js';
+import { registerGallery } from './../gallery/register-gallery.js';
 import { gsap as _gsap } from '../../../node_modules/gsap/index.js';
 
 const global_ = () => /** @type {UnderScore} */(/** @type {any} */(globalThis)._);
@@ -15,7 +15,7 @@ const global_ = () => /** @type {UnderScore} */(/** @type {any} */(globalThis)._
 const createScrollSmoother = () => {
     // create the scrollSmoother before your scrollTriggers
     ScrollSmoother.create({
-        content: document.querySelector('#allrecords'), // the element that scrolls
+        content: document.querySelector('#allrecords') || document.querySelector('body'), // global_().queryThrow('#allrecords'), // the element that scrolls
         smooth: 1, // how long (in seconds) it takes to "catch up" to the native scroll position
         effects: true, // looks for data-speed and data-lag attributes on elements
         smoothTouch: 0.1, // much shorter smoothing time on touch devices (default is NO smoothing on touch devices)
@@ -42,10 +42,7 @@ const registerUnderScore = (options = {}) => {
     registerGallery(global_());
 
     const finishRegister = () => {
-        /* setTimeout(() => {
-            createScrollSmoother();
-        }, 500); */
-
+        createScrollSmoother();
         return global_();
     };
 

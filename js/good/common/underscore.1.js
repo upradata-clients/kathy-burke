@@ -729,7 +729,7 @@ window._ = {
  * @property {typeof import('../gallery/gallery-menu.js').galleryMenu} galleryMenu
  * @property {typeof import('../gallery/gallery-slider.js').GallerySlider} GallerySlider
  * @property {typeof import('./mouse-follow.js').createMouseFollower} createMouseFollower
- * @property {typeof import('../gallery/gallery-layout.js').createElements} createElements
+ * @property {typeof import('../gallery/gallery-layout.local.js').createElements} createElements
  * @property {typeof import('../gallery/gallery-animation.js').createGalleryAnimation} createGalleryAnimation
  * @property {typeof import('./gsap-plugins.js').registerGsapPlugins} registerGsapPlugins
  */

@@ -2,49 +2,52 @@
 
 
 
+
 /**
- * @param {import('./gallery-layout.js').Elements} elements
+ * @param {Object} params
+ * @param {GalleryElements} params.galleryElements
+ * @param {GalleryItems} params.galleryItems
  */
-const initGalleryMenu = elements => {
+const initGalleryMenu = ({ galleryElements: elements, galleryItems }) => {
 
+    const menuItemsTitles = elements.menu.menuItems.map(({ title }) => title);
+    const menuItemsImages = elements.menu.menuItems.map(({ item }) => _.queryThrow('.t959__card-image', item));
 
-    const menuItemsTitles = elements.menuItems.map(m => _.queryThrow('.t-card__title', m));
-    const menuItemsImages = elements.menuItems.map(item => _.queryThrow('.t959__card-image', item));
-
-
-    /** @type {ImageSettings[]} */
-    const menuItemsImagesSettings = _.getImagesSettings(menuItemsImages);
+    const menuItemsImagesSettings = _.applySettingsPropMap(
+        /** @type {readonly ImageSettings[]} */(galleryItems.map(({ menu }) => menu.settings).filter(s => !!s))
+    );
 
     /**
-     * @param {Array<string | { prop: ImageSettingsProp; mode: ImageSettingsMode }>} styles 
+     * @param {Array<string | { prop: ImageSettingsKeys; mediaQuery: ImageSettingsMediaQueries }>} styles 
      */
     const setMenuItemsImagesStyle = styles => {
 
         menuItemsImagesSettings.forEach((imagesSettings, i) => {
+            if (!imagesSettings)
+                return;
 
             const cssStyles = styles.reduce((cssStyles, style) => {
 
-                const { prop, mode } = typeof style === 'string' ? { prop: style, mode: 'value' } : style;
+                const { prop, mediaQuery } = typeof style === 'string' ? { prop: style, mediaQuery: 'all' } : style;
+                const p = _.getSettingPropMap(prop);
 
-                const value = imagesSettings[ prop ]?.[ mode ];
+                const value = imagesSettings[ p ]?.[ mediaQuery ];
 
-                return value ? { ...cssStyles, [ prop ]: imagesSettings[ prop ][ mode ] } : cssStyles;
+                return value ? { ...cssStyles, [ p ]: imagesSettings[ p ][ mediaQuery ] } : cssStyles;
             }, {});
 
-            if (cssStyles)
+            if (Object.values(cssStyles).length > 0)
                 gsap.set(menuItemsImages[ i ], cssStyles);
         });
     };
 
-    const params = { menuItems: elements.menuItems, menuContainer: elements.menuContainer };
+    const hinter = createMenuHinter(elements.menu);
 
-    const hinter = createMenuHinter(params);
-
-    addMenuAppareanceAnimation(params);
-    addMenuOnHover({ ...params, ...hinter });
+    addMenuAppareanceAnimation(elements.menu);
+    addMenuOnHover({ ...elements.menu, ...hinter });
 
     return {
-        ...params,
+        ...elements.menu,
         ...hinter,
         menuItemsTitles,
         menuItemsImages,
@@ -58,17 +61,17 @@ const initGalleryMenu = elements => {
  */
 
 
-/** @param {Pick<import('./gallery-layout.js').Elements,'menuItems' | 'menuContainer'>} params */
+/** @param {Pick<GalleryElements['menu'], 'menuItems' | 'menuContainer'>} params */
 const createMenuHinter = ({ menuContainer, menuItems }) => {
 
-    _.queryThrow('.t959__card-overlay', menuContainer).setAttribute('style', '');
+    // _.queryThrow('.t959__card-overlay', menuContainer).setAttribute('style', '');
 
-    menuItems.forEach(item => {
+    menuItems.forEach(({ item }) => {
         menuContainer.append(item);
         item.classList.remove('t959__card_25');
     });
 
-    menuItems[ 0 ].insertAdjacentHTML('beforeend', `
+    menuItems[ 0 ].item.insertAdjacentHTML('beforeend', `
         <div class="card--hint">
             <span class="hinter"></span>
             <span class="hinter"></span>
@@ -79,13 +82,13 @@ const createMenuHinter = ({ menuContainer, menuItems }) => {
 
     _.queryAllThrow('.t959__row', menuContainer).forEach(el => el.remove());
 
-    const hinter = _.queryThrow('.card--hint', menuItems[ 0 ]);
-    const hinterItems = _.queryAllThrow('.card--hint .hinter', menuItems[ 0 ]);
+    const hinter = _.queryThrow('.card--hint', menuItems[ 0 ].item);
+    const hinterItems = _.queryAllThrow('.card--hint .hinter', menuItems[ 0 ].item);
 
 
     /** @param {number} i */
     const hinterGoTo = i => {
-        const itemHovered = menuItems[ i ];
+        const itemHovered = menuItems[ i ].item;
 
         const state = Flip.getState(hinterItems, { props: 'opacity' });
 
@@ -109,11 +112,11 @@ const createMenuHinter = ({ menuContainer, menuItems }) => {
 
 
 
-/** @param {Pick<import('./gallery-layout.js').Elements,'menuItems' | 'menuContainer'>} params */
+/** @param {Pick<GalleryElements['menu'], 'menuItems' | 'menuContainer'>} params */
 const addMenuAppareanceAnimation = ({ menuItems, menuContainer }) => {
 
     // menu cards appear animation
-    gsap.from(menuItems, {
+    gsap.from(menuItems.map(({ item }) => item), {
         scrollTrigger: {
             // markers: true,
             trigger: menuContainer,
@@ -132,8 +135,8 @@ const addMenuAppareanceAnimation = ({ menuItems, menuContainer }) => {
 
 
 
-
-/** @param {Pick<import('./gallery-layout.js').Elements,'menuItems' | 'menuContainer'> & Hinter} params */
+// 
+/** @param {Pick<GalleryElements['menu'], 'menuItems' | 'menuContainer'> & Hinter} params */
 const addMenuOnHover = ({ menuItems, menuContainer, hinterGoTo, hinterItems }) => {
 
     /**
@@ -162,7 +165,7 @@ const addMenuOnHover = ({ menuItems, menuContainer, hinterGoTo, hinterItems }) =
     });
 
 
-    menuItems.forEach((item, i) => onHover(item, { enter: () => hinterGoTo(i) }));
+    menuItems.forEach(({ item }, i) => onHover(item, { enter: () => hinterGoTo(i) }));
 
 };
 
@@ -172,7 +175,7 @@ const addMenuOnHover = ({ menuItems, menuContainer, hinterGoTo, hinterItems }) =
 
 /**
  * @param {Object} params
- * @param {import('./gallery-layout.js').Elements} params.elements
+ * @param {GalleryElements} params.elements
  * @param {(from: number, to: number, isInit: boolean) => void | Promise<void>} [params.onActivating]
  * @param {(params: AnimateSliderParams) => void | Promise<void>} [params.onClickMenuItem]
  * @param {(from: number, to: number) => void | Promise<void>} [params.onDesactivating]
@@ -200,7 +203,7 @@ const createGalleryMenuListener = ({ elements, onActivating, onClickMenuItem, on
      * @param {AnimateSliderParams['state']} [sliderState]
      */
     const goTo = async (i, sliderState) => {
-        const menuItem = elements.menuItems[ i ];
+        const menuItem = elements.menu.menuItems[ i ].item;
 
         const currentIndex = state.movingI ?? state.i;
 
@@ -249,8 +252,8 @@ const createGalleryMenuListener = ({ elements, onActivating, onClickMenuItem, on
     };
 
 
-    elements.menuItems.forEach((menuItem, i) => {
-        const card = elements.cards[ i ];
+    elements.menu.menuItems.forEach(({ item: menuItem }, i) => {
+        const { card } = elements.gallerySlider.cards[ i ];
 
         const isStateI = () => typeof state.movingI !== 'undefined' ? state.movingI === i : state.i === i;
 

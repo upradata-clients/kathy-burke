@@ -1,29 +1,15 @@
 // @ts-check
-import * as galleryLayout from './gallery-layout';
-import * as galleryMenu from './gallery-menu';
-import * as gallerySlider from './gallery-slider';
-import * as galleryAnimation from './gallery-animation';
+import { registerUnderScore } from '../common/register-underscore.js';
+
+const _ = await registerUnderScore({ isLocal: true });
+
+await import('./extra-header.js');
 
 
-_.EventNames.gallery = {
-    enter: 'gallery:enter',
-    leave: 'gallery:leave',
-    resize: 'gallery:resize'
-};
-
-
-_.define(() => ({
-    gallery: {
-        ...galleryLayout,
-        ...galleryMenu,
-        ...gallerySlider,
-        ...galleryAnimation
-    }
-}));
 
 _.onLoad(() => {
 
-    /** @type {import('./gallery-layout.js').GalleryCategories} */
+    /** @type {import('./gallery-layout.local.js').GalleryCategories} */
     const galleryCategories = [
         { name: 'Invisible guests', imagesRecids: [ '746428010', '746428004' ] },
         { name: 'Cathedral Moods', imagesRecids: [ '571578108', '746400014' ] },
@@ -59,23 +45,22 @@ _.onLoad(() => {
         _.dispatchEvent(_.EventNames.gallery.resize, { isActive });
     }, { passive: true });
 
-    _.onEvent(_.EventNames.hero.firstScrubDone, () => {
-        _.dispatchEvent(_.EventNames.gallery.resize, { isActive });
-        goTo(3, 'desactivated');
-        _.dispatchEvent(_.EventNames.ready.gallery);
-    }, { isCold: true });
-
+    // .onEvent(_.EventNames.hero.firstScrubDone, () => {
+    _.dispatchEvent(_.EventNames.gallery.resize, { isActive });
+    // galleryAnimation.animateSlider({ to: 3, from: -1, isInit: true, state: 'desactivated' });
+    goTo(3, 'desactivated');
+    // });
 
     // _.dispatchEvent(_.EventNames.gallery.resize, { isActive });
+
+
 
     setTimeout(() => {
         try {
             // @ts-ignore
-            if (window.lazyload_img)
-                // @ts-ignore
-                window.lazyload_img.skip_invisible = false;
+            window.lazyload_img.skip_invisible = false;
             // @ts-ignore
-            window.lazyload_img?.update();
+            window.lazyload_img.update();
         } catch (e) {
             console.error(e);
         }

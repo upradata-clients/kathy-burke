@@ -11,11 +11,11 @@
 
 /**
  * @param {Object} params
- * @param {import('./gallery-layout.js').CategoryElements[]} params.elementsPerCategory
+ * @param {GallerySliderCard[]} params.sliderCards
  * @param {Record<Axis, number>} params.maxRotation
  * @param {Record<Axis, number> | ((params: { wrapper: HTMLElement; }) => Record<Axis, number>)} params.maxDistance
  */
-const createSideCardsMouseFollowAnimation = ({ elementsPerCategory, maxRotation, maxDistance }) => {
+const createSideCardsMouseFollowAnimation = ({ sliderCards, maxRotation, maxDistance }) => {
 
     const power2Ease = gsap.parseEase('power2.out');
 
@@ -53,7 +53,7 @@ const createSideCardsMouseFollowAnimation = ({ elementsPerCategory, maxRotation,
         ]));
     };
 
-    const cardsMouseFollowAnimation = elementsPerCategory.map(({ wrapper }) => {
+    const cardsMouseFollowAnimation = sliderCards.map(({ wrapper }) => {
 
         /** @typedef {{ x: number; y: number;}}  Point2D */
 
@@ -147,23 +147,24 @@ const createSideCardsMouseFollowAnimation = ({ elementsPerCategory, maxRotation,
 /** @typedef {ReturnType<typeof createSideCardsMouseFollowAnimation>} SideCardsMouseAnimation} */
 
 /**
- * @param {HTMLElement[]} cards
- * @param {import('./gallery-layout.js').Elements} elements
+ * @param {GalleryElements} elements
  */
-const createGallerySlider = (cards, elements) => {
+const createGallerySlider = elements => {
+
+    const menuItems = elements.menu.menuItems.map(({ item }) => item);
 
     // cards.forEach(card => gsap.set(card, { transformPerspective: 800 }));
-    cards.forEach(card => gsap.set(card, { transformOrigin: 'center center' }));
+    menuItems.forEach(card => gsap.set(card, { transformOrigin: 'center center' }));
 
-    const sliderWrapper = _.queryThrow('.slider-wrapper', elements.cardsWrapper);
-    const galleryBackgroundFrame = _.queryThrow('.t-container', elements.galleryBackground);
+    const sliderWrapper = elements.gallerySlider.wrapper;
+    const galleryBackgroundFrame = _.queryThrow('.t-container', elements.galleryBackground.block);
 
     gsap.set(sliderWrapper, { width: gsap.getProperty(galleryBackgroundFrame, 'width') });
 
-    const slider = _.gallery2.GallerySlider.create({
-        cards,
+    const slider = _.gallery.GallerySlider.create({
+        cards: elements.gallerySlider.cards.map(({ card }) => card),
         dtStagger: 0.1,
-        duration: 0.1 * (cards.length - 1), // duration of the card animation from x = xPercent% to -xPercent%
+        duration: 0.1 * (menuItems.length - 1), // duration of the card animation from x = xPercent% to -xPercent%
         // translation of the card at the beginning of the animation (card side by side => at 1 dt, 100% cards' width)
         xPercent: ({ dtStagger }) => 0.85 * (100 / dtStagger) / 2,
         eases: {
@@ -242,7 +243,7 @@ const createGallerySlider = (cards, elements) => {
             return tl;
         },
         onStop: () => {
-            cards.forEach(card => {
+            menuItems.forEach(card => {
                 gsap.set(_.queryThrow('.t156', card), { clearProps: 'all' });
             });
         }
@@ -325,16 +326,18 @@ const createGalleryApparationAnimation = cardsBlock => {
 
 /**
  * @param {object} params
- * @param {import('./gallery-layout.js').Elements} params.elements
+ * @param {GalleryElements} params.elements
  * @param {import('./gallery-menu.js').GalleryMenu} params.galleryMenu
  */
 const createGalleryAnimation = ({ elements, galleryMenu }) => {
 
-    const { menuContainer, cards, galleryTitle } = elements;
+    const { galleryTitle, menu: { menuContainer } } = elements;
+    const menuItems = elements.menu.menuItems.map(({ item }) => item);
 
-    galleryMenu.setMenuItemsImagesStyle([ { prop: 'background-position', mode: 'lg' } ]);
 
-    const slider = _.createLazySingleton(() => createGallerySlider(cards, elements))({
+    galleryMenu.setMenuItemsImagesStyle([ { prop: 'position', mediaQuery: 'lg' } ]);
+
+    const slider = _.createLazySingleton(() => createGallerySlider(elements))({
         destroy: slider => slider.stop()
     });
     // /** @param {GallerySlider} slider */
@@ -342,7 +345,7 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
     const sideCardsMouseFollowAnimation = _.createLazySingleton(
         /** @param {number[]} indexes */
         indexes => createSideCardsMouseFollowAnimation({
-            elementsPerCategory: elements.elementsPerCategory.filter((_, i) => indexes.includes(i)),
+            sliderCards: elements.gallerySlider.cards.filter((_, i) => indexes.includes(i)),
             maxRotation: { x: 3, y: 6 },
             maxDistance: ({ wrapper }) => {
                 const { width, height } = _.getRect(wrapper);
@@ -356,8 +359,8 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
 
 
     const sideCardsScrollFollow = _.createLazySingleton(() => createSideCardsScrollFollow({
-        galleryBackground: _.queryThrow('.t-container', elements.galleryBackground),
-        cards: elements.cards
+        galleryBackground: _.queryThrow('.t-container', elements.galleryBackground.block),
+        cards: elements.gallerySlider.cards.map(({ card }) => card)
     }))({
         destroy: sideCardsScrollFollow => sideCardsScrollFollow.kill()
     });
@@ -378,7 +381,7 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
 
     /** @param {'activating' | 'desactivating'} action */
     const animateActivationMenu = action => {
-        galleryMenu.setMenuItemsImagesStyle([ { prop: 'background-position', mode: action === 'activating' ? 'xs' : 'lg' } ]);
+        galleryMenu.setMenuItemsImagesStyle([ { prop: 'position', mediaQuery: action === 'activating' ? 'xs' : 'lg' } ]);
 
         if (action === 'activating') {
             if (!menuHeight)
@@ -402,8 +405,8 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
      */
     const flipTitles = ({ from, to, state, isInit }) => {
 
-        const { galleryTitleHeader, galleryTitleHeader2, menuItemsTitles } = elements;
-
+        const [ galleryTitleHeader, galleryTitleHeader2 ] = elements.galleryTitle.titles;
+        const menuItemsTitles = elements.menu.menuItems.map(({ title }) => title);
 
         if (state === 'activated' || state === 'activating') {
             const sideMenuItems = menuItemsTitles.filter((_, i) => i !== to);
@@ -511,7 +514,7 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
      * @param {'add'|'remove'} action 
      */
     const setStateCards = (i, action) => {
-        cards[ i ].dataset.cardState = action === 'add' ? 'active' : '';
+        menuItems[ i ].dataset.cardState = action === 'add' ? 'active' : '';
         // cards[ wrapI(i - 1) ].dataset.cardState = action === 'add' ? 'left' : '';
         // cards[ wrapI(i + 1) ].dataset.cardState = action === 'add' ? 'right' : '';
     };
@@ -538,9 +541,8 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
         // in tilda-zoom-2.0.min.js -> t_zoom__initFullScreenImgOnClick
         // Otherwise, the image will get zoom as we set the zoomable attribute of the next active card
         setTimeout(() => {
-            elements.cards.forEach((card, i) => {
-                const images = /**@type {HTMLImageElement[]} */(_.queryAllThrow('img', card));
-                images.forEach(img => setZoomable(img, activeI === i));
+            elements.gallerySlider.cards.forEach(({ images }, i) => {
+                images.forEach(img => setZoomable(_.queryThrow('img', img), activeI === i));
             });
         }, 0);
     };
@@ -565,7 +567,7 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
         //     });
         // }
 
-        const indexes = cards.map((_, i) => i).filter(i => i !== to);
+        const indexes = menuItems.map((_, i) => i).filter(i => i !== to);
 
         await sideCardsMouseFollowAnimation.instance()?.stop(); // in case
         sideCardsMouseFollowAnimation.get(indexes).start();
@@ -594,7 +596,7 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
         const isSame = from === to;
 
         if (isInit) {
-            gsap.to(galleryTitle, { opacity: 1, duration: 0.5, ease: 'expo.out' });
+            gsap.to(galleryTitle.block, { opacity: 1, duration: 0.5, ease: 'expo.out' });
         }
 
         if (from !== -1) {
@@ -638,13 +640,13 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
 
     /** @param {'add' | 'remove' } action */
     const setActiveCardsBlock = action => {
-        _.setClassName(elements.cardsBlock, 'active')(action);
-        _.setClassName(elements.menu, 'slider-active')(action);
+        _.setClassName(elements.gallerySlider.block, 'active')(action);
+        _.setClassName(elements.menu.block, 'slider-active')(action);
     };
 
 
-    const galleryBgContainer = _.queryThrow('.t-container', elements.galleryBackground);
-    const sliderWrapper = _.queryThrow('.slider-wrapper', elements.cardsWrapper);
+    const galleryBgContainer = elements.galleryBackground.container;
+    const sliderWrapper = elements.gallerySlider.wrapper;
 
     const bgWidthOnActive = '50vw';
 

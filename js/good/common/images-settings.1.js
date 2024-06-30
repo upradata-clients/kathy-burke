@@ -1,35 +1,20 @@
 // @ts-check
 
-/** @param {string} name */
-const getSettingPropMap = name => {
-    switch (name) {
-        case 'position': return 'object-position';
-        case 'pos': return 'object-position';
-        case 'bgPosition': return 'background-position';
-        case 'bgPos': return 'background-position';
-        default: return name;
-    }
-};
 
-
-/**
- * @param {readonly ImageSettings[] | undefined} settings
- * @returns {readonly ImageSettings[]}
- */
-const applySettingsPropMap = settings => {
-    if (!settings)
-        return [];
-
-    return settings.map(setting => Object.entries(setting).reduce(
-        (newSetting, [ prop, value ]) => ({ ...newSetting, [ getSettingPropMap(prop) ]: value }), {})
-    );
-};
 
 /**
  * @param {HTMLElement[]} images
  * @returns {ImageSettings[]}
  */
 const getImagesSettings = images => {
+
+    /** @param {string} name */
+    const settingNameToProp = name => {
+        switch (name) {
+            case 'position': return 'background-position';
+            default: return name;
+        }
+    };
 
     /**
      * @param {string} settingsStr
@@ -47,7 +32,7 @@ const getImagesSettings = images => {
             const [ , key, value ] = result;
 
             const [ , mode = 'value', k ] = key.match(/(?:(.+)-)?(.*)/) || [];
-            const prop = getSettingPropMap(k);
+            const prop = settingNameToProp(k);
 
             return { ...settings, [ prop ]: { ...settings[ prop ], [ mode ]: value.trim() } };
         }, {});
@@ -70,4 +55,4 @@ const getImagesSettings = images => {
 };
 
 
-export { getImagesSettings, getSettingPropMap, applySettingsPropMap };
+export { getImagesSettings };

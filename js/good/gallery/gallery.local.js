@@ -1,15 +1,13 @@
 // @ts-check
-import { registerUnderScore } from '../common/register-underscore.js';
+import { registerUnderScore } from '../common/register-underscore-old.js';
 
 const _ = await registerUnderScore({ isLocal: true });
-
-await import('./extra-header.js');
 
 
 
 _.onLoad(() => {
 
-    /** @type {import('./gallery-layout.js').GalleryCategories} */
+    /** @type {import('./gallery-layout.local.js').GalleryCategories} */
     const galleryCategories = [
         { name: 'Invisible guests', imagesRecids: [ '746428010', '746428004' ] },
         { name: 'Cathedral Moods', imagesRecids: [ '571578108', '746400014' ] },
@@ -20,14 +18,14 @@ _.onLoad(() => {
         { name: 'The Empty Studio', imagesRecids: [ '571579939', '571579804' ] }
     ];
 
-    const elements = _.gallery.createElements(galleryCategories);
+    const elements = _.gallery2.createElements(galleryCategories);
 
-    const menu = _.gallery.galleryMenu.initGalleryMenu(elements);
-    const galleryAnimation = _.gallery.createGalleryAnimation({ elements, galleryMenu: menu });
+    const menu = _.gallery2.galleryMenu.initGalleryMenu(elements);
+    const galleryAnimation = _.gallery2.createGalleryAnimation({ elements, galleryMenu: menu });
 
     let isActive = false;
 
-    const { goTo } = _.gallery.galleryMenu.createGalleryMenuListener({
+    const { goTo } = _.gallery2.galleryMenu.createGalleryMenuListener({
         elements,
         onActivating: (from, to, isInit) => {
             isActive = true;

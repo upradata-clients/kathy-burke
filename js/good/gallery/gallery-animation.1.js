@@ -6,8 +6,6 @@
  */
 
 
-/** @type {typeof import('../underscore.js')._} */
-const _ = /** @type {any} */ (window)._;
 
 /** @typedef {'x' | 'y'} Axis */
 
@@ -107,7 +105,7 @@ const createGallerySlider = cards => {
     // cards.forEach(card => gsap.set(card, { transformPerspective: 800 }));
     // cards.forEach(card => gsap.set(card, { transformOrigin: 'center center' }));
 
-    const slider = _.GallerySlider.create({
+    const slider = _.gallery2.GallerySlider.create({
         cards,
         dtStagger: 0.1,
         duration: 0.1 * (cards.length - 1), // duration of the card animation from x = xPercent% to -xPercent%
@@ -455,7 +453,7 @@ const createGalleryAnimation = ({ elements }) => {
 
     const { menuContainer, menuItems, cards, galleryTitle } = elements;
 
-    const galleryMenu = _.galleryMenu.getGalleryMenu(elements);
+    const galleryMenu = _.gallery2.galleryMenu.getGalleryMenu(elements);
     galleryMenu.setMenuItemsImagesStyle([ { prop: 'background-position', mode: 'lg' } ]);
 
     /** @type {GallerySlider | undefined} */
