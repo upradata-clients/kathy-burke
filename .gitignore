@@ -1,6 +1,6 @@
 node_modules
-lib
-lib-esm
+dist
+dist-esm
 _bundles
 bundles
 .directory

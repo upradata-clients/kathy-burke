@@ -1,0 +1,33 @@
+.uc-gallery-title {
+    padding-top: 15px;
+    padding-bottom: 75px;
+    opacity: 1;
+}
+
+.uc-gallery-title .t-title {
+    font-size: 20px;
+    color: #6a6a6a;
+    margin-bottom: 15px;
+    margin-top: 8px;
+    padding-bottom: 6px;
+}
+
+@media screen and (max-width: 480px) {
+    .uc-gallery-title .t-title {
+        font-size: 15px;
+    }
+}
+
+.uc-gallery-title .t-descr {
+    font-size: 14px;
+}
+
+@media screen and (max-width: 480px) {
+    .uc-gallery-title .t-descr {
+        font-size: 12px;
+    }
+}
+
+.uc-slider-cards img {
+    width: 100%;
+}
