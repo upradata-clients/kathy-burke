@@ -390,7 +390,7 @@ const isLocal = [ 'localhost', '127.0.0.1' ].some(host => window.location.hostna
 
 
 
-/** @type {(selector: string, el?: Element) => (HTMLElement | null)[]} */
+/** @type {(selector: string, el?: Element | DocumentFragment) => (HTMLElement | null)[]} */
 const queryAll = (...args) => gsap.utils.toArray(...args);
 
 /**
@@ -406,7 +406,7 @@ const queryAll = (...args) => gsap.utils.toArray(...args);
 /**
  * @template {string} K
  * @param {K} selector
- * @param {Element} [el]
+ * @param {Element | DocumentFragment} [el]
  * 
  * @returns {HTMLElementByKey<K>[]}
  */
@@ -425,7 +425,7 @@ const queryAllThrow = (selector, el) => {
 /**
  * @template {string} K
  * @param {K} selector
- * @param {Element} [el]
+ * @param {Element | DocumentFragment} [el]
  * 
  * @returns {HTMLElementByKey<K>}
  */

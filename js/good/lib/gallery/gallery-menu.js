@@ -39,7 +39,7 @@ const initGalleryMenu = ({ galleryElements: elements, galleryItems }) => {
         });
     };
 
-    const hinter = createMenuHinter(elements.menu);
+    const hinter = createMenuHinter(elements.menu.menuItems.map(({ item }) => item));
 
     addMenuAppareanceAnimation(elements.menu);
     addMenuOnHover({ ...elements.menu, ...hinter });
@@ -54,35 +54,30 @@ const initGalleryMenu = ({ galleryElements: elements, galleryItems }) => {
     };
 };
 
-/**
- * @typedef {ReturnType<typeof initGalleryMenu>} GalleryMenu
- */
 
+/** @param {readonly HTMLElement[]} items */
+const createMenuHinter = items => {
 
-/** @param {Pick<GalleryElements['menu'], 'menuItems' | 'block'>} params */
-const createMenuHinter = ({ block: menu, menuItems }) => {
-
-    menuItems[ 0 ].item.insertAdjacentHTML('beforeend', `
-        <div class="mt-card--hint">
+    const template = document.createElement('template');
+    template.innerHTML = `
+        <div class="mt-hinter">
             <span class="hinter"></span>
             <span class="hinter"></span>
             <span class="hinter"></span>
         </div>
-    `.trim());
+    `.trim();
 
-
-    const hinter = _.queryThrow('.mt-card--hint', menuItems[ 0 ].item);
-    const hinterItems = _.queryAllThrow('.mt-card--hint .hinter', menuItems[ 0 ].item);
-
+    const hinter = _.createElementFromTemplate(template);
+    const hinterItems = _.queryAllThrow('.hinter', hinter);
 
     /** @param {number} i */
     const hinterGoTo = i => {
-        const itemHovered = menuItems[ i ].item;
+        const itemHovered = items[ i ];
 
-        const state = Flip.getState(hinterItems, { props: 'opacity' });
+        const state = Flip.getState(hinterItems/* , { props: 'opacity' } */);
 
         itemHovered.append(hinter);
-        gsap.set(hinterItems, { opacity: 1 });
+        // gsap.set(hinterItems, { opacity: 1 });
 
         Flip.from(state, { duration: 0.5, ease: 'expo.inOut', stagger: 0.05, overwrite: true });
     };
@@ -124,7 +119,6 @@ const addMenuAppareanceAnimation = ({ menuItems, block: menu }) => {
 
 
 
-// 
 /** @param {Pick<GalleryElements['menu'], 'menuItems' | 'block'> & Hinter} params */
 const addMenuOnHover = ({ menuItems, block: menu, hinterGoTo, hinterItems }) => {
 

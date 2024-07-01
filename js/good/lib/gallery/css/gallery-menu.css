@@ -77,7 +77,7 @@
 
 
 
- .uc-gallery-menu .card--hint {
+ .uc-gallery-menu .mt-hinter {
      display: block;
      width: 100%;
      position: absolute;
@@ -88,7 +88,7 @@
      gap: 5px;
  }
 
- .uc-gallery-menu .card--hint .hinter {
+ .uc-gallery-menu .mt-hinter .hinter {
      display: block;
      width: var(--hint-width);
      height: var(--hint-width);
@@ -120,7 +120,7 @@
          --hint-width: 3px;
      }
 
-     .uc-gallery-menu .t959__card .card--hint .hinter:not(:last-child) {
+     .uc-gallery-menu .t959__card .mt-hinter .hinter:not(:last-child) {
          display: none;
      }
 

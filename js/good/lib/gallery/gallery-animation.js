@@ -321,7 +321,7 @@ const createGalleryApparationAnimation = cardsBlock => {
 /**
  * @param {object} params
  * @param {GalleryElements} params.elements
- * @param {import('./gallery-menu.js').GalleryMenu} params.galleryMenu
+ * @param {GalleryMenu} params.galleryMenu
  */
 const createGalleryAnimation = ({ elements, galleryMenu }) => {
 

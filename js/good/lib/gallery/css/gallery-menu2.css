@@ -15,14 +15,21 @@
 
  .mt-gallery-menu-card {
      position: relative;
+ }
+
+ .mt-gallery-menu-card__container {
+     position: relative;
      display: flex;
      flex-direction: column;
      align-items: center;
      justify-content: flex-end;
+     width: 100%;
+     height: 100%;
      padding: 15px;
+
+     overflow: hidden;
      border-radius: 6px;
      box-shadow: 0px 15px 30px -10px rgba(0, 11, 48, 0.3);
-     overflow: hidden;
  }
 
 
@@ -58,7 +65,7 @@
 
 
 
- .mt-gallery-menu .mt-card__hint {
+ .mt-gallery-menu-card .mt-hinter {
      display: block;
      width: 100%;
      position: absolute;
@@ -69,13 +76,13 @@
      gap: 5px;
  }
 
- .mt-gallery-menu .mt-card__hint .hinter {
+ .mt-gallery-menu-card .mt-hinter .hinter {
      display: block;
      width: var(--hint-width);
      height: var(--hint-width);
      border-radius: 20px;
      background: rgba(0, 0, 0, 0.4);
-     opacity: 0;
+     /* opacity: 0; */
  }
 
 
@@ -95,7 +102,7 @@
 
 
  @media screen and (max-width: 1280px) {
-     .mt-gallery-menu-card {
+     .mt-gallery-menu-card__container {
          align-items: flex-start;
          justify-content: flex-start;
      }
@@ -113,7 +120,7 @@
          --hint-width: 3px;
      }
 
-     .mt-gallery-menu .mt-card__hint .hinter:not(:last-child) {
+     .mt-gallery-menu .mt-hinter .hinter:not(:last-child) {
          display: none;
      }
 
