@@ -35,7 +35,7 @@ const initGalleryMenu = ({ galleryElements: elements, galleryItems }) => {
             }, {});
 
             if (Object.values(cssStyles).length > 0)
-                gsap.set(menuItemsImages[ i ], cssStyles);
+                gsap.to(menuItemsImages[ i ], { ...cssStyles, duration: 0.5, ease: 'power2.inOut' });
         });
     };
 
@@ -134,7 +134,7 @@ const addMenuOnHover = ({ menuItems, block: menu, hinterGoTo, hinterItems }) => 
     };
 
 
-    let isActive = false;
+    /* let isActive = false;
 
     onHover(menu, {
         enter: () => { isActive = true; },
@@ -145,7 +145,7 @@ const addMenuOnHover = ({ menuItems, block: menu, hinterGoTo, hinterItems }) => 
             isActive = false;
             gsap.to(hinterItems, { opacity: 0, duration: 0.2, ease: 'power4.out', stagger: 0.04, overwrite: true });
         },
-    });
+    }); */
 
 
     menuItems.forEach(({ item }, i) => onHover(item, { enter: () => hinterGoTo(i) }));

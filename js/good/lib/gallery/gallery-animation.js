@@ -150,11 +150,6 @@ const createGallerySlider = elements => {
     // cards.forEach(card => gsap.set(card, { transformPerspective: 800 }));
     menuItems.forEach(card => gsap.set(card, { transformOrigin: 'center center' }));
 
-    const sliderWrapper = elements.gallerySlider.wrapper;
-    const galleryBackgroundFrame = _.queryThrow('.t-container', elements.galleryBackground.block);
-
-    gsap.set(sliderWrapper, { width: gsap.getProperty(galleryBackgroundFrame, 'width') });
-
     const slider = _.gallery.GallerySlider.create({
         cards: elements.gallerySlider.cards.map(({ card }) => card),
         dtStagger: 0.1,
@@ -257,15 +252,14 @@ const createGallerySlider = elements => {
  */
 const createSideCardsScrollFollow = ({ galleryBackground, cards }) => {
 
-    const galleryBackgroundContainer = galleryBackground;
-    const item = _.queryThrow('.t-col', galleryBackgroundContainer);
+    const item = _.queryThrow('.t-col', galleryBackground);
 
     const imageHeight = _.getRect(item).height;
 
     const cardSidesTL = gsap.timeline({
         scrollTrigger: {
             markers: false,
-            trigger: galleryBackgroundContainer,
+            trigger: galleryBackground,
             scrub: 0.7,
             start: `center-=${0.75 * imageHeight} bottom`,
             end: `center+=${0.75 * imageHeight} bottom`
@@ -325,7 +319,7 @@ const createGalleryApparationAnimation = cardsBlock => {
  */
 const createGalleryAnimation = ({ elements, galleryMenu }) => {
 
-    const { galleryTitle, menu: { menuContainer } } = elements;
+    const { galleryTitle, menu: { block: menuContainer } } = elements;
     const menuItems = elements.menu.menuItems.map(({ item }) => item);
 
 
@@ -353,7 +347,7 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
 
 
     const sideCardsScrollFollow = _.createLazySingleton(() => createSideCardsScrollFollow({
-        galleryBackground: _.queryThrow('.t-container', elements.galleryBackground.block),
+        galleryBackground: elements.galleryBackground.container,
         cards: elements.gallerySlider.cards.map(({ card }) => card)
     }))({
         destroy: sideCardsScrollFollow => sideCardsScrollFollow.kill()
@@ -639,14 +633,45 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
     };
 
 
-    const galleryBgContainer = elements.galleryBackground.container;
-    const sliderWrapper = elements.gallerySlider.wrapper;
+    /**
+     * @param {Element} el 
+     * @param {string} cssVarName 
+     */
+    const getCssValue = (el, cssVarName) => {
+        const cssValue = getComputedStyle(el).getPropertyValue(cssVarName);
 
-    const bgWidthOnActive = '50vw';
+        /*  if (gsap.utils.getUnit(cssValue) === 'vw')
+             return _.round2Decimals(parseFloat(cssValue) * window.innerWidth / 100, 2);
+ 
+         if (gsap.utils.getUnit(cssValue) === '%')
+             return _.round2Decimals(parseFloat(cssValue) * (el.parentElement?.getBoundingClientRect().width || 0), 0); */
 
-    const bgWidthAnimation = gsap.timeline({ paused: true })
-        .fromTo(galleryBgContainer, { width: gsap.getProperty(galleryBgContainer, 'width') }, { width: bgWidthOnActive, duration: 0.5, ease: 'expo.out' })
-        .to(sliderWrapper, { width: bgWidthOnActive, duration: 0.5, ease: 'expo.out' }, 0);
+        return parseFloat(cssValue);
+    };
+
+    const cssVarsToAnimate = () => [
+        '--mt-cards-width',
+        '--mt-card-height'
+    ].map(cssVarName => ({
+        name: cssVarName,
+        inactive: getCssValue(elements.gallerySlider.block, `${cssVarName}-inactive`),
+        active: getCssValue(elements.gallerySlider.block, `${cssVarName}-active`)
+    }));
+
+    /** @param {{ isActive: boolean; }} mode */
+    const getCssVarsGsapProps = ({ isActive }) => cssVarsToAnimate().reduce((vars, { name, inactive, active }) => {
+        return { ...vars, [ name ]: isActive ? active : inactive };
+    }, {});
+
+
+    const bgWidthAnimation = gsap.timeline({ paused: true }).fromTo(
+        elements.gallerySlider.block, getCssVarsGsapProps({ isActive: false }),
+        { ...getCssVarsGsapProps({ isActive: true }), duration: 0.5, ease: 'expo.out' }
+    );
+
+    _.onEvent(_.EventNames.gallery.resize, ({ detail: { isActive } }) => {
+        gsap.set(elements.gallerySlider.block, getCssVarsGsapProps({ isActive }));
+    });
 
     /**
      * @param {Object} params

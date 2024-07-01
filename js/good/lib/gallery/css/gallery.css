@@ -83,11 +83,11 @@
 }
 
 
-:is(.gallery-background, .card) .t-col {
+.cards .mt-gallery-cards-container {
     padding: 24px;
 }
 
-.cards.active :is(.gallery-background, .card) .t-col {
+.cards.active .mt-gallery-cards-container {
     padding: 44px;
 }
 
@@ -99,34 +99,72 @@
     cursor: zoom-in;
 }
 
+.cards {
+    --mt-cards-width: 30vw;
+    --mt-cards-width-inactive: 30vw;
+    --mt-cards-width-active: 50vw;
 
-.cards .t156__wrapper {
+    --mt-card-height: 200px;
+    --mt-card-height-inactive: 200px;
+    --mt-card-height-active: 340px;
+
+    --mt-card-grid-size: 6px;
+    --mt-card-grid-size-active: 13px;
+}
+
+
+
+.cards .mt-gallery-cards-container {
     height: auto;
-    width: 100%;
     display: grid;
-    grid-template-columns: repeat(4, minmax(110px, 1fr));
-    grid-template-rows: repeat(2, 200px);
-    grid-gap: 6px 6px;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(2, var(--mt-card-height));
+    gap: var(--mt-card-grid-size);
     /*perspective: 800px;*/
 }
 
-.cards.active .t156__wrapper {
-    grid-template-rows: repeat(2, 380px);
-    /*300px*/
-    grid-gap: 13px 13px;
+.mt-slider-background .mt-gallery-cards-container,
+.cards .mt-slider-container {
+    width: var(--mt-cards-width);
+}
+
+
+@media screen and (max-width: 1300px) {
+    .cards {
+        --mt-cards-width-inactive: 50vw;
+        --mt-cards-width-active: 50vw;
+
+        --mt-card-height-inactive: 200px;
+        --mt-card-height-active: 240px;
+    }
+
+    .cards.active .mt-gallery-cards-container {
+        padding: 24px;
+    }
+
+    /* .cards {
+        --mt-card-height-active: 420px;
+    } */
+
+    /* .cards .mt-gallery-cards-container {
+        grid-template-columns: repeat(2, 1fr);
+    } */
+}
+
+@media screen and (max-width: 750px) {
+    .cards {
+        --mt-cards-width-inactive: 70vw;
+        --mt-cards-width-active: 50vw;
+
+        --mt-card-height-inactive: 200px;
+        --mt-card-height-active: 190px;
+    }
 }
 
 .slider-wrapper {
     perspective: 800px;
 }
 
-
-@media screen and (max-width: 960px) {
-    .t156__wrapper {
-        grid-template-columns: repeat(2, minmax(100px, 1fr));
-        grid-template-rows: repeat(4, 420px);
-    }
-}
 
 
 .cards .t156__item {
@@ -199,27 +237,8 @@
 }
 
 
-.gallery-background .t156 {
-    display: flex;
-    justify-content: center;
-    width: auto;
-}
-
-.gallery-background .t-container {
-    width: auto;
-    /*width: 420px;*/
-    /*var(--gallery-menu-width, 90vw);*/
-    max-width: none;
-    margin: 0;
-}
-
-/*.cards.active .gallery-background .t-container {
-        width: 50vw;
-    }*/
-.gallery-background .t-col {
-    max-width: none;
-    width: 100%;
-    margin: 0;
+.mt-slider-background .mt-gallery-cards-container {
+    /* width: auto; */
     box-shadow: 0px 0px 62px 22px rgb(0 0 0 / 20%);
     border-radius: 12px;
 }

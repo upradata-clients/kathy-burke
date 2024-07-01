@@ -7,11 +7,11 @@ import * as galleryAnimation from './gallery-animation.js';
 
 /** @param {UnderScore} _ */
 const registerGallery = _ => {
-    _.EventNames.gallery = {
+    _.EventNames.gallery = /** @type {EventNames['gallery']} */({
         enter: 'gallery:enter',
         leave: 'gallery:leave',
         resize: 'gallery:resize'
-    };
+    });
 
 
     _.define(() => ({

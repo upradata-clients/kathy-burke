@@ -8,17 +8,19 @@ const createGalleriesLayout = galleryItems => {
     const gallery = _.queryThrow('.gallery');
 
     const menu = _.queryThrow('.mt-gallery-menu', gallery);
-
     const slider = _.queryThrow('.uc-slider-cards', gallery);
-    const sliderWrapper = _.queryThrow('.slider-wrapper', slider);
+    const galleryBackground = _.queryThrow('.mt-slider-background', slider);
 
-    const galleryBackground = _.queryThrow('.gallery-background', slider);
+    const containers = {
+        slider: _.queryThrow('.slider-wrapper', slider),
+        galleryBackground: _.queryThrow('.mt-gallery-cards-container', galleryBackground)
+    };
 
     const references = {
         menuCard: /** @type {HTMLTemplateElement} */(_.queryThrow('.mt-gallery-menu-card-template', menu)),
         sliderCard: /** @type {HTMLTemplateElement} */(_.queryThrow('.mt-slider-card-template', slider)),
         sliderCardImage:  /** @type {HTMLTemplateElement} */(_.queryThrow('.mt-slider-card__image-template', slider)),
-        galleryBackgroundItem: /** @type {HTMLTemplateElement} */(_.queryThrow('.mt-gallery-background-item-template', galleryBackground))
+        galleryBackgroundItem: /** @type {HTMLTemplateElement} */(_.queryThrow('.mt-slider-background-item-template', galleryBackground))
     };
 
 
@@ -106,8 +108,8 @@ const createGalleriesLayout = galleryItems => {
         const galleryBackgroundItem = createGalleryBackgroundItem(menuI);
 
         menu.append(menuItem.item);
-        sliderWrapper.append(sliderCard.card);
-        _.queryThrow('.t156__wrapper', galleryBackground).append(galleryBackgroundItem);
+        containers.slider.append(sliderCard.card);
+        containers.galleryBackground.append(galleryBackgroundItem);
 
         return { menuItem, sliderCard, galleryBackgroundItem };
     });
@@ -129,12 +131,12 @@ const createGalleriesLayout = galleryItems => {
         },
         gallerySlider: {
             block: _.queryThrow('.uc-slider-cards'),
-            wrapper: sliderWrapper,
+            wrapper: containers.slider,
             cards: galleryElts.map(({ sliderCard }) => sliderCard)
         },
         galleryBackground: {
             block: galleryBackground,
-            container: _.queryThrow('.t-container', galleryBackground),
+            container: containers.galleryBackground,
             items: galleryElts.map(({ galleryBackgroundItem }) => galleryBackgroundItem)
         }
     };

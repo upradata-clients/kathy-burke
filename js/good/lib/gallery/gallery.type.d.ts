@@ -9,4 +9,18 @@ declare global {
     export interface UnderScore {
         gallery: Gallery;
     }
+
+    interface EventNames {
+        gallery: {
+            enter: 'gallery:enter';
+            leave: 'gallery:leave';
+            resize: 'gallery:resize';
+        };
+    }
+
+    interface _EventData {
+        'gallery:enter': { when: 'before' | 'after'; };
+        'gallery:leave': { when: 'before' | 'after'; };
+        'gallery:resize': { isActive: boolean; };
+    };
 }

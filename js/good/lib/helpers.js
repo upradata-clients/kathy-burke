@@ -62,8 +62,10 @@ const onReady = readyState => cb => {
  */
 
 /**
- * @param {string} event
- * @param {(event: CustomEvent) => void} fn
+ * @template {string} T
+ * 
+ * @param {T} event
+ * @param {(event: CustomEvent<EventData<T>>) => void} fn
  * @param {OnEventOptions} [options]
  */
 const onEvent = (event, fn, { element = window, isCold = false, eventListenerOptions = { passive: true } } = {}) => {
@@ -108,15 +110,15 @@ const onMultipleEvents = (events, fn, options) => {
     return () => stops.forEach(stop => stop());
 };
 
-
-
 /**
- * @param {string} event
- * @param {any} [detail]
+ * @template {string} T
+ * 
+ * @param {T} event
+ * @param {EventData<T>} detail
  * @param {Object} [options]
  * @param {Element | Window & typeof globalThis | undefined} [options.element]
  */
-const dispatchEvent = (event, detail = undefined, { element = window } = {}) => {
+const dispatchEvent = (event, detail, { element = window } = {}) => {
     const customEvent = new CustomEvent(event, { detail });
     dispatchEvent.events[ event ] = customEvent;
 
@@ -147,14 +149,14 @@ const createDispatchEventOnce = (event, detail, options) => {
 
 
 
-const EventNames = {
+const EventNames =/** @type {EventNames} */ (/** @type {GlobalEventNames} */({
     ready: {
         document: 'document:ready',
         gsap: 'gsap:ready',
         gallery: 'gallery:ready'
     },
     resize: 'resize',
-};
+}));
 
 
 
@@ -457,6 +459,13 @@ const cloneElement = (el, deep = true) =>/** @type {T} */(el.cloneNode(deep));
 const createElementFromTemplate = (template, type) =>/** @type {HTMLElementByKey<Type>} */(cloneElement(template).content.firstElementChild);
 
 
+/**
+ * @param {number} nb
+ * @param {number} [precision]
+ */
+const round2Decimals = (nb, precision = 0) => Math.round(nb * Math.pow(10, precision)) / Math.pow(10, precision);
+
+
 
 const getNavigator = () => {
 
@@ -507,6 +516,7 @@ const helpers = {
     createMultipleSetTimeoutCalls,
     queryAll, queryAllThrow, queryThrow, cloneElement, createElementFromTemplate,
     debounce, debounceRestart,
+    round2Decimals,
     onReady, onLoad: onReady('complete'), onDOMContentLoaded: onReady('interactive'),
     onEvent, onMultipleEvents, dispatchEvent, createDispatchEventOnce, EventNames,
     getElementFromRecid,

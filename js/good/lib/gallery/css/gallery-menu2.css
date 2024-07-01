@@ -93,7 +93,7 @@
      }
 
      .mt-gallery-menu {
-         min-height: 200px;
+         /*  min-height: 200px; */
          max-height: 340px;
          height: 20vw;
          grid-column-gap: 1.2vw;
@@ -120,7 +120,7 @@
          --hint-width: 3px;
      }
 
-     .mt-gallery-menu .mt-hinter .hinter:not(:last-child) {
+     .mt-gallery-menu .mt-hinter .hinter:not(:first-child) {
          display: none;
      }
 
