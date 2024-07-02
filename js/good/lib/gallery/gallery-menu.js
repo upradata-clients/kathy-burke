@@ -8,12 +8,11 @@
  */
 const initGalleryMenu = ({ galleryElements: elements, galleryItems }) => {
 
-    const menuItemsTitles = elements.menu.menuItems.map(({ title }) => title);
-    const menuItemsImages = elements.menu.menuItems.map(({ item }) => _.queryThrow('.mt-gallery-menu-card__image', item));
 
     const menuItemsImagesSettings = _.applySettingsPropMap(
         /** @type {readonly ImageSettings[]} */(galleryItems.map(({ menu }) => menu.settings).filter(s => !!s))
     );
+
 
     /**
      * @param {Array<string | { prop: ImageSettingsKeys; mediaQuery: ImageSettingsMediaQueries }>} styles 
@@ -35,21 +34,17 @@ const initGalleryMenu = ({ galleryElements: elements, galleryItems }) => {
             }, {});
 
             if (Object.values(cssStyles).length > 0)
-                gsap.to(menuItemsImages[ i ], { ...cssStyles, duration: 0.5, ease: 'power2.inOut' });
+                gsap.to(elements.menu.menuItemsImages[ i ], { ...cssStyles, duration: 0.5, ease: 'power2.inOut' });
         });
     };
 
     const hinter = createMenuHinter(elements.menu.menuItems.map(({ item }) => item));
 
     addMenuAppareanceAnimation(elements.menu);
-    addMenuOnHover({ ...elements.menu, ...hinter });
+    addMenuOnHover({ menuItems: elements.menu.menuItems.map(({ item }) => item), hinterGoTo: hinter.hinterGoTo });
 
     return {
-        ...elements.menu,
-        ...hinter,
-        menuItemsTitles,
-        menuItemsImages,
-        menuItemsImagesSettings,
+        hinterGoTo: hinter.hinterGoTo,
         setMenuItemsImagesStyle
     };
 };
@@ -119,8 +114,8 @@ const addMenuAppareanceAnimation = ({ menuItems, block: menu }) => {
 
 
 
-/** @param {Pick<GalleryElements['menu'], 'menuItems' | 'block'> & Hinter} params */
-const addMenuOnHover = ({ menuItems, block: menu, hinterGoTo, hinterItems }) => {
+/** @param {{ menuItems: readonly HTMLElement[]; hinterGoTo: Hinter['hinterGoTo']; }} params */
+const addMenuOnHover = ({ menuItems, hinterGoTo }) => {
 
     /**
      * @param {HTMLElement} el
@@ -148,8 +143,7 @@ const addMenuOnHover = ({ menuItems, block: menu, hinterGoTo, hinterItems }) => 
     }); */
 
 
-    menuItems.forEach(({ item }, i) => onHover(item, { enter: () => hinterGoTo(i) }));
-
+    menuItems.forEach((item, i) => onHover(item, { enter: () => hinterGoTo(i) }));
 };
 
 
@@ -224,8 +218,9 @@ const createGalleryMenuListener = ({ elements, onActivating, onClickMenuItem, on
         state = { ...state, isInit: false };
 
         if (sliderState ? sliderState === 'desactivating' : isDesactivating) {
+            _.dispatchEvent(_.EventNames.gallery.leave, { when: 'before' });
             await waitIfPromise(onDesactivating?.(sliderParams.from, sliderParams.to));
-            _.dispatchEvent(_.EventNames.gallery.leave);
+            _.dispatchEvent(_.EventNames.gallery.leave, { when: 'after' });
         }
 
         if (state.movingI === i)

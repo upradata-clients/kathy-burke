@@ -1,8 +1,8 @@
-import { initGalleryMenu } from './gallery-menu';
+import { galleryMenu } from './gallery-menu';
 
 
 declare global {
-    export type GalleryMenu = ReturnType<typeof initGalleryMenu>;
+    export type GalleryMenu = ReturnType<typeof galleryMenu.initGalleryMenu>;
 
 }
 

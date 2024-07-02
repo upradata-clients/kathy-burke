@@ -6,20 +6,21 @@
     <link rel="stylesheet" type="text/css" href="./tilda.css">
 
     <link rel="stylesheet" type="text/css" href="../lib/gallery/css/gallery.css">
+    <link rel="stylesheet" type="text/css" href="../lib/gallery/css/gallery-title.css">
     <link rel="stylesheet" type="text/css" href="../lib/gallery/css/gallery-slider.css">
-    <link rel="stylesheet" type="text/css" href="../lib/gallery/css/gallery-menu2.css">
+    <link rel="stylesheet" type="text/css" href="../lib/gallery/css/gallery-menu.css">
 
     <script type="module" src="./gallery.local.js"></script>
 
     <style>
-        .gallery {
+        .mt-gallery {
             font-family: 'FuturaPT', Arial, sans-serif;
         }
     </style>
 </head>
 
 <body>
-    <div class="gallery">
+    <div class="mt-gallery">
         <!-- <div class="uc-gallery-menu">
             <div class="t959">
                 <div class="t959__container t-card__container t-container">
@@ -42,47 +43,50 @@
         </div> -->
 
 
-        <div class="mt-gallery-menu">
-            <template class="mt-gallery-menu-card-template">
-                <div class="mt-gallery-menu-card">
-                    <div class="mt-gallery-menu-card__container">
+        <div class="mt-gallery_menu">
+            <template class="mt-gallery_menu_card_template">
+                <div class="mt-gallery_menu_card">
+                    <div class="mt-gallery_menu_card-container">
                         <meta itemprop="image" content="">
                         <meta itemprop="caption" content="">
 
-                        <img class="mt-gallery-menu-card__image" src="" aria-label="" />
-                        <span class="mt-gallery-menu-card__title"></span>
+                        <img class="mt-gallery_menu_card-image" src="" aria-label="" />
+                        <span class="mt-gallery_menu_card-title"></span>
                     </div>
                 </div>
             </template>
         </div>
 
 
-        <div class="uc-gallery-title">
-            <div class="gallery-titles">
-                <div class="t-title t-title_xxs gallery-title-header-1"></div>
-                <div class="t-title t-title_xxs gallery-title-header-2"></div>
+        <div class="uc-gallery-title mt-gallery_title">
+            <div class="mt-gallery_title_headers gallery-titles">
+                <div class="t-title t-title_xxs mt-gallery_title_header mt-gallery_title_header-1 gallery-title-header-1"></div>
+                <div class="t-title t-title_xxs mt-gallery_title_header mt-gallery_title_header-2 gallery-title-header-2"></div>
             </div>
-            <div class="t-descr t-descr_md t-align_center">You can click on each painting to zoom in and see more details</div>
+            <div class="mt-gallery_title-descr t-descr t-descr_md t-align_center">You can click on each painting to zoom in and see more
+                details</div>
         </div>
 
-        <div class="cards uc-slider-cards">
-            <div class="cards__wrapper">
-                <div class="slider-wrapper mt-slider-container">
+        <div class="mt-gallery_slider cards uc-slider-cards">
+            <div class="cards__wrapper mt-gallery_slider-wrapper">
+                <div class="slider-wrapper mt-gallery_slider-container">
 
-                    <template class="mt-slider-card-template">
-                        <div class="gallery card">
+                    <template class="mt-gallery_slider_card_template">
+                        <div class="gallery card mt-gallery_slider_card">
                             <div class="t156">
                                 <div class="t-container">
                                     <div class="t-col t-col_12">
-                                        <div class="t156__wrapper mt-gallery-cards-container"><!--  mt-slider-card__image-template --></div>
+                                        <div class="t156__wrapper mt-gallery_slider_card-container mt-gallery-cards-container">
+                                            <!--  mt-gallery_slider_card--item_template -->
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </template>
 
-                    <template class="mt-slider-card__image-template">
-                        <div class="t156__item" itemscope itemtype="http://schema.org/ImageObject">
+                    <template class="mt-gallery_slider_card-item_template">
+                        <div class="t156__item mt-gallery_slider_card-item" itemscope itemtype="http://schema.org/ImageObject">
                             <img class="t-img t-zoomable loaded" src="" alt="" data-zoom-target="0" data-zoomable="yes" data-img-zoom-url=""
                                  data-img-zoom-descr="" data-lazy-rule="skip" data-gallery-img-zoom-url="">
                             <meta itemprop="image" content="">
@@ -93,10 +97,10 @@
                 </div> <!-- slider card -->
             </div> <!-- cards__wrapper -->
 
-            <div class="mt-slider-background">
-                <div class="mt-gallery-cards-container">
-                    <template class="mt-slider-background-item-template">
-                        <div class="t156__item"></div>
+            <div class="mt-gallery_slider_background">
+                <div class="mt-gallery_slider_card-container">
+                    <template class="mt-gallery_slider_background-item_template">
+                        <div class="mt-gallery_slider_card-item t156__item"></div>
                     </template>
                 </div>
             </div> <!-- cards gallery-background -->

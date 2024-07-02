@@ -1,33 +1,173 @@
-.uc-gallery-title {
-    padding-top: 15px;
-    padding-bottom: 75px;
-    opacity: 1;
-}
+/***********
+   SLIDER 
+ ***********/
 
-.uc-gallery-title .t-title {
-    font-size: 20px;
-    color: #6a6a6a;
-    margin-bottom: 15px;
-    margin-top: 8px;
-    padding-bottom: 6px;
-}
-
-@media screen and (max-width: 480px) {
-    .uc-gallery-title .t-title {
-        font-size: 15px;
-    }
-}
-
-.uc-gallery-title .t-descr {
-    font-size: 14px;
-}
-
-@media screen and (max-width: 480px) {
-    .uc-gallery-title .t-descr {
-        font-size: 12px;
-    }
-}
-
-.uc-slider-cards img {
+.mt-gallery_slider {
+    display: flex;
     width: 100%;
+    height: auto;
+    justify-content: center;
+    opacity: 1;
+    position: relative;
+}
+
+
+.mt-gallery_slider-wrapper {
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    position: absolute;
+    overflow: hidden;
+}
+
+.mt-gallery_slider-container {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    height: 100%;
+    width: auto;
+    perspective: 800px;
+}
+
+.mt-gallery_slider_background {
+    z-index: -1;
+    padding: 0;
+}
+
+.mt-gallery_slider_background .mt-gallery_slider_card-container,
+.mt-gallery_slider-container {
+    width: var(--mt-cards-width);
+}
+
+.mt-gallery_slider_background .mt-gallery_slider_card-container {
+    box-shadow: 0px 0px 62px 22px rgb(0 0 0 / 20%);
+    border-radius: 12px;
+}
+
+
+
+/***************
+   SLIDER CARD
+ ***************/
+
+.mt-gallery_slider {
+    --mt-cards-width: 30vw;
+    --mt-cards-width-inactive: 30vw;
+    --mt-cards-width-active: 50vw;
+
+    --mt-card-height: 200px;
+    --mt-card-height-inactive: 200px;
+    --mt-card-height-active: 340px;
+
+    --mt-card-grid-size: 6px;
+    --mt-card-grid-size-active: 13px;
+}
+
+
+.mt-gallery_slider_card {
+    position: absolute;
+    right: 0;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    padding: 0 !important;
+    margin: 0;
+    opacity: 0;
+    transition: opacity 0.4s ease-out;
+}
+
+.mt-gallery_slider_card[data-card-state="active"] {
+    cursor: pointer;
+}
+
+.mt-gallery_slider_card .t-col {
+    margin: 0;
+}
+
+.mt-gallery_slider_card:not([data-card-state="active"]) .mt-gallery_slider_card-item:hover {
+    opacity: 1 !important;
+}
+
+
+.mt-gallery_slider_card-container {
+    padding: 24px;
+}
+
+.mt-gallery.slider-active .mt-gallery_slider_card-container {
+    padding: 44px;
+}
+
+.mt-gallery_slider_card-container {
+    height: auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(2, var(--mt-card-height));
+    gap: var(--mt-card-grid-size);
+}
+
+
+@media screen and (max-width: 1300px) {
+    .mt-gallery_slider {
+        --mt-cards-width-inactive: 50vw;
+        --mt-cards-width-active: 50vw;
+
+        --mt-card-height-inactive: 200px;
+        --mt-card-height-active: 240px;
+    }
+
+    .mt-gallery.slider-active .mt-gallery_slider_card-container {
+        padding: 24px;
+    }
+
+    /* .mt-gallery_slider {
+        --mt-card-height-active: 420px;
+    } */
+
+    /* .mt-gallery_slider .mt-gallery-cards-container {
+        grid-template-columns: repeat(2, 1fr);
+    } */
+}
+
+@media screen and (max-width: 750px) {
+    .mt-gallery_slider {
+        --mt-cards-width-inactive: 70vw;
+        --mt-cards-width-active: 50vw;
+
+        --mt-card-height-inactive: 200px;
+        --mt-card-height-active: 190px;
+    }
+}
+
+
+/*********************
+   SLIDER CARD ITEM
+ ********************/
+
+
+.mt-gallery_slider_card-item {
+    border-radius: 6px;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    overflow: hidden;
+    cursor: unset;
+}
+
+.mt-gallery.slider-active .mt-gallery_slider_card[data-card-state="active"] .mt-gallery_slider_card-item {
+    cursor: zoom-in;
+}
+
+.mt-gallery_slider_card-item img {
+    object-fit: cover;
+    width: 100%;
+    height: 100%;
+    border-radius: 6px;
+    transition: all 0.3s ease-out;
+}
+
+.mt-gallery_slider_card-item img:hover {
+    transform: scale(1.05);
+    filter: brightness(1.3);
 }

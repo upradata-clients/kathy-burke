@@ -5,22 +5,22 @@
  * @param {GalleryItems} galleryItems
  */
 const createGalleriesLayout = galleryItems => {
-    const gallery = _.queryThrow('.gallery');
+    const gallery = _.queryThrow('.mt-gallery');
 
-    const menu = _.queryThrow('.mt-gallery-menu', gallery);
-    const slider = _.queryThrow('.uc-slider-cards', gallery);
-    const galleryBackground = _.queryThrow('.mt-slider-background', slider);
+    const menu = _.queryThrow('.mt-gallery_menu', gallery);
+    const slider = _.queryThrow('.mt-gallery_slider', gallery);
+    const galleryBackground = _.queryThrow('.mt-gallery_slider_background', slider);
 
     const containers = {
-        slider: _.queryThrow('.slider-wrapper', slider),
-        galleryBackground: _.queryThrow('.mt-gallery-cards-container', galleryBackground)
+        slider: _.queryThrow('.mt-gallery_slider-container', slider),
+        galleryBackground: _.queryThrow('.mt-gallery_slider_card-container', galleryBackground)
     };
 
     const references = {
-        menuCard: /** @type {HTMLTemplateElement} */(_.queryThrow('.mt-gallery-menu-card-template', menu)),
-        sliderCard: /** @type {HTMLTemplateElement} */(_.queryThrow('.mt-slider-card-template', slider)),
-        sliderCardImage:  /** @type {HTMLTemplateElement} */(_.queryThrow('.mt-slider-card__image-template', slider)),
-        galleryBackgroundItem: /** @type {HTMLTemplateElement} */(_.queryThrow('.mt-slider-background-item-template', galleryBackground))
+        menuCard: /** @type {HTMLTemplateElement} */(_.queryThrow('.mt-gallery_menu_card_template', menu)),
+        sliderCard: /** @type {HTMLTemplateElement} */(_.queryThrow('.mt-gallery_slider_card_template', slider)),
+        sliderCardItem:  /** @type {HTMLTemplateElement} */(_.queryThrow('.mt-gallery_slider_card-item_template', slider)),
+        galleryBackgroundItem: /** @type {HTMLTemplateElement} */(_.queryThrow('.mt-gallery_slider_background-item_template', galleryBackground))
     };
 
 
@@ -29,10 +29,10 @@ const createGalleriesLayout = galleryItems => {
         const { name, menu: { src, alt } } = galleryItems[ index ];
 
         const item = _.createElementFromTemplate(references.menuCard);
-        item.classList.add(`menu-item-${index}`);
+        item.classList.add(`mt-gallery_menu_card-${index}`);
 
-        const title = _.queryThrow('.mt-gallery-menu-card__title', item);
-        const img =/** @type {HTMLImageElement} */(_.queryThrow('.mt-gallery-menu-card__image', item));
+        const title = _.queryThrow('.mt-gallery_menu_card-title', item);
+        const img =/** @type {HTMLImageElement} */(_.queryThrow('.mt-gallery_menu_card-image', item));
 
         const metaImage = /** @type {HTMLMetaElement} */(_.queryThrow('[itemprop="image"]', item));
         const metaCaption = /** @type {HTMLMetaElement} */(_.queryThrow('[itemprop="caption"]', item));
@@ -44,20 +44,21 @@ const createGalleriesLayout = galleryItems => {
         img.alt = alt;
         metaImage.content = src;
 
-        return { item, title };
+        return { item, title, img };
     };
 
     /**
      * @param {number} categoryI
      * @param {number} cardI
      */
-    const createSliderCardImage = (categoryI, cardI) => {
+    const createSliderCardItem = (categoryI, cardI) => {
         const { images } = galleryItems[ categoryI ];
         const { src, alt } = images[ cardI ];
 
-        const slideCardImage = _.createElementFromTemplate(references.sliderCardImage);
+        const slideCardImage = _.createElementFromTemplate(references.sliderCardItem);
 
         const item = _.cloneElement(slideCardImage);
+        item.classList.add(`mt-gallery_slider_card-item-${cardI}`);
 
         const img = _.queryThrow('img', item);
 
@@ -83,21 +84,21 @@ const createGalleriesLayout = galleryItems => {
         const { images } = galleryItems[ index ];
 
         const item = _.createElementFromTemplate(references.sliderCard);
-        const wrapper = _.queryThrow('.t156__wrapper', item);
+        const container = _.queryThrow('.mt-gallery_slider_card-container', item);
 
-        item.classList.add(`gallery-item-${index}`);
+        item.classList.add(`mt-gallery_slider_card-${index}`);
 
-        const cardImages = images.map((_, imageI) => createSliderCardImage(index, imageI));
+        const cardImages = images.map((_, imageI) => createSliderCardItem(index, imageI));
 
-        wrapper.append(...cardImages);
+        container.append(...cardImages);
 
-        return { card: item, images: cardImages, wrapper };
+        return { card: item, images: cardImages, container };
     };
 
     /** @param {number} index */
     const createGalleryBackgroundItem = index => {
         const item = _.createElementFromTemplate(references.galleryBackgroundItem);
-        item.classList.add(`gallery-item-${index}`);
+        item.classList.add(`mt-gallery_slider_card-${index}`);
 
         return item;
     };
@@ -116,22 +117,24 @@ const createGalleriesLayout = galleryItems => {
 
     Object.values(references).forEach(ref => ref.remove());
 
-    const galleryTitle = _.queryThrow('.uc-gallery-title');
 
     const elements = {
-        gallery: galleryElts,
+        gallery: { ...galleryElts, block: gallery },
         menu: {
             block: menu,
-            menuItems: galleryElts.map(({ menuItem }) => menuItem)
+            menuItems: galleryElts.map(({ menuItem }) => menuItem),
+            menuItemsTitles: galleryElts.map(({ menuItem }) => menuItem.title),
+            menuItemsImages: galleryElts.map(({ menuItem }) => menuItem.img),
         },
         galleryTitle: {
-            block: galleryTitle,
-            titles: _.queryAllThrow('.t-title', galleryTitle),
-            descr: _.queryThrow('.t-descr ', galleryTitle)
+            block: _.queryThrow('.mt-gallery_title'),
+            titles: _.queryAllThrow('.mt-gallery_title_header'),
+            descr: _.queryThrow('.mt-gallery_title-descr')
         },
         gallerySlider: {
-            block: _.queryThrow('.uc-slider-cards'),
-            wrapper: containers.slider,
+            block: _.queryThrow('.mt-gallery_slider'),
+            wrapper: _.queryThrow('.mt-gallery_slider-wrapper'),
+            container: containers.slider,
             cards: galleryElts.map(({ sliderCard }) => sliderCard)
         },
         galleryBackground: {

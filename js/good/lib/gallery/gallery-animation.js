@@ -7,7 +7,7 @@
  * @param {Object} params
  * @param {GallerySliderCard[]} params.sliderCards
  * @param {Record<Axis, number>} params.maxRotation
- * @param {Record<Axis, number> | ((params: { wrapper: HTMLElement; }) => Record<Axis, number>)} params.maxDistance
+ * @param {Record<Axis, number> | ((params: { container: HTMLElement; }) => Record<Axis, number>)} params.maxDistance
  */
 const createSideCardsMouseFollowAnimation = ({ sliderCards, maxRotation, maxDistance }) => {
 
@@ -47,7 +47,7 @@ const createSideCardsMouseFollowAnimation = ({ sliderCards, maxRotation, maxDist
         ]));
     };
 
-    const cardsMouseFollowAnimation = sliderCards.map(({ wrapper }) => {
+    const cardsMouseFollowAnimation = sliderCards.map(({ container }) => {
 
         /** @typedef {{ x: number; y: number;}}  Point2D */
 
@@ -60,13 +60,13 @@ const createSideCardsMouseFollowAnimation = ({ sliderCards, maxRotation, maxDist
 
 
         const mouseFollower = _.createMouseFollower({
-            items: [ wrapper ],
+            items: [ container ],
             distanceEasing,
-            maxDistance: typeof maxDistance === 'function' ? maxDistance({ wrapper }) : maxDistance,
+            maxDistance: typeof maxDistance === 'function' ? maxDistance({ container }) : maxDistance,
             onStart: () => {
                 rotationStart = /** @type {Point2D} */({
-                    x: gsap.getProperty(wrapper, 'rotationX'),
-                    y: gsap.getProperty(wrapper, 'rotationY')
+                    x: gsap.getProperty(container, 'rotationX'),
+                    y: gsap.getProperty(container, 'rotationY')
                 });
             },
             onMouseMove: data => {
@@ -100,32 +100,32 @@ const createSideCardsMouseFollowAnimation = ({ sliderCards, maxRotation, maxDist
                 });
             },
             onStop: async () => {
-                // gsap.set(wrapper, { rotateX: 0, rotateY: 0 }); 
-                gsap.killTweensOf(wrapper);
-                return new Promise(resolve => gsap.set(wrapper, {
+                // gsap.set(container, { rotateX: 0, rotateY: 0 });
+                gsap.killTweensOf(container);
+                return new Promise(resolve => gsap.set(container, {
                     clearProps: 'all', onComplete: resolve
                 }));
 
-                // gsap.getTweensOf(wrapper).map(tween => {
+                // gsap.getTweensOf(container).map(tween => {
                 //     if ('rotationX' in tween.vars || 'rotationY' in tween.vars)
                 //         tween.revert();
                 // });
 
 
                 // await Promise.allSettled(
-                //     gsap.getTweensOf(wrapper).map(tween => {
+                //     gsap.getTweensOf(container).map(tween => {
                 //         if ('rotationX' in tween.vars || 'rotationY' in tween.vars)
                 //             return new Promise(resolve => tween.revert().eventCallback('onComplete', resolve));
                 //     })
                 // );
-                // gsap.set(wrapper, { clearProps: 'rotationX, rotationY' });
-                // const p = _.promisifyTimeline(gsap.set(wrapper, { clearProps: 'rotationX, rotationY' }));
-                // gsap.killTweensOf(wrapper, 'rotationX, rotationY');
+                // gsap.set(container, { clearProps: 'rotationX, rotationY' });
+                // const p = _.promisifyTimeline(gsap.set(container, { clearProps: 'rotationX, rotationY' }));
+                // gsap.killTweensOf(container, 'rotationX, rotationY');
 
             }
         });
 
-        return { mouseFollower, item: wrapper };
+        return { mouseFollower, item: container };
     });
 
     return {
@@ -248,7 +248,7 @@ const createGallerySlider = elements => {
 /**
  * @param {Object} params
  * @param {HTMLElement} params.galleryBackground
- * @param {HTMLElement[]} params.cards
+ * @param {GalleryElements['gallerySlider']['cards']} params.cards
  */
 const createSideCardsScrollFollow = ({ galleryBackground, cards }) => {
 
@@ -267,7 +267,7 @@ const createSideCardsScrollFollow = ({ galleryBackground, cards }) => {
     });
 
     /** @param {number} activeI */
-    const sideCards = activeI => cards.filter((_, i) => i !== activeI).map(c => _.queryThrow('.t156__wrapper', c));
+    const sideCards = activeI => cards.filter((_, i) => i !== activeI).map(c => c.card);
 
 
     /**
@@ -305,11 +305,11 @@ const createSideCardsScrollFollow = ({ galleryBackground, cards }) => {
 
 /** @typedef {ReturnType<typeof createSideCardsScrollFollow>} SideCardsScrollFollow */
 
-/** @param {HTMLElement} cardsBlock */
-const createGalleryApparationAnimation = cardsBlock => {
+/** @param {HTMLElement} cards */
+const createGalleryApparationAnimation = cards => {
     return gsap
         .timeline({ paused: true })
-        .to(cardsBlock, { opacity: 1, ease: 'expo.out', duration: 0.7 });
+        .to(cards, { opacity: 1, ease: 'expo.out', duration: 0.7 });
 };
 
 /**
@@ -335,8 +335,8 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
         indexes => createSideCardsMouseFollowAnimation({
             sliderCards: elements.gallerySlider.cards.filter((_, i) => indexes.includes(i)),
             maxRotation: { x: 3, y: 6 },
-            maxDistance: ({ wrapper }) => {
-                const { width, height } = _.getRect(wrapper);
+            maxDistance: ({ container }) => {
+                const { width, height } = _.getRect(container);
                 return { x: 0.5 * window.innerWidth / 2 /* width */, y: 0.5 * height };
             }
         })
@@ -348,7 +348,7 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
 
     const sideCardsScrollFollow = _.createLazySingleton(() => createSideCardsScrollFollow({
         galleryBackground: elements.galleryBackground.container,
-        cards: elements.gallerySlider.cards.map(({ card }) => card)
+        cards: elements.gallerySlider.cards
     }))({
         destroy: sideCardsScrollFollow => sideCardsScrollFollow.kill()
     });
@@ -483,8 +483,8 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
         galleryTitleHeader2.textContent = menuItemsTitles[ to ].textContent;
 
         return gsap.timeline()
-            .to(galleryTitleHeader, { opacity: 0, x: 400, duration: 0.4, ease: 'expo.in', overwrite: true })
-            .fromTo(galleryTitleHeader2, { opacity: 0, x: -400 }, {
+            .fromTo(galleryTitleHeader, { x: 0, y: 0 }, { opacity: 0, x: 400, duration: 0.4, ease: 'expo.in', overwrite: true })
+            .fromTo(galleryTitleHeader2, { opacity: 0, x: -400, y: 0 }, {
                 opacity: 1, x: 0, duration: 0.4, ease: 'expo.out', overwrite: true,
                 onComplete: () => {
                     galleryTitleHeader.textContent = menuItemsTitles[ to ].textContent;
@@ -502,7 +502,7 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
      * @param {'add'|'remove'} action 
      */
     const setStateCards = (i, action) => {
-        menuItems[ i ].dataset.cardState = action === 'add' ? 'active' : '';
+        elements.gallerySlider.cards[ i ].card.dataset.cardState = action === 'add' ? 'active' : '';
         // cards[ wrapI(i - 1) ].dataset.cardState = action === 'add' ? 'left' : '';
         // cards[ wrapI(i + 1) ].dataset.cardState = action === 'add' ? 'right' : '';
     };
@@ -627,10 +627,7 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
     // setActiveTitle('add');
 
     /** @param {'add' | 'remove' } action */
-    const setActiveCardsBlock = action => {
-        _.setClassName(elements.gallerySlider.block, 'active')(action);
-        _.setClassName(elements.menu.block, 'slider-active')(action);
-    };
+    const setActiveCardsBlock = action => _.setClassName(elements.gallery.block, 'slider-active')(action);
 
 
     /**
@@ -687,10 +684,13 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
 
         const p = _.promisifyTimeline;
 
-        await Promise.allSettled([
+        /* await Promise.allSettled([
             p(animateActivationMenu(state)),
             p(state === 'activating' ? bgWidthAnimation.play() : bgWidthAnimation.reverse())
-        ]);
+        ]); */
+
+         p(animateActivationMenu(state));
+         p(state === 'activating' ? bgWidthAnimation.play() : bgWidthAnimation.reverse());
 
         if (state === 'desactivating') {
             activateSideCardsFollowers({ from, to, state: 'desactivating' });
