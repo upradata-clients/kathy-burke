@@ -1,5 +1,8 @@
  .mt-gallery_menu {
      --mt-gallery-menu-width: 90vw;
+     --mt-gallery-menu-height: 340px;
+     --mt-gallery-menu-height-inactive: 340px;
+     --mt-gallery-menu-height-active: 120px;
      --mt-hint-width: 5px;
  }
 
@@ -9,8 +12,8 @@
      display: grid;
      grid-template-columns: repeat(auto-fit, minmax(10px, 1fr));
      grid-column-gap: 15px;
-     height: 340px;
-     width: var(--mt-gallery-menu-width, 90vw);
+     height: var(--mt-gallery-menu-height);
+     width: var(--mt-gallery-menu-width);
  }
 
  .mt-gallery.slider-active .mt-gallery_menu_card-title.active {
@@ -94,20 +97,25 @@
 
 
  @media screen and (max-width: 1500px) {
-     :root {
+     .mt-gallery_menu {
          --mt-hint-width: 4px;
      }
 
-     .mt-gallery-menu {
+     .mt-gallery_menu {
          /*  min-height: 200px; */
-         max-height: 340px;
-         height: 20vw;
+         /*  max-height: 340px; */
+         /*  height: 20vw; */
          grid-column-gap: 1.2vw;
      }
  }
 
 
  @media screen and (max-width: 1280px) {
+     .mt-gallery_menu {
+         --mt-gallery-menu-height-inactive: 290px;
+         --mt-gallery-menu-height-active: 140px;
+     }
+
      .mt-gallery_menu_card-container {
          align-items: flex-start;
          justify-content: flex-start;
@@ -116,21 +124,27 @@
      .mt-gallery_menu_card-title {
          writing-mode: vertical-lr;
          text-orientation: sideways;
-         margin-top: 5px;
+         /*  margin-top: 5px; */
          font-size: 14px;
+     }
+
+     .mt-gallery.slider-active .mt-gallery_menu_card-title {
+         font-size: 13px;
      }
  }
 
  @media screen and (max-width: 800px) {
-     :root {
+     .mt-gallery_menu {
+         --mt-gallery-menu-height-inactive: 230px;
+         --mt-gallery-menu-height-active: 140px;
          --mt-hint-width: 3px;
      }
 
-     .mt-gallery-menu .mt-hinter .hinter:not(:first-child) {
+     .mt-gallery_menu .mt-hinter .hinter:not(:first-child) {
          display: none;
      }
 
-     .mt-gallery_menu_card-title {
+     /* .mt-gallery_menu_card-title {
          font-size: 12px;
-     }
+     } */
  }

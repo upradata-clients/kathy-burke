@@ -34,28 +34,39 @@
     text-align: center;
 }
 
-.mt-gallery_title-descr {
-    font-size: 14px;
-}
-
-@media screen and (max-width: 480px) {
-    .mt-gallery_title_header {
-        font-size: 15px;
-    }
-}
-
-
-@media screen and (max-width: 480px) {
-    .mt-gallery_title-descr {
-        font-size: 12px;
-    }
-}
-
-
 .mt-gallery.slider-active .mt-gallery_title_header {
     display: none;
 }
 
 .mt-gallery.slider-active .mt-gallery_title_header.active {
     display: block;
+}
+
+
+.mt-gallery_title-descr {
+    font-size: 14px;
+}
+
+
+@media screen and (max-width: 1280px) {
+    .mt-gallery_title {
+        padding-bottom: 55px;
+    }
+}
+
+@media screen and (max-width: 960px) {
+    .mt-gallery_title {
+        padding-top: 0;
+    }
+}
+
+
+@media screen and (max-width: 480px) {
+    .mt-gallery_title_header {
+        font-size: 15px;
+    }
+
+    .mt-gallery_title-descr {
+        font-size: 12px;
+    }
 }

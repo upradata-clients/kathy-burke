@@ -1,5 +1,51 @@
 // @ts-check
 
+/**
+ * @param {Element} el 
+ * @param {string} cssVarName 
+ */
+const getCssValue = (el, cssVarName) => {
+    const cssValue = getComputedStyle(el).getPropertyValue(cssVarName);
+
+    /*  if (gsap.utils.getUnit(cssValue) === 'vw')
+         return _.round2Decimals(parseFloat(cssValue) * window.innerWidth / 100, 2);
+ 
+     if (gsap.utils.getUnit(cssValue) === '%')
+         return _.round2Decimals(parseFloat(cssValue) * (el.parentElement?.getBoundingClientRect().width || 0), 0); */
+
+    return parseFloat(cssValue);
+};
+
+
+/**
+ * @template {string} State
+ * @typedef {{ name: string; } & Record<State, string | number>} CssVarTonAnimate
+ */
+
+
+/**
+ * @template {string} State
+ * 
+ * @param {HTMLElement} element
+ * @param {readonly string[]} cssVars
+ * @param {readonly State[]} states
+ */
+const createGetCssVarsGsapProps = (element, cssVars, states) => {
+    const cssVarsToAnimate = () =>  /** @type {readonly CssVarTonAnimate<State>[]} */(cssVars.map(name => ({
+        name,
+        ...Object.fromEntries(states.map(state => [ state, getCssValue(element, `${name}-${state}`) ]))
+    })));
+
+    /** @param {State} state */
+    const get = state => cssVarsToAnimate().reduce((vars, { name, ...valuesByState }) => {
+        return { ...vars, [ name ]: valuesByState[/** @type {string} */(state) ] };
+    }, {});
+
+    return get;
+};
+
+
+
 
 /** @typedef {'x' | 'y'} Axis */
 
@@ -199,7 +245,7 @@ const createGallerySlider = elements => {
             );
 
             addFromTo({
-                el: _.queryThrow('.t156', item),
+                el: _.queryThrow('.mt-gallery_slider_card-container', item),
                 from: { xPercent: 0 },
                 to: {
                     xPercent: -24,
@@ -212,7 +258,7 @@ const createGallerySlider = elements => {
             });
 
             addFromTo({
-                el: _.queryThrow('.t156', item),
+                el: _.queryThrow('.mt-gallery_slider_card-container', item),
                 from: { xPercent: 0 },
                 to: {
                     xPercent: 24,
@@ -233,7 +279,7 @@ const createGallerySlider = elements => {
         },
         onStop: () => {
             menuItems.forEach(card => {
-                gsap.set(_.queryThrow('.t156', card), { clearProps: 'all' });
+                gsap.set(_.queryThrow('.mt-gallery_slider_card-container', card), { clearProps: 'all' });
             });
         }
     });
@@ -319,7 +365,7 @@ const createGalleryApparationAnimation = cards => {
  */
 const createGalleryAnimation = ({ elements, galleryMenu }) => {
 
-    const { galleryTitle, menu: { block: menuContainer } } = elements;
+    const { galleryTitle, menu } = elements;
     const menuItems = elements.menu.menuItems.map(({ item }) => item);
 
 
@@ -365,23 +411,32 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
 
 
 
-    let menuHeight = gsap.getProperty(menuContainer, 'height');
+    let menuHeight = gsap.getProperty(menu.block, 'height');
+
+    const getMenuCssVarsGsapProps = createGetCssVarsGsapProps(menu.block, [ '--mt-gallery-menu-height' ], [ 'inactive', 'active' ]);
+
+    _.onEvent(_.EventNames.gallery.resize, ({ detail: { isActive } }) => {
+        gsap.set(menu.block, getMenuCssVarsGsapProps(isActive ? 'active' : 'inactive'));
+    });
+
 
     /** @param {'activating' | 'desactivating'} action */
     const animateActivationMenu = action => {
         galleryMenu.setMenuItemsImagesStyle([ { prop: 'position', mediaQuery: action === 'activating' ? 'xs' : 'lg' } ]);
 
         if (action === 'activating') {
-            if (!menuHeight)
-                menuHeight = gsap.getProperty(menuContainer, 'height');
+            /*  if (!menuHeight)
+                 menuHeight = gsap.getProperty(menu.block, 'height'); */
 
             return gsap.timeline()
                 // we scroll to the menu and make it smaller
-                .to(window, { scrollTo: { y: menuContainer, offsetY: 25 }, duration: 1, ease: 'expo.out' })
-                .to(menuContainer, { height: 120, duration: 0.5, ease: 'expo.out' }, '<10%');
+                .to(window, { scrollTo: { y: menu.block, offsetY: 25 }, duration: 1, ease: 'expo.out' })
+                .fromTo(menu.block, getMenuCssVarsGsapProps('inactive'), { ...getMenuCssVarsGsapProps('active'), duration: 0.5, ease: 'expo.out' }, '<10%');
+            // .to(menuContainer, { height: 120, duration: 0.5, ease: 'expo.out' }, '<10%');
         }
 
-        return gsap.timeline().to(menuContainer, { height: menuHeight, duration: 1, ease: 'expo.in' }, '<10%');
+        // return gsap.timeline().to(menu.block, { height: menuHeight, duration: 1, ease: 'expo.in' }, '<10%');
+        return gsap.timeline().fromTo(menu.block, getMenuCssVarsGsapProps('active'), { ...getMenuCssVarsGsapProps('inactive'), duration: 1, ease: 'expo.in' }, '<10%');
     };
 
     /**
@@ -411,8 +466,11 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
                 }
             }
 
-            if (from === to)
+            if (from === to) {
+                menuItemsTitles[ to ].classList.add('active');
+                galleryTitleHeader.classList.add('active');
                 return;
+            }
 
             galleryTitleHeader.innerHTML = menuItemsTitles[ to ].innerHTML;
 
@@ -630,44 +688,31 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
     const setActiveCardsBlock = action => _.setClassName(elements.gallery.block, 'slider-active')(action);
 
 
-    /**
-     * @param {Element} el 
-     * @param {string} cssVarName 
-     */
-    const getCssValue = (el, cssVarName) => {
-        const cssValue = getComputedStyle(el).getPropertyValue(cssVarName);
+    // const cssVarsToAnimate = () => [
+    //     '--mt-cards-width',
+    //     '--mt-card-height'
+    // ].map(cssVarName => ({
+    //     name: cssVarName,
+    //     inactive: getCssValue(elements.gallerySlider.block, `${cssVarName}-inactive`),
+    //     active: getCssValue(elements.gallerySlider.block, `${cssVarName}-active`)
+    // }));
 
-        /*  if (gsap.utils.getUnit(cssValue) === 'vw')
-             return _.round2Decimals(parseFloat(cssValue) * window.innerWidth / 100, 2);
- 
-         if (gsap.utils.getUnit(cssValue) === '%')
-             return _.round2Decimals(parseFloat(cssValue) * (el.parentElement?.getBoundingClientRect().width || 0), 0); */
-
-        return parseFloat(cssValue);
-    };
-
-    const cssVarsToAnimate = () => [
+    // /** @param {{ isActive: boolean; }} mode */
+    // const getCssVarsGsapProps = ({ isActive }) => cssVarsToAnimate().reduce((vars, { name, inactive, active }) => {
+    //     return { ...vars, [ name ]: isActive ? active : inactive };
+    // }, {});
+    const getCardsCssVarsGsapProps = createGetCssVarsGsapProps(elements.gallerySlider.block, [
         '--mt-cards-width',
         '--mt-card-height'
-    ].map(cssVarName => ({
-        name: cssVarName,
-        inactive: getCssValue(elements.gallerySlider.block, `${cssVarName}-inactive`),
-        active: getCssValue(elements.gallerySlider.block, `${cssVarName}-active`)
-    }));
-
-    /** @param {{ isActive: boolean; }} mode */
-    const getCssVarsGsapProps = ({ isActive }) => cssVarsToAnimate().reduce((vars, { name, inactive, active }) => {
-        return { ...vars, [ name ]: isActive ? active : inactive };
-    }, {});
-
+    ], [ 'inactive', 'active' ]);
 
     const bgWidthAnimation = gsap.timeline({ paused: true }).fromTo(
-        elements.gallerySlider.block, getCssVarsGsapProps({ isActive: false }),
-        { ...getCssVarsGsapProps({ isActive: true }), duration: 0.5, ease: 'expo.out' }
+        elements.gallerySlider.block, getCardsCssVarsGsapProps('inactive'),
+        { ...getCardsCssVarsGsapProps('active'), duration: 0.5, ease: 'expo.out' }
     );
 
     _.onEvent(_.EventNames.gallery.resize, ({ detail: { isActive } }) => {
-        gsap.set(elements.gallerySlider.block, getCssVarsGsapProps({ isActive }));
+        gsap.set(elements.gallerySlider.block, getCardsCssVarsGsapProps(isActive ? 'active' : 'inactive'));
     });
 
     /**
@@ -689,8 +734,8 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
             p(state === 'activating' ? bgWidthAnimation.play() : bgWidthAnimation.reverse())
         ]); */
 
-         p(animateActivationMenu(state));
-         p(state === 'activating' ? bgWidthAnimation.play() : bgWidthAnimation.reverse());
+        p(animateActivationMenu(state));
+        p(state === 'activating' ? bgWidthAnimation.play() : bgWidthAnimation.reverse());
 
         if (state === 'desactivating') {
             activateSideCardsFollowers({ from, to, state: 'desactivating' });
