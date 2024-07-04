@@ -153,12 +153,14 @@ const addMenuOnHover = ({ menuItems, hinterGoTo }) => {
 /**
  * @param {Object} params
  * @param {GalleryElements} params.elements
- * @param {(from: number, to: number, isInit: boolean) => void | Promise<void>} [params.onActivating]
  * @param {(params: AnimateSliderParams) => void | Promise<void>} [params.onClickMenuItem]
+ * @param {(params: AnimateSliderParams) => void | Promise<void>} [params.onActivated]
+ * @param {(params: AnimateSliderParams) => void | Promise<void>} [params.onDesactivated]
  * @param {(from: number, to: number) => void | Promise<void>} [params.onDesactivating]
+ * @param {(from: number, to: number, isInit: boolean) => void | Promise<void>} [params.onActivating]
  * @param {Hinter['hinterGoTo']} params.hinterGoTo
  */
-const createGalleryMenuListener = ({ elements, onActivating, onClickMenuItem, onDesactivating, hinterGoTo }) => {
+const createGalleryMenuListener = ({ elements, onClickMenuItem, onActivating, onActivated, onDesactivating, onDesactivated, hinterGoTo }) => {
 
     /** @type {{menuItem: HTMLElement | undefined; i: number; isInit: boolean; movingI: number | undefined; sliderState: AnimateSliderParams['state']; }} */
     let state = { menuItem: undefined, isInit: true, movingI: undefined, i: -1, sliderState: 'desactivated' };
@@ -227,6 +229,12 @@ const createGalleryMenuListener = ({ elements, onActivating, onClickMenuItem, on
             state = { ...state, i, movingI: undefined };
 
         state.sliderState = state.sliderState === 'desactivating' ? 'desactivated' : state.sliderState === 'activating' ? 'activated' : state.sliderState;
+
+        if (state.sliderState === 'activated')
+            await waitIfPromise(onActivated?.(sliderParams));
+
+        if (state.sliderState === 'desactivated')
+            await waitIfPromise(onDesactivated?.(sliderParams));
     };
 
 

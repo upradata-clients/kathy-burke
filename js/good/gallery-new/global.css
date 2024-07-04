@@ -1,0 +1,57 @@
+:root {
+    --scrollbar-color-thumb: #ababab;
+    --scrollbar-color-track: transparent;
+    --scrollbar-width: thin;
+    --scrollbar-width-legacy: 12px;
+    --scrollbar-padding-legacy: 4px;
+}
+
+@supports selector(::-webkit-scrollbar) /* and (not (scrollbar-width: auto)) */ {
+
+    .mt-scroller::-webkit-scrollbar {
+        width: var(--scrollbar-width-legacy)
+            /*
+        max-width: var(--scrollbar-width-legacy);
+        max-height: var(--scrollbar-width-legacy);
+        */
+    }
+
+
+    .mt-scroller::-webkit-scrollbar-track {
+        background-color: var(--scrollbar-color-track);
+        transition: all 0.3s ease-out;
+    }
+
+
+    .mt-scroller::-webkit-scrollbar-thumb {
+        background-color: var(--scrollbar-color-thumb);
+        border: var(--scrollbar-padding-legacy) solid transparent;
+        border-radius: 100px;
+        background-clip: content-box;
+        transition: all 0.3s ease-out;
+    }
+
+
+    .mt-scroller::-webkit-scrollbar-thumb:hover {
+        backdrop-filter: brightness(0.6);
+        filter: brightness(0.6);
+    }
+
+    .mt-scroller::-webkit-scrollbar:hover {
+        --scrollbar-color-track: #e5e5e5
+    }
+}
+
+/* 
+@supports (scrollbar-width: auto) {
+    .mt-scroller {
+        transition: scrollbar-color 0.3s ease-out;
+        scrollbar-color: var(--scrollbar-color-thumb) var(--scrollbar-color-track);
+        scrollbar-width: var(--scrollbar-width);
+    }
+
+    .mt-scroller:hover {
+        scrollbar-color: #49d2c7;
+    }
+}
+ */

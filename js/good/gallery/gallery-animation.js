@@ -526,10 +526,10 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
          */
         const setZoomable = (img, isActive) => {
             if (isActive) {
-                img.dataset.imgZoomUrl = img.dataset.imgZoomUrl || img.dataset.galleryImgZoomUrl;
-                delete img.dataset.galleryImgZoomUrl;
+                img.dataset.imgZoomUrl = img.dataset.imgZoomUrl || img.dataset.imgZoomUrl;
+                delete img.dataset.imgZoomUrl;
             } else {
-                img.dataset.galleryImgZoomUrl = img.dataset.galleryImgZoomUrl || img.dataset.imgZoomUrl;
+                img.dataset.imgZoomUrl = img.dataset.imgZoomUrl || img.dataset.imgZoomUrl;
                 img.dataset.imgZoomUrl = '';
             }
         };

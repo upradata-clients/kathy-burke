@@ -26,7 +26,7 @@ const createGalleriesLayout = galleryItems => {
 
     /** @param {number} index */
     const createMenuItem = index => {
-        const { name, menu: { src, alt } } = galleryItems[ index ];
+        const { name, menu: { src, alt = '' } } = galleryItems[ index ];
 
         const item = _.createElementFromTemplate(references.menuCard);
         item.classList.add(`mt-gallery_menu_card-${index}`);
@@ -38,11 +38,13 @@ const createGalleriesLayout = galleryItems => {
         const metaCaption = /** @type {HTMLMetaElement} */(_.queryThrow('[itemprop="caption"]', item));
 
         title.textContent = name;
-        metaCaption.content = alt;
 
         img.src = src;
-        img.alt = alt;
         metaImage.content = src;
+
+        metaCaption.content = alt;
+        img.alt = alt;
+
 
         return { item, title, img };
     };
@@ -52,28 +54,32 @@ const createGalleriesLayout = galleryItems => {
      * @param {number} cardI
      */
     const createSliderCardItem = (categoryI, cardI) => {
-        const { images } = galleryItems[ categoryI ];
-        const { src, alt } = images[ cardI ];
+        const { images, name } = galleryItems[ categoryI ];
+        const { src, alt = '', title = name } = images[ cardI ];
 
         const slideCardImage = _.createElementFromTemplate(references.sliderCardItem);
 
         const item = _.cloneElement(slideCardImage);
         item.classList.add(`mt-gallery_slider_card-item-${cardI}`);
+        item.dataset.zoomTarget = `${cardI}`;
 
         const img = _.queryThrow('img', item);
 
         const metaImage = /** @type {HTMLMetaElement} */(_.queryThrow('[itemprop="image"]', item));
         const metaCaption = /** @type {HTMLMetaElement} */(_.queryThrow('[itemprop="caption"]', item));
 
-        metaCaption.content = alt;
-
-        img.src = src;
-        img.dataset.galleryImgZoomUrl = src;
+                img.src = src;
+        img.dataset.imgZoomUrl = src;
+        metaImage.content = src;
         // img.dataset.imgZoomUrl = src;
         // img.dataset.original = src;
-        metaImage.content = src;
+
+        img.setAttribute('title', title);
 
         img.dataset.zoomTarget = `${cardI}`;
+        
+        img.alt = alt;
+        metaCaption.content = alt;
         img.dataset.imgZoomDescr = alt;
 
         return item;

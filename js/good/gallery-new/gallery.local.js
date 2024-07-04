@@ -18,13 +18,15 @@ _.onLoad(() => {
         elements,
         onActivating: (from, to, isInit) => {
             isActive = true;
-            return galleryAnimation.animateActivationGallery({ state: 'activating', from, to, isInit });
+            return galleryAnimation.animateActivatingGallery({ state: 'activating', from, to, isInit });
         },
         onClickMenuItem: galleryAnimation.animateSlider,
         onDesactivating: (from, to) => {
             isActive = false;
-            return galleryAnimation.animateActivationGallery({ state: 'desactivating', from, to, isInit: false });
+            return galleryAnimation.animateDesactivatingGallery({ state: 'desactivating', from, to, isInit: false });
         },
+        onActivated: galleryAnimation.animateActivatedGallery,
+        onDesactivated: galleryAnimation.animateDesactivatedGallery,
         hinterGoTo: menu.hinterGoTo
     });
 

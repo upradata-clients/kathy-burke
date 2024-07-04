@@ -948,8 +948,11 @@ const getModules = async (...modules) => {
 };
 
 
-const registerGsapPlugins = async () => {
+/** @param {import('gsap')} gsap */
+const registerGsapPlugins = async gsap => {
     registerDrawSvgPlugin();
+    DrawSVGPlugin.register(gsap);
+    
     registerSplitText();
     registerScrollSmoothPlugin();
     registerGSDevTools();

@@ -870,8 +870,11 @@ const registerScrollSmoothPlugin = () => {
 };
 
 
-const registerGsapPlugins = () => {
+/** @param {import('gsap')} gsap */
+const registerGsapPlugins = gsap => {
     registerDrawSvgPlugin();
+    DrawSVGPlugin.register(gsap);
+
     registerSplitText();
     registerScrollSmoothPlugin();
 

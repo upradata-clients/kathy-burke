@@ -15,6 +15,6 @@ const define = fn => {
 const _ = { define };
 /** @type {any} */(globalThis)._ = _;
 
-// /** @typedef {typeof _} _ */
+
 
 export { _ };

@@ -5,7 +5,8 @@ declare global {
 
     export type Image = {
         readonly src: string;
-        readonly alt: string;
+        readonly alt?: string;
+        readonly title?: string;
         readonly settings?: ImageSettings;
     };
 

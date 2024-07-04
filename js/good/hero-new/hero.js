@@ -1,13 +1,7 @@
 // @ts-check
-import { registerUnderScore } from '../../lib/register-underscore.js';
+import { registerUnderScore } from '../lib/register-underscore.js';
 
-const _ = await registerUnderScore({ isLocal: true });
-
-
-_.EventNames.hero = {
-    firstScrubDone: 'hero:first-scrub-done'
-};
-
+const _ = await registerUnderScore({ isLocal: false });
 
 
 /**
@@ -20,7 +14,6 @@ const POSITION_TYPE =/** @type {const} */({
     XY: 'xy',
     TOP_LEFT: 'top-left'
 });
-
 
 
 

@@ -118,7 +118,7 @@ const createSideCardsMouseFollowAnimation = ({ sliderCards, maxRotation, maxDist
             onMouseMove: data => {
                 const d = mouseFollower.getDistanceEase(data);
 
-                const card = /** @type {HTMLElement} */ (data.item.closest('.card'));
+                const card = /** @type {HTMLElement} */ (data.item.closest('.mt-gallery_slider_card'));
 
                 if (!card)
                     throw new Error(`The card is not found for the element: ${data.item}`);
@@ -566,33 +566,43 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
     };
 
 
-    /** @param {number} activeI */
-    const setZoomableCard = activeI => {
+    /**
+     * @param {number} index
+     * @param {boolean} isActive
+     */
+    const setZoomableCard = (index, isActive) => {
+        elements.gallerySlider.cards.forEach((__, i) => {
+            const state = !isActive ? 'off' : index === i ? 'on' : 'off';
+            elements.gallerySlider.cards[ i ].card.dataset.zoomState = state;
+        });
 
         /**
          * @param {HTMLImageElement} img
          * @param {boolean} isActive
          */
         const setZoomable = (img, isActive) => {
-            if (isActive) {
-                img.dataset.imgZoomUrl = img.dataset.imgZoomUrl || img.dataset.galleryImgZoomUrl;
-                delete img.dataset.galleryImgZoomUrl;
+            /* if (isActive) {
+                img.dataset.imgZoomUrl = img.dataset.imgZoomUrl || img.dataset.imgZoomUrl;
+                delete img.dataset.imgZoomUrl;
             } else {
-                img.dataset.galleryImgZoomUrl = img.dataset.galleryImgZoomUrl || img.dataset.imgZoomUrl;
+                img.dataset.imgZoomUrl = img.dataset.imgZoomUrl || img.dataset.imgZoomUrl;
                 img.dataset.imgZoomUrl = '';
-            }
+            } */
+            // _.setClassName(img, 't-zoomable')(isActive ? 'add' : 'remove');
         };
 
         // we need to wait next tick because first will be called document.addEventListener("click", function(t) {
         // in tilda-zoom-2.0.min.js -> t_zoom__initFullScreenImgOnClick
         // Otherwise, the image will get zoom as we set the zoomable attribute of the next active card
-        setTimeout(() => {
-            elements.gallerySlider.cards.forEach(({ images }, i) => {
-                images.forEach(img => setZoomable(_.queryThrow('img', img), activeI === i));
-            });
-        }, 0);
+        // setTimeout(() => {
+        //     elements.gallerySlider.cards.forEach(({ images }, i) => {
+        //         images.forEach(img => setZoomable(_.queryThrow('img', img), activeI === i));
+        //     });
+        // }, 0);
     };
 
+
+    setZoomableCard(-1, false);
 
     /**
      * @param {Object} params
@@ -627,19 +637,15 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
     };
 
 
-    /**
-     * @param {Object} params
-     * @param { 'activated' | 'activating' | 'desactivated' | 'desactivating' } params.state
-     * @param {number} params.from
-     * @param {number} params.to
-     * @param {boolean} params.isInit
-     */
+    /** @param {AnimateSliderParams} params */
     const animateSlider = ({ from, to, state, isInit }) => {
 
         /** @type {Promise<void>} */
         let sliderTL$ = Promise.resolve();
 
         const isSame = from === to;
+
+        setZoomableCard(-1, false);
 
         if (isInit) {
             gsap.to(galleryTitle.block, { opacity: 1, duration: 0.5, ease: 'expo.out' });
@@ -660,7 +666,6 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
 
         if (to !== -1) {
             setStateCards(to, 'add');
-            setZoomableCard(to);
 
             sliderTL$ = sliderTL$.then(() => slider.get().goTo(to));
 
@@ -681,26 +686,10 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
 
 
 
-    // const setActiveTitle = _.setClassName(elements.galleryTitle, 'active');
-    // setActiveTitle('add');
-
     /** @param {'add' | 'remove' } action */
     const setActiveCardsBlock = action => _.setClassName(elements.gallery.block, 'slider-active')(action);
 
 
-    // const cssVarsToAnimate = () => [
-    //     '--mt-cards-width',
-    //     '--mt-card-height'
-    // ].map(cssVarName => ({
-    //     name: cssVarName,
-    //     inactive: getCssValue(elements.gallerySlider.block, `${cssVarName}-inactive`),
-    //     active: getCssValue(elements.gallerySlider.block, `${cssVarName}-active`)
-    // }));
-
-    // /** @param {{ isActive: boolean; }} mode */
-    // const getCssVarsGsapProps = ({ isActive }) => cssVarsToAnimate().reduce((vars, { name, inactive, active }) => {
-    //     return { ...vars, [ name ]: isActive ? active : inactive };
-    // }, {});
     const getCardsCssVarsGsapProps = createGetCssVarsGsapProps(elements.gallerySlider.block, [
         '--mt-cards-width',
         '--mt-card-height'
@@ -715,13 +704,8 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
         gsap.set(elements.gallerySlider.block, getCardsCssVarsGsapProps(isActive ? 'active' : 'inactive'));
     });
 
-    /**
-     * @param {Object} params
-     * @param {'activating' | 'desactivating'} params.state
-     * @param {number} params.from
-     * @param {number} params.to
-     * @param {boolean} params.isInit
-     */
+
+    /** @param {AnimateSliderParams<'activating' | 'desactivating'>} params */
     const animateActivationGallery = async ({ state, from, to, isInit }) => {
         setActiveCardsBlock(state === 'activating' ? 'add' : 'remove');
 
@@ -740,6 +724,23 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
         if (state === 'desactivating') {
             activateSideCardsFollowers({ from, to, state: 'desactivating' });
         }
+    };
+
+    /** @param {AnimateSliderParams<'activating'>} params */
+    const animateActivatingGallery = animateActivationGallery;
+
+    /** @param {AnimateSliderParams<'desactivating'>} params */
+    const animateDesactivatingGallery = animateActivationGallery;
+
+
+    /** @param {AnimateSliderParams<'activated'>} params */
+    const animateActivatedGallery = ({ to }) => {
+        setZoomableCard(to, true);
+    };
+
+    /** @param {AnimateSliderParams<'desactivated'>} params */
+    const animateDesactivatedGallery = ({}) => {
+        setActiveCardsBlock('remove');
     };
 
     // const onGalleryResize = ({ isActive = false } = {}) => {
@@ -761,9 +762,18 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
     //         onGalleryResize({ isActive: true });
     // });
 
-    return { animateSlider, setActiveCardsBlock, animateActivationGallery };
+    return { animateSlider, setActiveCardsBlock, animateActivatingGallery, animateActivatedGallery, animateDesactivatingGallery, animateDesactivatedGallery };
 };
 
-/** @typedef {Parameters<ReturnType<(typeof createGalleryAnimation)>['animateSlider']>[0]} AnimateSliderParams */
+/** @typedef {'activated' | 'activating' | 'desactivated' | 'desactivating'} GalleryState */
+
+/**
+ * @template {GalleryState} [S=GalleryState]
+ * @typedef {Object} AnimateSliderParams
+ * @property {S} state
+ * @property {number} from
+ * @property {number} to
+ * @property {boolean} isInit
+ */
 
 export { createGalleryAnimation, createGallerySlider };
