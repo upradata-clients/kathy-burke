@@ -7,6 +7,7 @@ declare global {
         readonly src: string;
         readonly alt?: string;
         readonly title?: string;
+        readonly description?: string;
         readonly settings?: ImageSettings;
     };
 
