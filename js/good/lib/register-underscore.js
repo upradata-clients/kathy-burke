@@ -33,6 +33,9 @@ const addScripts = async (...urls) => {
 
 /** @param {UnderScore} _ */
 const createScrollSmoother = _ => {
+    /* if (_.device.isMobile())
+        return; */
+
     const getContentEl = () => {
         const allRecords = document.querySelector('#allrecords');
 
@@ -55,7 +58,7 @@ const createScrollSmoother = _ => {
     document.documentElement.classList.add('mt-scroller');
 
     // create the scrollSmoother before your scrollTriggers
-    const scroller = ScrollSmoother.create({
+    ScrollSmoother.create({
         content: getContentEl(), // the element that scrolls
         smooth: 1, // how long (in seconds) it takes to "catch up" to the native scroll position
         effects: true, // looks for data-speed and data-lag attributes on elements
@@ -70,7 +73,7 @@ const createScrollSmoother = _ => {
  * @returns {Promise<UnderScore>}
  */
 const registerUnderScore = async (options = {}) => {
-    const { isLocal = false } = options;
+    const { isLocal = [ 'localhost', '127.0.0.1' ].some(host => window.location.hostname === host) } = options;
 
     global_().define(() => helpers);
     global_().define(() => textSplit);
@@ -80,6 +83,9 @@ const registerUnderScore = async (options = {}) => {
 
 
     const finishRegister = () => {
+        const deviceType = global_().device.isMobile() ? 'is-mobile' : 'is-desktop';
+        document.body.classList.add(deviceType);
+
         createScrollSmoother(global_());
 
         registerHero(global_());

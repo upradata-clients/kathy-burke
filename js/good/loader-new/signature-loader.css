@@ -1,0 +1,51 @@
+.init-loader.active .svg-signature path:nth-child(1) {
+                        stroke-dashoffset: 33.46;
+                        stroke-dasharray: 33.46;
+                        animation: 0.12s linear 1s forwards hand-writing;
+                    }
+.init-loader.active .svg-signature path:nth-child(2) {
+                        stroke-dashoffset: 33.32;
+                        stroke-dasharray: 33.32;
+                        animation: 0.14s linear 1.12s forwards hand-writing;
+                    }
+.init-loader.active .svg-signature path:nth-child(3) {
+                        stroke-dashoffset: 18.81;
+                        stroke-dasharray: 18.81;
+                        animation: 0.12s linear 1.26s forwards hand-writing;
+                    }
+.init-loader.active .svg-signature path:nth-child(4) {
+                        stroke-dashoffset: 58.68;
+                        stroke-dasharray: 58.68;
+                        animation: 0.39s linear 1.39s forwards hand-writing;
+                    }
+.init-loader.active .svg-signature path:nth-child(5) {
+                        stroke-dashoffset: 41.21;
+                        stroke-dasharray: 41.21;
+                        animation: 0.23s linear 1.78s forwards hand-writing;
+                    }
+.init-loader.active .svg-signature path:nth-child(6) {
+                        stroke-dashoffset: 17.41;
+                        stroke-dasharray: 17.41;
+                        animation: 0.16s linear 2.01s forwards hand-writing;
+                    }
+.init-loader.active .svg-signature path:nth-child(7) {
+                        stroke-dashoffset: 10.8;
+                        stroke-dasharray: 10.8;
+                        animation: 0.14s linear 2.17s forwards hand-writing;
+                    }
+.init-loader.active .svg-signature path:nth-child(8) {
+                        stroke-dashoffset: 28.95;
+                        stroke-dasharray: 28.95;
+                        animation: 0.16s linear 2.31s forwards hand-writing;
+                    }
+.init-loader.active .svg-signature path:nth-child(9) {
+                        stroke-dashoffset: 3.3;
+                        stroke-dasharray: 3.3;
+                        animation: 0.03s linear 2.47s forwards hand-writing;
+                    }
+
+@keyframes hand-writing {
+            to {
+                stroke-dashoffset: 0;
+            }
+        }

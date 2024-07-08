@@ -1,6 +1,6 @@
 // @ts-check
 
-import * as hero from './hero.local.js';
+import * as hero from './hero.js';
 
 /** @param {UnderScore} _ */
 const registerHero = _ => {

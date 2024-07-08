@@ -6,7 +6,9 @@
     --scrollbar-padding-legacy: 4px;
 }
 
-@supports selector(::-webkit-scrollbar) /* and (not (scrollbar-width: auto)) */ {
+@supports selector(::-webkit-scrollbar)
+/* and (not (scrollbar-width: auto)) */
+    {
 
     .mt-scroller::-webkit-scrollbar {
         width: var(--scrollbar-width-legacy)
@@ -55,3 +57,29 @@
     }
 }
  */
+
+
+
+:root {
+    --doc-height: 100vh;
+    --doc-width: 100vw;
+}
+
+@supports(height: 100dvh) {
+    :root {
+        --doc-height: 100dvh;
+        --doc-width: 100dvw;
+    }
+}
+
+
+.t-zoomer__show_fixed {
+    height: var(--doc-height);
+    max-height: var(--doc-height);
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.t-slds {
+    overflow: unset;
+}

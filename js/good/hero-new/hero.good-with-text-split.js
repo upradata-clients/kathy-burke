@@ -184,7 +184,7 @@ const getLazyPositionElementTo = opts => {
         to,
         type = 'xy',
         usePercent = false,
-        decimalPrecision = 1,
+        decimalPrecision = 0,
         getRect = el => getAbsoluteRect(el, { ...opts.getAbsoluteRectOptions, type: POSITION_TYPE.XY }),
         margins,
         isRelative = false
@@ -323,6 +323,46 @@ const createHeroToImagePinAnimation = ({ hero, signature, notreDame }) => {
 
         // _.setSvgPosition(/** @type {SVGSVGElement} */(/** @type {unknown} */(_.queryThrow('svg', notreDameBlock))), { x: 0.8, y: 0.5 });
 
+
+        const titleSplit = _.createTextSplit(notreDameTitle, {
+            separator: { group: /\s*#\s*/ },
+            createElement: {
+                char: ({ charI, char }) => {
+                    const charEl = document.createElement('span');
+                    charEl.append(char);
+
+                    const div = document.createElement('div');
+                    div.append(charEl);
+
+                    div.classList.add('char-wrapper', `char-wrapper-${charI}`);
+                    charEl.classList.add('char', `char-${charI}`);
+
+                    return div;
+                }
+            },
+            cssClass: {
+                groups: 'notre-dame-title',
+                group: 'group',
+                word: 'word',
+                char: 'char'
+            }
+        });
+
+
+        const groupsClone = titleSplit.groups.map(group => {
+            const groupClone = /** @type {HTMLElement} */(group.cloneNode(false));
+
+            groupClone.style.cssText += 'position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: -1; padding: 0; margin: 0;';
+            groupClone.classList.add('group-clone');
+
+            group.style.position = 'relative';
+
+            group.append(groupClone);
+
+            return groupClone;
+        });
+
+
         return {
             hero,
             gallery: {
@@ -332,7 +372,7 @@ const createHeroToImagePinAnimation = ({ hero, signature, notreDame }) => {
             signature,
             notreDame: {
                 block: notreDame,
-                container: notreDameContainer, title: notreDameTitle,
+                container: notreDameContainer, title: notreDameTitle, titleSplit: { ...titleSplit, groupsClone },
                 svg: { notreDame: svgNotreDame, hand: notreDameHand, sky: notreDameSky, }
             }
         };
@@ -344,7 +384,7 @@ const createHeroToImagePinAnimation = ({ hero, signature, notreDame }) => {
         const tlScrub = gsap.timeline({
             scrollTrigger: {
                 onLeave: _.createDispatchEventOnce(_.EventNames.hero.firstScrubDone),
-                markers: false,
+                markers: true,
                 trigger: hero,
                 scrub: 1,
                 pin: hero,
@@ -393,7 +433,6 @@ const createHeroToImagePinAnimation = ({ hero, signature, notreDame }) => {
         const notreDameTL = gsap.timeline({ id: 'notre-dame-tl' });
 
         const matchMediaBreakpoints = {
-            all: { value: '(min-width: 0px)', name: 'all' },
             mobile: { value: '(max-width: 640px)', name: 'mobile' },
             tablet: { value: '(max-width: 970px)', name: 'tablet' },
             desktop: { value: '(min-width: 970.1px)', name: 'desktop' },
@@ -406,47 +445,55 @@ const createHeroToImagePinAnimation = ({ hero, signature, notreDame }) => {
 
         createSignatureSignatureAnimation({ signature });
 
+        // chrome has a bug on svg rendering and it is the case with svg scaling (it blocks the rendering for a few seconds)
+        const useScale = _.getNavigator() === 'Chrome';
 
-        const galleryTiming =/** @type {const} */({
+        const galleryTiming = {
             desktop: {
                 signature: { disappears: { start: 0.2, duration: 0.5 } },
-                notreDameImgInPainting: {
-                    set: { start: 0.7, },
-                    appears: { start: 0.7, duration: 0.6 },
-                },
-                centralPainting: {
-                    disappears: { start: 0.7, duration: 0.6 },
-                },
-                notreDameTL: { start: 0.7 + 0.6 + 0.01 }
-            },
-            tablet: {
-                signature: { disappears: { start: 1 + 0.05, duration: 0.5 } },
                 gallery: {
-                    shift: { start: 0.05, duration: 1 },
-                },
-                notreDameImgInPainting: {
-                    set: { start: 0.05 + 1, },
-                    appears: { start: 0.05 + 1, duration: 0.6 },
-                },
-                centralPainting: {
-                    disappears: { start: 0.05 + 1 + 0.6, duration: 0.6 },
-                },
-                notreDameTL: { start: 0.05 + 1 + 0.6 + 0.01 }
+                    scaleUp: { start: 0.2, duration: 1 }
+                }
             },
-        });
-
-        const notreDametiming =/** @type {const} */({
-            set: { start: 0 },
-            scaleUp: { start: 0.01, duration: 1 },
             tablet: {
-                shift: { start: 1.01, duration: 1 }
+                signature: { disappears: { start: 1.2, duration: 0.5 } },
+                gallery: {
+                    shift: { start: 0.2, duration: 1 },
+                    scaleUp: { start: /* 1.2 * 0.75 */ 0.2, duration: 1 }
+                }
+            },
+            notreDameImgInPainting: {
+                set: { start: 1.01, },
+                appears: { start: 1.01, duration: 0.6 },
+            },
+            centralPainting: {
+                disappears: { start: 1.01, duration: 0.6 },
+            },
+            notreDameTL: { start: 1.61, /* '+=0.01' */ }
+        };
+
+        const notreDametiming = {
+            notreDame: {
+                set: { start: 0 },
+                scaleUp: { start: 0.01, duration: 1 }
+            },
+            tablet: {
+                notreDame: {
+                    shift: { start: 1.01, duration: 1 }
+                }
+            },
+            title: {
+                set: { start: 2.02 },
+                appears: { start: 2.52, duration: 2 },
+                disappears: { start: 4.52, duration: 2 },
             }
-        });
+        };
 
 
         addToScrub(
             {
-                matchMedia: _.device.isMobile() ? matchMediaBreakpoints.all.name : matchMediaBreakpoints.tablet.name,
+                condition: _.device.isMobile,
+                matchMedia: _.device.isMobile() ? undefined : matchMediaBreakpoints.tablet.name,
                 matchMedias: [
                     {
                         target: signature,  // disappears while scrolling
@@ -469,7 +516,17 @@ const createHeroToImagePinAnimation = ({ hero, signature, notreDame }) => {
                         }
                     },
                     {
-                        target: gallery.container,
+                        target: gallery.container, // scales up
+                        start: galleryTiming.tablet.gallery.scaleUp.start,
+                        to: { duration: galleryTiming.tablet.gallery.scaleUp.duration, scale: useScale ? 1 : 1.5, ease: 'power2.inOut' }
+                    },
+                    /*  {
+                         target: gallery.container, // scales up
+                         start: 0,
+                         set: { width: () => gallery.svg.gallery.getBBox().width }
+                     }, */
+                    {
+                        target: gallery.container, // scales up
                         start: 0,
                         set: { width: 'max-content' }
                     }
@@ -482,52 +539,48 @@ const createHeroToImagePinAnimation = ({ hero, signature, notreDame }) => {
                         target: signature,  // disappears while scrolling
                         start: galleryTiming.desktop.signature.disappears.start,
                         to: { duration: galleryTiming.desktop.signature.disappears.duration, opacity: 0, ease: 'expo.out' }
-                    }
+                    },
+                    {
+                        target: gallery.container, // scales up
+                        start: galleryTiming.desktop.gallery.scaleUp.start,
+                        to: { duration: galleryTiming.desktop.gallery.scaleUp.duration, scale: useScale ? 1 : 1.5, ease: 'power2.inOut' }
+                    },
                 ],
+            },
+            {
+                target: gallery.svg.notreDameImgInPainting, // place notreDameImgInPainting in the middle of the gallery
+                start: galleryTiming.notreDameImgInPainting.set.start,
+                /* useScale ?
+                    _.gsapTime.previousEnd.percentage.ofPrevious.remove(35) :
+                    _.gsapTime.atEnd, // 1.01, // 0.2, */
+                set: {
+                    ...getLazyPositionElementTo({ to: gallery.svg.centralPainting }),
+                    ...getLazySize(gallery.svg.centralPainting),
+                }
+            },
+            {
+                target: gallery.svg.notreDameImgInPainting, // appears in the middle frame
+                start: galleryTiming.notreDameImgInPainting.appears.start,
+                to: {
+                    duration: galleryTiming.notreDameImgInPainting.appears.duration, opacity: 1, ease: 'power2.inOut',
+                }
+            },
+            {
+                target: gallery.svg.centralPainting, // disappears in the middle frame
+                start: galleryTiming.centralPainting.disappears.start,
+                to: { duration: galleryTiming.centralPainting.disappears.duration, opacity: 0, ease: 'power2.inOut' }
+            },
+            {
+                target: notreDameTL, // add notreDame timeline
+                start: galleryTiming.notreDameTL.start,
             }
         );
 
-        /** @type {const} */([
-            { name: 'desktop', timing: galleryTiming.desktop, media: matchMediaBreakpoints.desktop.name },
-            { name: 'tablet', timing: galleryTiming.tablet, media: matchMediaBreakpoints.tablet.name },
-        ]).forEach(({ timing, media }) => {
-
-            addToScrub(
-                {
-                    target: gallery.svg.notreDameImgInPainting, // place notreDameImgInPainting in the middle of the gallery
-                    start: timing.notreDameImgInPainting.set.start,
-                    matchMedia: media,
-                    set: {
-                        ...getLazyPositionElementTo({ to: gallery.svg.centralPainting }),
-                        ...getLazySize(gallery.svg.centralPainting),
-                    }
-                },
-                {
-                    target: gallery.svg.notreDameImgInPainting, // appears in the middle frame
-                    start: timing.notreDameImgInPainting.appears.start,
-                    matchMedia: media,
-                    to: {
-                        duration: timing.notreDameImgInPainting.appears.duration, opacity: 1, ease: 'power2.inOut',
-                    }
-                },
-                {
-                    target: gallery.svg.centralPainting, // disappears in the middle frame
-                    start: timing.centralPainting.disappears.start,
-                    matchMedia: media,
-                    to: { duration: timing.centralPainting.disappears.duration, opacity: 0, ease: 'power2.inOut' }
-                },
-                {
-                    target: notreDameTL, // add notreDame timeline
-                    start: timing.notreDameTL.start,
-                    matchMedia: media
-                }
-            );
-        });
 
 
         addToNotreDame(
             {
-                target: notreDame.block, start: notreDametiming.set.start,
+                target: notreDame.block, start: notreDametiming.notreDame.set.start,
                 set: {
                     ...getLazyPositionElementTo({ to: gallery.svg.centralPainting, type: 'top-left' }),
                     ...getLazySize(gallery.svg.centralPainting),
@@ -535,23 +588,23 @@ const createHeroToImagePinAnimation = ({ hero, signature, notreDame }) => {
                 }
             },
             {
-                target: notreDame.block, start: notreDametiming.scaleUp.start,
-                to: { duration: notreDametiming.scaleUp.duration, top: 0, left: 0, width: '100%', height: '100%', ease: 'expo.in' }
+                target: notreDame.block, start: notreDametiming.notreDame.scaleUp.start,
+                to: { duration: notreDametiming.notreDame.scaleUp.duration, top: 0, left: 0, width: '100%', height: '100%', ease: 'expo.in' }
             },
             {
-                target: notreDame.container, start: notreDametiming.tablet.shift.start,
+                target: notreDame.container, start: notreDametiming.tablet.notreDame.shift.start,
                 condition: _.device.isMobile,
-                matchMedia: _.device.isMobile() ? matchMediaBreakpoints.all.name : matchMediaBreakpoints.tablet.name,
+                matchMedia: _.device.isMobile() ? undefined : matchMediaBreakpoints.tablet.name,
                 fromTo: {
                     from: { width: '100%', xPercent: 0 }, to: { width: 'max-content', xPercent: -50, duration: 0 }
                 }
             },
             {
-                target: notreDame.container, start: notreDametiming.tablet.shift.start + 0.01,
+                target: notreDame.container, start: notreDametiming.tablet.notreDame.shift.start + 0.01,
                 condition: _.device.isMobile,
-                matchMedia: _.device.isMobile() ? matchMediaBreakpoints.all.name : matchMediaBreakpoints.tablet.name,
+                matchMedia: _.device.isMobile() ? undefined : matchMediaBreakpoints.tablet.name,
                 to: {
-                    duration: notreDametiming.tablet.shift.duration,
+                    duration: notreDametiming.tablet.notreDame.shift.duration,
                     // width: 'max-content', // () => notreDame.svg.notreDame.getBBox().width,
                     /* xPercent */
                     x: () => {
@@ -567,11 +620,118 @@ const createHeroToImagePinAnimation = ({ hero, signature, notreDame }) => {
                         getRect: makeCompose(getAbsoluteRectXY, positionOfRect({ x: 1, y: 0.5 }))
                     }).x(index, target), */
                     ease: 'power2.out'
+                },
+                // fromTo: {
+                //     from: {/*  width: '100%', */
+                //         xPercent: 0,
+                //         /* x: 0 */
+                //     },
+                //     to: {
+                //         duration: notreDametiming.tablet.notreDame.shift.duration,
+                //         // width: 'max-content', // () => notreDame.svg.notreDame.getBBox().width,
+                //         xPercent: () => {
+                //             const w1 = notreDame.container.getBoundingClientRect().width / 2; // notreDame.svg.notreDame.getBBox().width;
+                //             const w2 = getAbsoluteRectXY(notreDame.block).width / 2;
+
+                //             const w = (w2 - w1) / w1;
+
+                //             return `+=${1 * w * 100}`; // 100; // -50;
+                //             // return 1 * w * 100; // 100; // -50;
+                //         },
+                //         /* x: (index, target) => getLazyPositionElementTo({
+                //             to: notreDame.block,
+                //             getRect: makeCompose(getAbsoluteRectXY, positionOfRect({ x: 1, y: 0.5 }))
+                //         }).x(index, target), */
+                //         ease: 'power2.out'
+                //     }
+                // }
+            },
+            {
+                target: notreDame.titleSplit.container, start: notreDametiming.title.set.start,
+                matchMedia: matchMediaBreakpoints.desktop.name,
+                set: {
+                    opacity: 1,
+                    ...getLazyPositionElementTo({ to: notreDame.svg.sky }),
+                    /* matchMedia: _.device.isMobile() ? undefined : [
+                        {
+                            media: matchMediaBreakpoints.tablet.name,
+                            x: getLazyPositionElementTo({ to: notreDame.block, getRect: makeCompose(getAbsoluteRectXY, centerOfRect) }).x,
+                            y: getLazyPositionElementTo({ to: notreDame.block, getRect: getAbsoluteRectXY, margins: { top: 100 } }).y
+                        },
+                        {
+                            media: matchMediaBreakpoints.desktop.name,
+                            ...getLazyPositionElementTo({ to: notreDame.svg.sky }),
+                        }
+                    ], */
+                },
+            },
+            {
+                target: notreDame.titleSplit.container, start: notreDametiming.title.set.start,
+                condition: _.device.isMobile,
+                matchMedia: _.device.isMobile() ? undefined : matchMediaBreakpoints.tablet.name,
+                set: {
+                    opacity: 1,
+                    x: getLazyPositionElementTo({ to: notreDame.block, getRect: makeCompose(getAbsoluteRectXY, centerOfRect) }).x,
+                    y: getLazyPositionElementTo({ to: notreDame.block, getRect: getAbsoluteRectXY, margins: { top: 100 } }).y
+                },
+            },
+            {
+                start: notreDametiming.title.appears.start,
+                timelines: {
+                    elements: notreDame.titleSplit.all,
+                    withScrub: true, time: () => '>-=70%',
+                    ease: 'expo.out',
+                    createAnimation: ({ element, index: i }) => {
+                        const { chars } = /** @type {InferArray<typeof notreDame.titleSplit.all>} */(element);
+                        const duration = notreDametiming.title.appears.duration;
+
+                        return [
+                            {
+                                target: chars, start: 0,
+                                from: {
+                                    ...getLazyPositionElementTo({
+                                        to: notreDame.svg.hand,
+                                        getRect: makeCompose(getAbsoluteRectXY, centerOfRect)
+                                    }),
+                                    duration,
+                                    stagger: 0.05
+                                }
+                            },
+                            { target: chars.map(c => c.firstChild), start: 0, from: { duration, rotationX: -50, rotationY: 40, z: -200, stagger: 0.05 } },
+                            { target: chars.map(c => c.firstChild), start: 0, from: { duration: 0.02, autoAlpha: 0, stagger: 0.04 } },
+                            {
+                                target: notreDame.titleSplit.groupsClone[ i ], start: 0, fromTo: {
+                                    from: { backgroundColor: 'rgba(255, 255, 255, 0)' },
+                                    to: { duration, backgroundColor: 'rgba(255, 255, 255, 0.85)' }
+                                }
+                            },
+                            {
+                                target: notreDame.titleSplit.groupsClone[ i ], start: 0,
+                                from: { duration, z: -400, x: 50, y: -20, ease: 'expoScale(0.5,7,power2.inOut)' }
+                            }
+                        ];
+                    }
                 }
             },
             {
-                target: notreDame.container, to: { duration: 0.4 }
+                target: notreDame.titleSplit.groups, // [ ...notreDame.titleSplit.groups, ...notreDame.titleSplit.groupsClone ],
+                start: notreDametiming.title.disappears.start,
+                to: { scale: 0.4, y: 100, x: -50, opacity: 0, duration: notreDametiming.title.disappears.duration, ease: 'expo.out', stagger: 0.4 }
             }
+            // ...(notreDame.titleSplit.groups.flatMap((group, i) => [
+            //     {
+            //         target: group,
+            //         start: notreDametiming.title.disappears.start + i * 0.4,
+            //         to: {
+            //             scale: 0.4, y: 100, x: -50, opacity: 0, duration: notreDametiming.title.disappears.duration, ease: 'none',/* 'power2.out' */
+            //         }
+            //     },
+            //     // {
+            //     //     target: notreDame.titleSplit.groupsClone[ i ],
+            //     //     start: notreDametiming.title.disappears.start + i * 0.4,
+            //     //     to: { scale: 0.4, y: 100, x: -50, opacity: 0, duration: notreDametiming.title.disappears.duration, ease: 'none',/* 'power2.out' */ }
+            //     // }
+            // ]))
         );
 
         // leave the pin longer

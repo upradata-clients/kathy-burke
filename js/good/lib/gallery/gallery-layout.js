@@ -26,7 +26,10 @@ const createGalleriesLayout = galleryItems => {
 
     /** @param {number} index */
     const createMenuItem = index => {
-        const { name, menu: { src, alt = '' } } = galleryItems[ index ];
+        const { name } = galleryItems[ index ];
+        const { menu } = galleryItems[ index ];
+
+        const { src, alt = `menu for "${name}" series of Kathy Burkes's painting` } = menu;
 
         const item = _.createElementFromTemplate(references.menuCard);
         item.classList.add(`mt-gallery_menu_card-${index}`);
@@ -55,7 +58,9 @@ const createGalleriesLayout = galleryItems => {
      */
     const createSliderCardItem = (categoryI, cardI) => {
         const { images, name } = galleryItems[ categoryI ];
-        const { src, alt = '', title = name } = images[ cardI ];
+
+        const { src, title = name, description = '' } = images[ cardI ];
+        const alt = images[ cardI ].alt || `Kathy Burkes's painting entitled "${title}${description ? ` - ${description}` : ''}" of the ${name} series`;
 
         const slideCardImage = _.createElementFromTemplate(references.sliderCardItem);
 
@@ -68,7 +73,7 @@ const createGalleriesLayout = galleryItems => {
         const metaImage = /** @type {HTMLMetaElement} */(_.queryThrow('[itemprop="image"]', item));
         const metaCaption = /** @type {HTMLMetaElement} */(_.queryThrow('[itemprop="caption"]', item));
 
-                img.src = src;
+        img.src = src;
         img.dataset.imgZoomUrl = src;
         metaImage.content = src;
         // img.dataset.imgZoomUrl = src;
@@ -77,10 +82,10 @@ const createGalleriesLayout = galleryItems => {
         img.setAttribute('title', title);
 
         img.dataset.zoomTarget = `${cardI}`;
-        
+
         img.alt = alt;
         metaCaption.content = alt;
-        img.dataset.imgZoomDescr = alt;
+        img.dataset.imgZoomDescr = description;
 
         return item;
     };
