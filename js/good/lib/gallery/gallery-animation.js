@@ -581,24 +581,25 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
          * @param {boolean} isActive
          */
         const setZoomable = (img, isActive) => {
-            /* if (isActive) {
-                img.dataset.imgZoomUrl = img.dataset.imgZoomUrl || img.dataset.imgZoomUrl;
-                delete img.dataset.imgZoomUrl;
+            if (isActive) {
+                img.dataset.imgZoomUrl = img.dataset.imgZoomUrl || img.dataset.galleryImgZoomUrl;
+                delete img.dataset.galleryImgZoomUrl;
             } else {
-                img.dataset.imgZoomUrl = img.dataset.imgZoomUrl || img.dataset.imgZoomUrl;
+                img.dataset.galleryImgZoomUrl = img.dataset.galleryImgZoomUrl || img.dataset.imgZoomUrl;
                 img.dataset.imgZoomUrl = '';
-            } */
-            // _.setClassName(img, 't-zoomable')(isActive ? 'add' : 'remove');
+            }
+
+            _.setClassName(img, 't-zoomable')(isActive ? 'add' : 'remove');
         };
 
         // we need to wait next tick because first will be called document.addEventListener("click", function(t) {
         // in tilda-zoom-2.0.min.js -> t_zoom__initFullScreenImgOnClick
         // Otherwise, the image will get zoom as we set the zoomable attribute of the next active card
-        // setTimeout(() => {
-        //     elements.gallerySlider.cards.forEach(({ images }, i) => {
-        //         images.forEach(img => setZoomable(_.queryThrow('img', img), activeI === i));
-        //     });
-        // }, 0);
+        setTimeout(() => {
+            elements.gallerySlider.cards.forEach(({ images }, i) => {
+                images.forEach(img => setZoomable(_.queryThrow('img', img), index === i));
+            });
+        }, 0);
     };
 
 
@@ -762,7 +763,14 @@ const createGalleryAnimation = ({ elements, galleryMenu }) => {
     //         onGalleryResize({ isActive: true });
     // });
 
-    return { animateSlider, setActiveCardsBlock, animateActivatingGallery, animateActivatedGallery, animateDesactivatingGallery, animateDesactivatedGallery };
+    return {
+        animateSlider,
+        setActiveCardsBlock,
+        animateActivatingGallery,
+        animateActivatedGallery,
+        animateDesactivatingGallery,
+        animateDesactivatedGallery
+    };
 };
 
 /** @typedef {'activated' | 'activating' | 'desactivated' | 'desactivating'} GalleryState */

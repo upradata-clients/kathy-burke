@@ -6,29 +6,13 @@ import { helpers } from './helpers.js';
 import * as textSplit from './text-split.js';
 import * as imagesSettings from './images-settings.js';
 import * as mouseFollow from './mouse-follow.js';
+import * as tildaFixes from './tilda-fixes.js';
 import { registerGallery } from './gallery/register-gallery.js';
 import { registerHero } from '../hero-new/register-hero.js';
 import { gsap as _gsap } from '../../../node_modules/gsap/index.js';
 
 const global_ = () => /** @type {UnderScore} */(/** @type {any} */(globalThis)._);
 
-
-
-/** @param {string[]} urls */
-const addScripts = async (...urls) => {
-
-    await Promise.allSettled(
-        urls.map(url => {
-            const script = document.createElement('script');
-            script.src = url;
-            document.head.appendChild(script);
-
-            return new Promise(resolve => {
-                script.addEventListener('load', resolve, { once: true });
-            });
-        })
-    );
-};
 
 
 /** @param {UnderScore} _ */
@@ -60,19 +44,23 @@ const createScrollSmoother = _ => {
     // create the scrollSmoother before your scrollTriggers
     ScrollSmoother.create({
         content: getContentEl(), // the element that scrolls
-        smooth: 1, // how long (in seconds) it takes to "catch up" to the native scroll position
+        smooth: 0.6, // 1, // how long (in seconds) it takes to "catch up" to the native scroll position
         effects: true, // looks for data-speed and data-lag attributes on elements
-        smoothTouch: 0.1, // much shorter smoothing time on touch devices (default is NO smoothing on touch devices)
+        // smoothTouch: 0.1, // much shorter smoothing time on touch devices (default is NO smoothing on touch devices)
     });
 };
 
+
 /**
- * @param {Object} [options]
- * @param {boolean} [options.isLocal]
- * 
+ * @typedef {{ isLocal?: boolean }} RegisterUnderScore
+ */
+
+
+/**
+ * @param {RegisterUnderScore} [options]
  * @returns {Promise<UnderScore>}
  */
-const registerUnderScore = async (options = {}) => {
+const _registerUnderScore = async (options = {}) => {
     const { isLocal = [ 'localhost', '127.0.0.1' ].some(host => window.location.hostname === host) } = options;
 
     global_().define(() => helpers);
@@ -80,6 +68,7 @@ const registerUnderScore = async (options = {}) => {
     global_().define(() => gsapHelpers);
     global_().define(() => imagesSettings);
     global_().define(() => mouseFollow);
+    global_().define(() => ({ tildaZoomIsInited: tildaFixes.tildaZoomIsInited }));
 
 
     const finishRegister = () => {
@@ -91,6 +80,8 @@ const registerUnderScore = async (options = {}) => {
         registerHero(global_());
         registerGallery(global_());
 
+        tildaFixes.tildaZoomIsInited().then(() => tildaFixes.applyFixes(global_()));
+
         return global_();
     };
 
@@ -99,12 +90,12 @@ const registerUnderScore = async (options = {}) => {
         const fromGsap = path => `https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/${path}`;
 
 
-        await addScripts(
-            fromGsap('gsap.js'),
-            fromGsap('ScrollTrigger.js'),
-            fromGsap('Flip.js'),
-            fromGsap('ScrollToPlugin.js'),
-            fromGsap('CustomEase.min.js'),
+        await global_().addScripts(
+            { url: fromGsap('gsap.js') },
+            { url: fromGsap('ScrollTrigger.js') },
+            { url: fromGsap('Flip.js') },
+            { url: fromGsap('ScrollToPlugin.js') },
+            { url: fromGsap('CustomEase.min.js') },
         );
 
         gsapPlugins.registerGsapPlugins(/** @type {any} */(gsap));
@@ -114,8 +105,23 @@ const registerUnderScore = async (options = {}) => {
     }
 
     Object.assign(window, { gsap: _gsap });
-    return gsapPluginsAMD.registerGsapPlugins(_gsap).then(() => finishRegister());
+    await gsapPluginsAMD.registerGsapPlugins(_gsap);
+
+    return finishRegister();
 };
+
+
+/**
+ * @param {RegisterUnderScore} [options] 
+ * @returns {Promise<UnderScore>}
+ */
+const registerUnderScore = async (options = {}) => {
+    registerUnderScore.instance = registerUnderScore.instance || _registerUnderScore(options);
+    return registerUnderScore.instance;
+};
+
+/** @type {Promise<UnderScore> | undefined} */
+registerUnderScore.instance = undefined;
 
 
 export { registerUnderScore };

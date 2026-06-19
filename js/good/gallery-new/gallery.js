@@ -3,7 +3,11 @@ import { registerUnderScore } from '../lib/register-underscore.js';
 
 const _ = await registerUnderScore();
 
-
+_.tildaZoomIsInited().then(() => {
+    _.queryThrow('t-zoomer__wrapper').setAttribute('data-zoom-scale', 'no');
+    document.querySelector(".t-zoomer__wrapper")?.delete();
+    t_initZoom();
+});
 _.onLoad(() => {
 
     const galleryItems = getGalleryItems();
@@ -38,7 +42,10 @@ _.onLoad(() => {
     _.dispatchEvent(_.EventNames.gallery.resize, { isActive });
     // galleryAnimation.animateSlider({ to: 3, from: -1, isInit: true, state: 'desactivated' });
 
-    /** @type {any} */(window).t_initZoom(elements.gallerySlider.cards.flatMap(card => card.images.map(img => _.queryThrow('img', img))));
+    // const initZoom =/** @type {any} */(window).t_initZoom;
+
+    // if (initZoom)
+    //     initZoom(elements.gallerySlider.cards.flatMap(card => card.images.map(img => _.queryThrow('img', img))));
 
     goTo(3, 'desactivated');
     // });
@@ -265,7 +272,8 @@ function getGalleryItems() {
                 },
                 {
                     src: fromTildaImage('tild6134-3463-4736-b031-353031326133/3-small.jpeg'),
-                    description: 'Acrylic on linen 2001 - 73 x 54 cm (29 x 21 in)'
+                    description: 'Acrylic on linen 2001 - 73 x 54 cm (29 x 21 in)',
+                    settings: { position: { all: '6% center' } }
                 },
                 {
                     src: fromTildaImage('tild6536-6364-4837-b831-626135353630/4-small.jpeg'),
@@ -314,7 +322,8 @@ function getGalleryItems() {
                 },
                 {
                     src: fromTildaImage('tild6232-3335-4566-b333-343739383834/5-small.jpeg'),
-                    description: 'Oil on linen 1989 - 146 x 114 cm (58 x 45 in)'
+                    description: 'Oil on linen 1989 - 146 x 114 cm (58 x 45 in)',
+                    settings: { position: { all: '100% center' } }
                 },
                 {
                     src: fromTildaImage('tild3131-3839-4137-a636-363232366361/6-small.jpeg'),
@@ -322,7 +331,8 @@ function getGalleryItems() {
                 },
                 {
                     src: fromTildaImage('tild3764-6666-4332-b761-663937333763/7-small.jpeg'),
-                    description: 'Oil on linen 1990 - 146 x 114 cm (58 x 45 in)'
+                    description: 'Oil on linen 1990 - 146 x 114 cm (58 x 45 in)',
+                    settings: { position: { all: '77% center' } }
                 },
                 {
                     src: fromTildaImage('tild3239-6565-4332-b862-353962323766/movie_stils_8.jpg'),

@@ -59,7 +59,7 @@ const createGalleriesLayout = galleryItems => {
     const createSliderCardItem = (categoryI, cardI) => {
         const { images, name } = galleryItems[ categoryI ];
 
-        const { src, title = name, description = '' } = images[ cardI ];
+        const { src, title = name, description = '', settings } = images[ cardI ];
         const alt = images[ cardI ].alt || `Kathy Burkes's painting entitled "${title}${description ? ` - ${description}` : ''}" of the ${name} series`;
 
         const slideCardImage = _.createElementFromTemplate(references.sliderCardItem);
@@ -86,6 +86,12 @@ const createGalleriesLayout = galleryItems => {
         img.alt = alt;
         metaCaption.content = alt;
         img.dataset.imgZoomDescr = description;
+
+        if (settings) {
+            _.setImagesStyle([ settings ], [ { mediaQuery: 'all', prop: 'position' } ], (__, cssStyles) => {
+                gsap.set(img, { ...cssStyles });
+            });
+        }
 
         return item;
     };

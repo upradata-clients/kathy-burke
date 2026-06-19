@@ -8,34 +8,16 @@
  */
 const initGalleryMenu = ({ galleryElements: elements, galleryItems }) => {
 
-
-    const menuItemsImagesSettings = _.applySettingsPropMap(
-        /** @type {readonly ImageSettings[]} */(galleryItems.map(({ menu }) => menu.settings).filter(s => !!s))
-    );
-
-
     /**
      * @param {Array<string | { prop: ImageSettingsKeys; mediaQuery: ImageSettingsMediaQueries }>} styles 
      */
     const setMenuItemsImagesStyle = styles => {
-
-        menuItemsImagesSettings.forEach((imagesSettings, i) => {
-            if (!imagesSettings)
-                return;
-
-            const cssStyles = styles.reduce((cssStyles, style) => {
-
-                const { prop, mediaQuery } = typeof style === 'string' ? { prop: style, mediaQuery: 'all' } : style;
-                const p = _.getSettingPropMap(prop);
-
-                const value = imagesSettings[ p ]?.[ mediaQuery ];
-
-                return value ? { ...cssStyles, [ p ]: imagesSettings[ p ][ mediaQuery ] } : cssStyles;
-            }, {});
-
-            if (Object.values(cssStyles).length > 0)
+        _.setImagesStyle(
+            galleryItems.map(({ menu }) => menu.settings).filter(s => !!s),
+            styles,
+            (i, cssStyles) => {
                 gsap.to(elements.menu.menuItemsImages[ i ], { ...cssStyles, duration: 0.5, ease: 'power2.inOut' });
-        });
+            });
     };
 
     const hinter = createMenuHinter(elements.menu.menuItems.map(({ item }) => item));

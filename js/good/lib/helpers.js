@@ -156,6 +156,9 @@ const EventNames =/** @type {EventNames} */ (/** @type {GlobalEventNames} */({
         gallery: 'gallery:ready'
     },
     resize: 'resize',
+    script: {
+        loaded: 'script:loaded'
+    }
 }));
 
 
@@ -530,18 +533,38 @@ const getNavigator = () => {
 };
 
 
-/** @param {string[]} urls */
-const addScripts = async (...urls) => {
+/** @typedef {{ url: string; name?: string; async?: boolean; defer?: boolean; type?: string }}  ScriptInput */
+
+/** @param {readonly (string | ScriptInput)[]} inputs */
+const addScripts = async (...inputs) => {
+
+    /** @param {string | ScriptInput} input */
+    const getScriptInput = (input) => {
+        if (typeof input === 'string')
+            return { url: input };
+
+        return input;
+    };
 
     await Promise.allSettled(
-        urls.map(url => {
+        inputs.map(input => {
+            const { url, name, async, defer, type } = getScriptInput(input);
+
             const script = document.createElement('script');
             script.src = url;
+
+            if (async) script.async = true;
+            if (defer) script.defer = true;
+            if (type) script.type = type;
+
             document.head.appendChild(script);
 
-            return new Promise(resolve => {
-                script.addEventListener('load', resolve, { once: true });
-            });
+            return /** @type {Promise<void>} */(new Promise(resolve => {
+                script.addEventListener('load', () => {
+                    resolve();
+                    dispatchEvent(EventNames.script.loaded, { url, name });
+                }, { once: true });
+            }));
         })
     );
 };

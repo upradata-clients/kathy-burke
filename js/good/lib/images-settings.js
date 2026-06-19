@@ -70,4 +70,31 @@ const getImagesSettings = images => {
 };
 
 
-export { getImagesSettings, getSettingPropMap, applySettingsPropMap };
+/**
+ * @param {readonly ImageSettings<ImageSettingsKeys, ImageSettingsMediaQueries>[]} listOfImagesSettings
+ * @param {Array<string | { prop: ImageSettingsKeys; mediaQuery: ImageSettingsMediaQueries }>} propsToApply
+ * @param {(i: number, cssStyle: Record<string, string | number>) => void} cb
+ */
+const setImagesStyle = (listOfImagesSettings, propsToApply, cb) => {
+
+    applySettingsPropMap(listOfImagesSettings).forEach((imagesSettings, i) => {
+        if (!imagesSettings)
+            return;
+
+        const cssStyles = propsToApply.reduce((cssStyles, style) => {
+
+            const { prop, mediaQuery } = typeof style === 'string' ? { prop: style, mediaQuery: 'all' } : style;
+            const p = getSettingPropMap(prop);
+
+            const value = imagesSettings[ p ]?.[ mediaQuery ];
+
+            return value ? { ...cssStyles, [ p ]: imagesSettings[ p ][ mediaQuery ] } : cssStyles;
+        }, {});
+
+        if (Object.values(cssStyles).length > 0)
+            cb(i, cssStyles);
+    });
+};
+
+
+export { getImagesSettings, getSettingPropMap, applySettingsPropMap, setImagesStyle };
